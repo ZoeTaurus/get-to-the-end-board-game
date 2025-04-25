@@ -9,6 +9,7 @@ export default defineConfig({
   },
   preview: {
     host: true,
-    port: process.env.PORT || 3000
+    port: process.env.PORT || 3000,
+    allowedHosts: ['get-to-the-end-board-game-production.up.railway.app']
   }
 }) 
