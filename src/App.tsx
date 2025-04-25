@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import Login from './Login';
+import { getTranslation, formatMessage } from './translations';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
@@ -54,6 +55,11 @@ function App() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(30);
   const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState(() => 
+    localStorage.getItem('language') || 'English'
+  );
+
+  const t = getTranslation(selectedLanguage);
 
   useEffect(() => {
     // Socket event listeners
@@ -336,7 +342,7 @@ function App() {
     if (blueWin || redWin) {
       const winner = blueWin ? 'blue' : 'red';
       setWinner(winner);
-      setGameMessage(`${players[winner].username} WINS by reaching the end!`);
+      setGameMessage(formatMessage(t.game.wins, { player: players[winner].username }));
       return true;
     }
 
@@ -346,13 +352,13 @@ function App() {
 
     if (!bluePiecesExist) {
       setWinner('red');
-      setGameMessage(`${players['red'].username} WINS by capturing all opponent pieces!`);
+      setGameMessage(formatMessage(t.game.wins, { player: players['red'].username }));
       return true;
     }
 
     if (!redPiecesExist) {
       setWinner('blue');
-      setGameMessage(`${players['blue'].username} WINS by capturing all opponent pieces!`);
+      setGameMessage(formatMessage(t.game.wins, { player: players['blue'].username }));
       return true;
     }
 
@@ -463,7 +469,7 @@ function App() {
           // Time's up - end game and declare other player as winner
           const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
           setWinner(otherPlayer);
-          setGameMessage(`${players[otherPlayer].username} WINS by timeout!`);
+          setGameMessage(formatMessage(t.game.wins, { player: players[otherPlayer].username }));
           clearInterval(newTimerId);
           return 0;
         }
@@ -495,6 +501,17 @@ function App() {
       clearInterval(timerId);
     }
   }, [winner, timerId]);
+
+  // Update game messages with translations
+  useEffect(() => {
+    if (winner) {
+      setGameMessage(formatMessage(t.game.wins, { player: players[winner].username }));
+    } else if (isMyTurn) {
+      setGameMessage(t.game.selectPiece);
+    } else if (opponent) {
+      setGameMessage(formatMessage(t.game.waitingForMove, { opponent }));
+    }
+  }, [winner, isMyTurn, opponent, players, t]);
 
   const HomeScreen = () => (
     <div className="home-screen">
@@ -592,24 +609,24 @@ function App() {
         {winner && (
           <div className="winner-announcement">
             <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>
-              {players[winner].username} WINS!
+              {formatMessage(t.game.wins, { player: players[winner].username })}
             </h2>
             <button onClick={() => {
               initializeGame();
               setScreen('home');
-            }}>Back to Home</button>
+            }}>{t.game.backToHome}</button>
           </div>
         )}
         <div className="game-info-container">
           <div className="game-status">
             <div className="player-indicator" style={{ backgroundColor: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? 'Your Turn' : `${opponent}'s Turn`}
+              {isMyTurn ? t.game.yourTurn : formatMessage(t.game.opponentTurn, { opponent })}
               <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px' }}>
-                Time left: {timeLeft}s
+                {formatMessage(t.game.timeLeft, { seconds: timeLeft.toString() })}
               </div>
             </div>
             <div className="game-message" style={{ color: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? 'Select a piece to move.' : `Waiting for ${opponent}'s move...`}
+              {isMyTurn ? t.game.selectPiece : formatMessage(t.game.waitingForMove, { opponent })}
             </div>
           </div>
         </div>

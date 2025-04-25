@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
+import { getTranslation } from './translations';
 
 // Language list in alphabetical order
 const languages = [
   'Afrikaans', 'Albanian', 'Amharic', 'Arabic', 'Armenian', 'Azerbaijani',
   'Basque', 'Belarusian', 'Bengali', 'Bosnian', 'Bulgarian', 'Burmese',
-  'Catalan', 'Cebuano', 'Chichewa', 'Chinese (Simplified)', 'Chinese (Traditional)', 'Corsican', 'Croatian', 'Czech',
+  'Catalan', 'Cebuano', 'Chichewa', 'Chinese', 'Chinese (Traditional)', 'Corsican', 'Croatian', 'Czech',
   'Danish', 'Dutch',
   'English', 'Esperanto', 'Estonian',
   'Filipino', 'Finnish', 'French', 'Frisian',
@@ -39,7 +40,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [password, setPassword] = useState(() => localStorage.getItem('password') || '');
   const [username, setUsername] = useState(() => localStorage.getItem('username') || '');
   const [showUsernameInput, setShowUsernameInput] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('English');
+  const [selectedLanguage, setSelectedLanguage] = useState(() => 
+    localStorage.getItem('language') || 'English'
+  );
+
+  const t = getTranslation(selectedLanguage);
 
   useEffect(() => {
     // Check if we have saved credentials
@@ -51,6 +56,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       onLogin(savedUsername);
     }
   }, [onLogin]);
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLanguage = e.target.value;
+    setSelectedLanguage(newLanguage);
+    localStorage.setItem('language', newLanguage);
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,15 +89,33 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     return (
       <div className="login-container">
         <form onSubmit={handleUsernameSubmit} className="login-form">
-          <h2>Choose Your Username</h2>
+          <h2>{t.login.chooseUsername}</h2>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="Enter username"
+            placeholder={t.login.usernamePlaceholder}
             required
           />
-          <button type="submit">Start Playing</button>
+          <button type="submit">{t.login.startPlaying}</button>
+          
+          <div className="language-selector">
+            <div className="language-label">
+              <span className="globe-icon">🌐</span>
+              <span>{t.login.language}</span>
+            </div>
+            <select 
+              value={selectedLanguage}
+              onChange={handleLanguageChange}
+              className="language-dropdown"
+            >
+              {languages.map((language) => (
+                <option key={language} value={language}>
+                  {language}
+                </option>
+              ))}
+            </select>
+          </div>
         </form>
       </div>
     );
@@ -95,31 +124,31 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className="login-container">
       <form onSubmit={handleLoginSubmit} className="login-form">
-        <h2>Login</h2>
+        <h2>{t.login.title}</h2>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
+          placeholder={t.login.emailPlaceholder}
           required
         />
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
+          placeholder={t.login.passwordPlaceholder}
           required
         />
-        <button type="submit">Login</button>
+        <button type="submit">{t.login.loginButton}</button>
         
         <div className="language-selector">
           <div className="language-label">
             <span className="globe-icon">🌐</span>
-            <span>Language</span>
+            <span>{t.login.language}</span>
           </div>
           <select 
             value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value)}
+            onChange={handleLanguageChange}
             className="language-dropdown"
           >
             {languages.map((language) => (
