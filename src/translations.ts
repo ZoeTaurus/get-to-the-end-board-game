@@ -56,6 +56,7 @@ export interface Translation {
   };
 }
 
+// Only include languages that have complete translations
 export const translations: Record<string, Translation> = {
   English: {
     login: {
@@ -85,10 +86,10 @@ export const translations: Record<string, Translation> = {
       waitingForOpponent: 'Waiting for opponent...',
       searchingForGame: 'Searching for game...',
       logout: 'Logout',
-      wins: 'Wins',
-      selectPiece: 'Select Piece',
-      waitingForMove: 'Waiting for move...',
-      timeLeft: 'Time left: {seconds} seconds'
+      wins: '{player} wins!',
+      selectPiece: 'Select a piece to move',
+      waitingForMove: 'Waiting for {opponent} to move...',
+      timeLeft: '{seconds} seconds left'
     },
     help: {
       title: 'How to Play',
@@ -142,10 +143,10 @@ export const translations: Record<string, Translation> = {
       waitingForOpponent: 'Esperando al oponente...',
       searchingForGame: 'Buscando partida...',
       logout: 'Cerrar Sesión',
-      wins: 'Victorias',
-      selectPiece: 'Seleccionar Ficha',
-      waitingForMove: 'Esperando movimiento...',
-      timeLeft: 'Tiempo restante: {seconds} segundos'
+      wins: '¡{player} gana!',
+      selectPiece: 'Selecciona una pieza para mover',
+      waitingForMove: 'Esperando a que {opponent} mueva...',
+      timeLeft: '{seconds} segundos restantes'
     },
     help: {
       title: 'Cómo Jugar',
@@ -158,8 +159,8 @@ export const translations: Record<string, Translation> = {
       circleEat: 'Puede comer en cualquier dirección',
       circleLimit: 'Solo puede comer 2 piezas antes de llenarse',
       howToWin: 'Cómo Ganar',
-      winByCapture: 'Comer todas las piezas del oponente, O',
-      winByReach: 'Llegar al otro lado del tablero',
+      winByCapture: 'Come todas las piezas del oponente, O',
+      winByReach: 'Llega al otro lado del tablero',
       setup: 'Configuración',
       setupDescription: 'Empezando desde la izquierda: Coloca 2 piezas con forma de persona, luego una pieza con forma de círculo, y finalmente otra pieza con forma de persona.',
       watchVideo: '¿Todavía no lo entiendes? ¡Mira este video!',
@@ -199,10 +200,10 @@ export const translations: Record<string, Translation> = {
       waitingForOpponent: '等待对手...',
       searchingForGame: '正在寻找游戏...',
       logout: '退出登录',
-      wins: '胜利',
-      selectPiece: '选择棋子',
-      waitingForMove: '等待移动...',
-      timeLeft: '剩余时间：{seconds}秒'
+      wins: '{player}赢了！',
+      selectPiece: '选择要移动的棋子',
+      waitingForMove: '等待{opponent}移动...',
+      timeLeft: '剩余{seconds}秒'
     },
     help: {
       title: '游戏规则',
@@ -230,41 +231,14 @@ export const translations: Record<string, Translation> = {
   }
 };
 
-// Language display names mapping
+// Language display names mapping - only include supported languages
 export const languageDisplayNames: Record<string, string> = {
   'English': 'English',
   'Spanish': 'Español',
-  'Chinese': '中文',
-  'French': 'Français',
-  'German': 'Deutsch',
-  'Italian': 'Italiano',
-  'Portuguese': 'Português',
-  'Russian': 'Русский',
-  'Japanese': '日本語',
-  'Korean': '한국어',
-  'Arabic': 'العربية',
-  'Hindi': 'हिन्दी',
-  'Bengali': 'বাংলা',
-  'Punjabi': 'ਪੰਜਾਬੀ',
-  'Turkish': 'Türkçe',
-  'Vietnamese': 'Tiếng Việt',
-  'Thai': 'ไทย',
-  'Indonesian': 'Bahasa Indonesia',
-  'Malay': 'Bahasa Melayu',
-  'Filipino': 'Filipino',
-  'Urdu': 'اردو',
-  'Persian': 'فارسی',
-  'O\'zbek': 'O\'zbek'
+  'Chinese': '中文'
 };
 
 export const languageList = Object.keys(languageDisplayNames);
-
-// Add English as fallback for any missing languages
-for (const language of languageList) {
-  if (!translations[language]) {
-    translations[language] = translations.English;
-  }
-}
 
 export function getTranslation(language: string): Translation {
   return translations[language] || translations.English;
