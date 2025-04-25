@@ -1,6 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
 
+// Language list in alphabetical order
+const languages = [
+  'Afrikaans', 'Albanian', 'Amharic', 'Arabic', 'Armenian', 'Azerbaijani',
+  'Basque', 'Belarusian', 'Bengali', 'Bosnian', 'Bulgarian', 'Burmese',
+  'Catalan', 'Cebuano', 'Chichewa', 'Chinese (Simplified)', 'Chinese (Traditional)', 'Corsican', 'Croatian', 'Czech',
+  'Danish', 'Dutch',
+  'English', 'Esperanto', 'Estonian',
+  'Filipino', 'Finnish', 'French', 'Frisian',
+  'Galician', 'Georgian', 'German', 'Greek', 'Gujarati',
+  'Haitian Creole', 'Hausa', 'Hawaiian', 'Hebrew', 'Hindi', 'Hmong', 'Hungarian',
+  'Icelandic', 'Igbo', 'Indonesian', 'Irish', 'Italian',
+  'Japanese', 'Javanese',
+  'Kannada', 'Kazakh', 'Khmer', 'Korean', 'Kurdish',
+  'Kyrgyz',
+  'Lao', 'Latin', 'Latvian', 'Lithuanian', 'Luxembourgish',
+  'Macedonian', 'Malagasy', 'Malay', 'Malayalam', 'Maltese', 'Maori', 'Marathi', 'Mongolian', 'Myanmar',
+  'Nepali', 'Norwegian',
+  'Odia', 'Pashto', 'Persian', 'Polish', 'Portuguese', 'Punjabi',
+  'Romanian', 'Russian',
+  'Samoan', 'Scots Gaelic', 'Serbian', 'Sesotho', 'Shona', 'Sindhi', 'Sinhala', 'Slovak', 'Slovenian', 'Somali', 'Spanish', 'Sundanese', 'Swahili', 'Swedish',
+  'Tajik', 'Tamil', 'Telugu', 'Thai', 'Turkish',
+  'Ukrainian', 'Urdu', 'Uyghur', 'Uzbek',
+  'Vietnamese',
+  'Welsh',
+  'Xhosa',
+  'Yiddish', 'Yoruba',
+  'Zulu'
+];
+
 interface LoginProps {
   onLogin: (username: string) => void;
 }
@@ -10,6 +39,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [password, setPassword] = useState(() => localStorage.getItem('password') || '');
   const [username, setUsername] = useState(() => localStorage.getItem('username') || '');
   const [showUsernameInput, setShowUsernameInput] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('English');
 
   useEffect(() => {
     // Check if we have saved credentials
@@ -81,6 +111,24 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           required
         />
         <button type="submit">Login</button>
+        
+        <div className="language-selector">
+          <div className="language-label">
+            <span className="globe-icon">🌐</span>
+            <span>Language</span>
+          </div>
+          <select 
+            value={selectedLanguage}
+            onChange={(e) => setSelectedLanguage(e.target.value)}
+            className="language-dropdown"
+          >
+            {languages.map((language) => (
+              <option key={language} value={language}>
+                {language}
+              </option>
+            ))}
+          </select>
+        </div>
       </form>
     </div>
   );
