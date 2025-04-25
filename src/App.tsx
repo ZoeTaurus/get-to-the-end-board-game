@@ -111,18 +111,21 @@ function App() {
         }
       }
 
-      // Update turn state
-      const isMyTurnNow = data.nextTurn === socket.id;
-      setIsMyTurn(isMyTurnNow);
-      setCurrentPlayer(prev => prev === 'red' ? 'blue' : 'red');
-      
       // Clear selection states
       setSelectedPiece(null);
       setValidMoves([]);
       setValidCaptures([]);
       
-      // Check for win condition
-      checkWinCondition(board, col);
+      // Check for win condition first
+      const hasWinner = checkWinCondition(board, col);
+      
+      // Only update turn state if there's no winner
+      if (!hasWinner) {
+        // Update turn state
+        const isMyTurnNow = data.nextTurn === socket.id;
+        setIsMyTurn(isMyTurnNow);
+        setCurrentPlayer(prev => prev === 'red' ? 'blue' : 'red');
+      }
     });
 
     socket.on('playerDisconnected', () => {
@@ -357,7 +360,7 @@ function App() {
   };
 
   const handleCellClick = (rowIndex: number, colIndex: number) => {
-    if (winner || !isMyTurn || !gameStarted) return;
+    if (!gameStarted || !isMyTurn || winner) return;
     
     const piece = board[rowIndex][colIndex];
     
@@ -401,6 +404,9 @@ function App() {
         newBoard[rowIndex][colIndex] = movingPiece;
         newBoard[selectedRow][selectedCol] = null;
         
+        // Check for win condition before emitting move
+        const hasWinner = checkWinCondition(newBoard, colIndex);
+        
         // Emit move to server with full board state
         socket.emit('makeMove', {
           gameId,
@@ -416,8 +422,12 @@ function App() {
         setSelectedPiece(null);
         setValidMoves([]);
         setValidCaptures([]);
-        setIsMyTurn(false);
-        setCurrentPlayer(prev => prev === 'red' ? 'blue' : 'red');
+        
+        // Only update turn state if there's no winner
+        if (!hasWinner) {
+          setIsMyTurn(false);
+          setCurrentPlayer(prev => prev === 'red' ? 'blue' : 'red');
+        }
       }
     } 
     else if (piece && piece.color === myColor) {
