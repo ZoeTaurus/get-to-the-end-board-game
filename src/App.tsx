@@ -92,9 +92,8 @@ function App() {
   const handleLogin = (username: string) => {
     setUsername(username);
     setIsLoggedIn(true);
-    // Join queue when logged in
-    socket.emit('joinQueue', username);
-    setIsSearching(true);
+    // Remove automatic game search
+    setScreen('home');
   };
 
   // Handle logout
