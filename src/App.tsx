@@ -124,10 +124,12 @@ function App() {
     });
 
     socket.on('playerDisconnected', () => {
-      alert('Opponent disconnected!');
-      setGameStarted(false);
-      setIsSearching(false);
-      setScreen('home');
+      if (!winner) {  // Only show disconnect message if game hasn't ended
+        alert('Opponent disconnected!');
+        setGameStarted(false);
+        setIsSearching(false);
+        setScreen('home');
+      }
     });
 
     return () => {
