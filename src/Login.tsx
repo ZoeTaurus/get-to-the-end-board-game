@@ -66,9 +66,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Save credentials
+    // Save email but not password
     localStorage.setItem('email', email);
-    localStorage.setItem('password', password);
+    localStorage.removeItem('password'); // Remove saved password
 
     // Check for saved username
     const savedUsername = localStorage.getItem('username');

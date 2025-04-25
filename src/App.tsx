@@ -157,37 +157,27 @@ function App() {
   };
 
   // Handle logout
-  const handleLogoutClick = () => {
-    setShowLogoutConfirm(true);
-  };
-
-  const handleLogoutConfirm = () => {
-    // Reset all game states
-    setIsLoggedIn(false);
-    setGameStarted(false);
-    setWinner(null);
-    setSelectedPiece(null);
-    setValidMoves([]);
-    setValidCaptures([]);
-    setGameMessage('');
-    setShowConfetti(false);
-    
-    // Reset players but keep the structure
-    setPlayers({
-      red: { color: 'red', username: '' },
-      blue: { color: 'blue', username: 'Player 2' }
-    });
-    
-    // Remove login state
-    localStorage.removeItem('isLoggedIn');
-    
-    // Reset the screen to home and close the confirmation dialog
-    setScreen('home');
-    setShowLogoutConfirm(false);
-  };
-
-  const handleLogoutCancel = () => {
-    setShowLogoutConfirm(false);
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to logout?')) {
+      socket.disconnect();
+      setUsername('');
+      setGameId('');
+      setOpponent('');
+      setBoard(Array(4).fill(null).map(() => Array(6).fill(null)));
+      setSelectedPiece(null);
+      setGameMessage('');
+      setPlayers({
+        red: { color: 'red', username: '' },
+        blue: { color: 'blue', username: 'Player 2' }
+      });
+      setIsMyTurn(false);
+      setGameStarted(false);
+      setWinner(null);
+      setShowConfetti(false);
+      // Clear saved credentials
+      localStorage.removeItem('username');
+      localStorage.removeItem('password');
+    }
   };
 
   // Initialize the game
@@ -522,7 +512,7 @@ function App() {
           setIsSearching(true);
         }}>Play Game</button>
         <button onClick={() => setScreen('help')}>Help</button>
-        <button onClick={handleLogoutClick} className="logout-button">Logout</button>
+        <button onClick={handleLogout} className="logout-button">Logout</button>
       </div>
       <p className="coming-soon">More stuff coming soon!</p>
       
@@ -532,8 +522,8 @@ function App() {
           <div className="logout-confirm-dialog">
             <h2>Are you sure you want to logout?</h2>
             <div className="logout-confirm-buttons">
-              <button onClick={handleLogoutConfirm} className="confirm-yes">Yes</button>
-              <button onClick={handleLogoutCancel} className="confirm-no">No</button>
+              <button onClick={handleLogout} className="confirm-yes">Yes</button>
+              <button onClick={() => setShowLogoutConfirm(false)} className="confirm-no">No</button>
             </div>
           </div>
         </div>
