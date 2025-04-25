@@ -1,7 +1,11 @@
-const express = require('express');
-const { createServer } = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
@@ -13,7 +17,7 @@ const io = new Server(httpServer, {
 });
 
 // Serve static files from the dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(join(__dirname, 'dist')));
 
 // Store waiting players and active games
 const waitingPlayers = new Map();
