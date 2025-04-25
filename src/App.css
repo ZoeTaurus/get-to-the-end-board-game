@@ -206,12 +206,12 @@
 }
 
 .piece {
-  width: 140%;
-  height: 140%;
+  width: 80%;
+  height: 80%;
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(2.0);
+  transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(1.2);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -222,10 +222,10 @@
 }
 
 .piece.circle {
-  transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.5);
+  transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.3);
   border-radius: 50%;
-  width: 140%;
-  height: 140%;
+  width: 80%;
+  height: 80%;
   background-size: cover;
   display: flex;
   justify-content: center;
@@ -233,11 +233,11 @@
 }
 
 .piece.circle:hover {
-  transform: translate(-50%, -50%) translateZ(20px) rotate(-90deg) scale(0.7);
+  transform: translate(-50%, -50%) translateZ(20px) rotate(-90deg) scale(0.4);
 }
 
 .piece:not(.circle):hover {
-  transform: translate(-50%, -50%) translateZ(20px) rotate(-90deg) scale(2.2);
+  transform: translate(-50%, -50%) translateZ(20px) rotate(-90deg) scale(1.3);
 }
 
 .piece.person {
@@ -258,17 +258,17 @@
 
 .eaten-count {
   position: absolute;
-  top: -25px;
-  right: -25px;
+  top: -15px;
+  right: -15px;
   background: white;
   border-radius: 50%;
-  width: 60px;
-  height: 60px;
+  width: 30px;
+  height: 30px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 32px;
-  border: 6px solid #333;
+  font-size: 16px;
+  border: 3px solid #333;
   font-weight: bold;
   transform: rotate(90deg) translateZ(5px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -327,126 +327,80 @@
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: 20px;
   text-align: center;
-  position: relative;
 }
 
 .home-screen h1 {
-  font-size: 3.5rem;
-  color: #333;
+  font-size: 4.5rem;
+  color: #2c3e50;
   margin-bottom: 40px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-  font-weight: 600;
-}
-
-.home-screen button {
-  width: 100%;
-  max-width: 300px;
-  padding: 15px;
-  margin: 10px 0;
-  border: none;
-  border-radius: 15px;
-  font-size: 1.4rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: white;
-}
-
-.home-screen button:nth-child(2),
-.home-screen button:nth-child(3) {
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-}
-
-.home-screen button:last-child {
-  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
-}
-
-.home-screen button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.home-screen button:active {
-  transform: translateY(0);
-}
-
-.coming-soon {
-  position: absolute;
-  bottom: 40px;
-  left: 0;
-  right: 0;
-  font-size: 1.2rem;
-  color: #666;
-  font-weight: 400;
-  text-align: center;
-}
-
-/* Mobile styles */
-@media (max-width: 768px) {
-  .home-screen h1 {
-    font-size: 2.8rem;
-    margin-bottom: 30px;
-  }
-
-  .home-screen button {
-    font-size: 1.2rem;
-    padding: 12px;
-    border-radius: 12px;
-  }
-
-  .coming-soon {
-    font-size: 1rem;
-    bottom: 30px;
-  }
-}
-
-/* iPhone SE and smaller devices */
-@media (max-width: 375px) {
-  .home-screen h1 {
-    font-size: 2.4rem;
-    margin-bottom: 25px;
-  }
-
-  .home-screen button {
-    font-size: 1.1rem;
-    padding: 10px;
-  }
-
-  .coming-soon {
-    font-size: 0.9rem;
-    bottom: 25px;
-  }
+  font-weight: bold;
+  letter-spacing: 2px;
 }
 
 .home-buttons {
   display: flex;
-  gap: 20px;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-width: 300px;
   margin-bottom: 30px;
 }
 
 .home-buttons button {
-  padding: 15px 40px;
+  padding: 15px 0;
   font-size: 1.5rem;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+  width: 100%;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.home-buttons button:first-child {
   background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
   color: white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.home-buttons button:nth-child(2) {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
 }
 
 .home-buttons .logout-button {
-  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
-}
-
-.home-buttons .logout-button:hover {
-  background: linear-gradient(135deg, #cc0000 0%, #990000 100%);
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
 }
 
 .home-buttons button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.home-buttons button:active {
+  transform: translateY(-1px);
+}
+
+.coming-soon {
+  font-size: 1.2rem;
+  color: #7f8c8d;
+  margin-top: 20px;
+  font-style: italic;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  animation: pulse 2s infinite;
+  letter-spacing: 1px;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
 }
 
 .help-screen {
@@ -633,51 +587,41 @@
   }
 
   .piece {
-    width: 120%;
-    height: 120%;
-    transform: translate(-50%, -50%) translateZ(4px) scale(1.1);
-    left: 45%;
-    top: 48%;
+    width: 70%;
+    height: 70%;
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.8);
   }
 
   .piece.circle {
-    width: 120%;
-    height: 120%;
-    transform: translate(-50%, -50%) translateZ(4px) scale(0.4);
-    left: 45%;
-    top: 48%;
+    width: 70%;
+    height: 70%;
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.25);
   }
 
   .piece:not(.circle):hover {
-    transform: translate(-50%, -50%) translateZ(4px) scale(1.1);
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.8);
   }
 
   .piece.circle:hover {
-    transform: translate(-50%, -50%) translateZ(4px) scale(0.4);
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.25);
   }
 
   .eaten-count {
-    left: 45%;
-    top: -15px;
+    width: 25px;
+    height: 25px;
+    font-size: 14px;
+    top: -10px;
+    right: -10px;
   }
 
   .home-screen h1 {
-    font-size: 2.5rem;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
-  .home-buttons {
-    flex-direction: column;
-    width: 100%;
-    padding: 0 20px;
+    font-size: 3rem;
+    margin-bottom: 30px;
   }
 
   .home-buttons button {
-    width: 100%;
-    margin-bottom: 10px;
-    font-size: 1.2rem;
-    padding: 12px 24px;
+    padding: 12px 0;
+    font-size: 1.3rem;
   }
 
   .help-screen .help-content {
@@ -694,6 +638,62 @@
 
   .winner-announcement h2 {
     font-size: 1.5rem;
+  }
+}
+
+/* iPhone SE and smaller devices */
+@media (max-width: 375px) {
+  .game-content {
+    padding-top: 100px;
+  }
+
+  .board-container {
+    transform: translate(-40%, -45%) scale(0.95);
+  }
+
+  .board {
+    width: 90vw;
+    height: 60vw;
+  }
+
+  .piece {
+    width: 60%;
+    height: 60%;
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.7);
+  }
+
+  .piece.circle {
+    width: 60%;
+    height: 60%;
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.2);
+  }
+
+  .eaten-count {
+    width: 25px;
+    height: 25px;
+    font-size: 14px;
+    top: -10px;
+    right: -10px;
+  }
+
+  .player-indicator {
+    font-size: 1.2rem;
+    padding: 8px 16px;
+  }
+
+  .game-message {
+    font-size: 1rem;
+    padding: 8px 16px;
+  }
+
+  .home-screen h1 {
+    font-size: 2.5rem;
+    margin-bottom: 25px;
+  }
+
+  .home-buttons button {
+    padding: 10px 0;
+    font-size: 1.2rem;
   }
 }
 
@@ -763,50 +763,85 @@
 
 /* Logout Confirmation Dialog */
 .logout-confirm-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  border-radius: 10px;
 }
 
 .logout-confirm-dialog {
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   text-align: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  max-width: 90%;
+  width: 400px;
+}
+
+.logout-confirm-dialog h2 {
+  color: #333;
+  margin-bottom: 25px;
+  font-size: 1.5rem;
 }
 
 .logout-confirm-buttons {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin-top: 15px;
+  gap: 15px;
 }
 
 .logout-confirm-buttons button {
-  padding: 8px 20px;
+  padding: 12px 30px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
+  font-size: 1.1rem;
   cursor: pointer;
-  font-weight: bold;
+  transition: all 0.3s ease;
 }
 
-.logout-confirm-buttons button:first-child {
-  background-color: #ff4444;
+.confirm-yes {
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
   color: white;
 }
 
-.logout-confirm-buttons button:last-child {
-  background-color: #4444ff;
+.confirm-no {
+  background: linear-gradient(135deg, #666 0%, #444 100%);
   color: white;
+}
+
+.confirm-yes:hover {
+  background: linear-gradient(135deg, #cc0000 0%, #990000 100%);
+  transform: translateY(-2px);
+}
+
+.confirm-no:hover {
+  background: linear-gradient(135deg, #444 0%, #333 100%);
+  transform: translateY(-2px);
+}
+
+/* Mobile styles for logout confirmation */
+@media (max-width: 768px) {
+  .logout-confirm-dialog {
+    width: 85%;
+    padding: 20px;
+  }
+
+  .logout-confirm-dialog h2 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+
+  .logout-confirm-buttons button {
+    padding: 10px 20px;
+    font-size: 1rem;
+  }
 }
 
 .timer {
@@ -830,70 +865,5 @@
     font-size: 1rem !important;
     padding: 3px;
     margin-top: 5px;
-  }
-}
-
-/* Language Selector Styles */
-.language-selector {
-  margin-top: 20px;
-  border-top: 1px solid #e1e1e1;
-  padding-top: 20px;
-  width: 100%;
-}
-
-.language-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.globe-icon {
-  font-size: 1.2rem;
-}
-
-.language-dropdown {
-  width: 100%;
-  padding: 10px;
-  border: 2px solid #e1e1e1;
-  border-radius: 6px;
-  font-size: 1rem;
-  color: #333;
-  background-color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 1em;
-}
-
-.language-dropdown:focus {
-  outline: none;
-  border-color: #4CAF50;
-  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-}
-
-.language-dropdown:hover {
-  border-color: #999;
-}
-
-/* Mobile styles for language selector */
-@media (max-width: 768px) {
-  .language-selector {
-    margin-top: 15px;
-    padding-top: 15px;
-  }
-
-  .language-label {
-    font-size: 0.8rem;
-  }
-
-  .language-dropdown {
-    padding: 8px;
-    font-size: 0.9rem;
   }
 } 
