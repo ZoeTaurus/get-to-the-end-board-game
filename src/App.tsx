@@ -507,10 +507,11 @@ const App: React.FC = () => {
     const t = getTranslation(selectedLanguage);
     return (
       <div className="home-screen">
-        <h1>{t.game.title}</h1>
-        <button onClick={onStartGame}>{t.game.startGame}</button>
-        <button onClick={onShowHelp}>{t.help.title}</button>
-        <button onClick={onLogout}>{t.game.logout}</button>
+        <h1>Get To The End</h1>
+        <button onClick={onStartGame}>Play Game</button>
+        <button onClick={onShowHelp}>Help</button>
+        <button onClick={onLogout}>Logout</button>
+        <div className="coming-soon">More stuff coming soon!</div>
       </div>
     );
   };
