@@ -548,7 +548,7 @@ function App() {
             <div className="player-indicator" style={{ backgroundColor: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
               {isMyTurn ? 'Your Turn' : `${opponent}'s Turn`}
             </div>
-            <div className="game-message">
+            <div className="game-message" style={{ color: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
               {isMyTurn ? 'Select a piece to move.' : `Waiting for ${opponent}'s move...`}
             </div>
           </div>
