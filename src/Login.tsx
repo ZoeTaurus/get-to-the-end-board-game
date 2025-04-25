@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Login.css';
-import { getTranslation } from './translations';
+import { getTranslation, getLanguageDisplayName, languageDisplayNames } from './translations';
 
 // Language list in alphabetical order
 const languages = [
@@ -42,6 +42,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChan
   const [password, setPassword] = useState(() => localStorage.getItem('password') || '');
   const [username, setUsername] = useState(() => localStorage.getItem('username') || '');
   const [showUsernameInput, setShowUsernameInput] = useState(false);
+  const [error, setError] = useState('');
 
   const t = getTranslation(selectedLanguage);
 
@@ -63,10 +64,16 @@ const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChan
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     
+    if (!email.trim()) {
+      setError(t.login.error);
+      return;
+    }
+
     // Save email but not password
     localStorage.setItem('email', email);
-    localStorage.removeItem('password'); // Remove saved password
+    localStorage.removeItem('password');
 
     // Check for saved username
     const savedUsername = localStorage.getItem('username');
@@ -79,6 +86,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChan
 
   const handleUsernameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+
+    if (!username.trim() || username.length < 3 || username.length > 15) {
+      setError(t.login.error);
+      return;
+    }
+
     localStorage.setItem('username', username);
     onLogin(username);
   };
@@ -93,8 +107,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChan
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder={t.login.usernamePlaceholder}
+            minLength={3}
+            maxLength={15}
             required
           />
+          {error && <div className="error">{error}</div>}
           <button type="submit">{t.login.startPlaying}</button>
           
           <div className="language-selector">
@@ -107,9 +124,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChan
               onChange={handleLanguageChange}
               className="language-dropdown"
             >
-              {languages.map((language) => (
-                <option key={language} value={language}>
-                  {language}
+              {Object.entries(languageDisplayNames).map(([key, displayName]) => (
+                <option key={key} value={key}>
+                  {displayName}
                 </option>
               ))}
             </select>
@@ -137,6 +154,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChan
           placeholder={t.login.passwordPlaceholder}
           required
         />
+        {error && <div className="error">{error}</div>}
         <button type="submit">{t.login.loginButton}</button>
         
         <div className="language-selector">
@@ -149,9 +167,9 @@ const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChan
             onChange={handleLanguageChange}
             className="language-dropdown"
           >
-            {languages.map((language) => (
-              <option key={language} value={language}>
-                {language}
+            {Object.entries(languageDisplayNames).map(([key, displayName]) => (
+              <option key={key} value={key}>
+                {displayName}
               </option>
             ))}
           </select>

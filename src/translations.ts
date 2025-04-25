@@ -7,6 +7,12 @@ export interface Translation {
     register: string;
     language: string;
     error: string;
+    emailPlaceholder: string;
+    passwordPlaceholder: string;
+    loginButton: string;
+    chooseUsername: string;
+    usernamePlaceholder: string;
+    startPlaying: string;
   };
   game: {
     title: string;
@@ -59,7 +65,13 @@ export const translations: Record<string, Translation> = {
       login: 'Login',
       register: 'Register',
       language: 'Language',
-      error: 'Invalid username or password'
+      error: 'Invalid username or password',
+      emailPlaceholder: 'Enter your email',
+      passwordPlaceholder: 'Enter your password',
+      loginButton: 'Login',
+      chooseUsername: 'Choose Your Username',
+      usernamePlaceholder: 'Enter username (3-15 characters)',
+      startPlaying: 'Start Playing'
     },
     game: {
       title: 'Game',
@@ -110,7 +122,13 @@ export const translations: Record<string, Translation> = {
       login: 'Iniciar Sesión',
       register: 'Registrarse',
       language: 'Idioma',
-      error: 'Usuario o contraseña inválidos'
+      error: 'Usuario o contraseña inválidos',
+      emailPlaceholder: 'Ingrese su correo electrónico',
+      passwordPlaceholder: 'Ingrese su contraseña',
+      loginButton: 'Iniciar Sesión',
+      chooseUsername: 'Elija su nombre de usuario',
+      usernamePlaceholder: 'Ingrese nombre de usuario (3-15 caracteres)',
+      startPlaying: 'Empezar a jugar'
     },
     game: {
       title: 'Juego',
@@ -161,7 +179,13 @@ export const translations: Record<string, Translation> = {
       login: '登录',
       register: '注册',
       language: '语言',
-      error: '用户名或密码无效'
+      error: '用户名或密码无效',
+      emailPlaceholder: '输入邮箱',
+      passwordPlaceholder: '输入密码',
+      loginButton: '登录',
+      chooseUsername: '选择用户名',
+      usernamePlaceholder: '输入用户名（3-15个字符）',
+      startPlaying: '开始游戏'
     },
     game: {
       title: '游戏',
@@ -206,31 +230,34 @@ export const translations: Record<string, Translation> = {
   }
 };
 
-export const languageList = [
-  'English',
-  'Spanish',
-  'Chinese',
-  'French',
-  'German',
-  'Italian',
-  'Portuguese',
-  'Russian',
-  'Japanese',
-  'Korean',
-  'Arabic',
-  'Hindi',
-  'Bengali',
-  'Punjabi',
-  'Turkish',
-  'Vietnamese',
-  'Thai',
-  'Indonesian',
-  'Malay',
-  'Filipino',
-  'Urdu',
-  'Persian',
-  'O\'zbek'
-];
+// Language display names mapping
+export const languageDisplayNames: Record<string, string> = {
+  'English': 'English',
+  'Spanish': 'Español',
+  'Chinese': '中文',
+  'French': 'Français',
+  'German': 'Deutsch',
+  'Italian': 'Italiano',
+  'Portuguese': 'Português',
+  'Russian': 'Русский',
+  'Japanese': '日本語',
+  'Korean': '한국어',
+  'Arabic': 'العربية',
+  'Hindi': 'हिन्दी',
+  'Bengali': 'বাংলা',
+  'Punjabi': 'ਪੰਜਾਬੀ',
+  'Turkish': 'Türkçe',
+  'Vietnamese': 'Tiếng Việt',
+  'Thai': 'ไทย',
+  'Indonesian': 'Bahasa Indonesia',
+  'Malay': 'Bahasa Melayu',
+  'Filipino': 'Filipino',
+  'Urdu': 'اردو',
+  'Persian': 'فارسی',
+  'O\'zbek': 'O\'zbek'
+};
+
+export const languageList = Object.keys(languageDisplayNames);
 
 // Add English as fallback for any missing languages
 for (const language of languageList) {
@@ -249,4 +276,8 @@ export function formatMessage(message: string, params: Record<string, string>): 
     result = result.replace(`{${key}}`, value);
   }
   return result;
+}
+
+export function getLanguageDisplayName(language: string): string {
+  return languageDisplayNames[language] || language;
 } 
