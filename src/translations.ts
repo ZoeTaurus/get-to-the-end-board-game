@@ -86,6 +86,42 @@ const translations: { [key: string]: Translation } = {
   }
 };
 
+// Add fallback translations for all other languages
+const languageList = [
+  'Afrikaans', 'Shqip', 'አማርኛ', 'العربية', 'Հայերեն', 'Azərbaycan',
+  'Euskara', 'Беларуская', 'বাংলা', 'Bosanski', 'Български', 'မြန်မာ',
+  'Català', 'Cebuano', 'Chichewa', '中文', '繁體中文', 'Corsu', 'Hrvatski', 'Čeština',
+  'Dansk', 'Nederlands',
+  'English', 'Esperanto', 'Eesti',
+  'Filipino', 'Suomi', 'Français', 'Frysk',
+  'Galego', 'ქართული', 'Deutsch', 'Ελληνικά', 'ગુજરાતી',
+  'Kreyòl Ayisyen', 'Hausa', 'ʻŌlelo Hawaiʻi', 'עברית', 'हिन्दी', 'Hmoob', 'Magyar',
+  'Íslenska', 'Igbo', 'Bahasa Indonesia', 'Gaeilge', 'Italiano',
+  '日本語', 'Basa Jawa',
+  'ಕನ್ನಡ', 'Қазақ', 'ខ្មែរ', '한국어', 'Kurdî',
+  'Кыргызча',
+  'ລາວ', 'Latina', 'Latviešu', 'Lietuvių', 'Lëtzebuergesch',
+  'Македонски', 'Malagasy', 'Bahasa Melayu', 'മലയാളം', 'Malti', 'Māori', 'मराठी', 'Монгол', 'မြန်မာစာ',
+  'नेपाली', 'Norsk',
+  'ଓଡ଼ିଆ', 'پښتو', 'فارسی', 'Polski', 'Português', 'ਪੰਜਾਬੀ',
+  'Română', 'Русский',
+  'Gagana Sāmoa', 'Gàidhlig', 'Српски', 'Sesotho', 'Shona', 'سنڌي', 'සිංහල', 'Slovenčina', 'Slovenščina', 'Soomaali', 'Español', 'Basa Sunda', 'Kiswahili', 'Svenska',
+  'Тоҷикӣ', 'தமிழ்', 'తెలుగు', 'ไทย', 'Türkçe',
+  'Українська', 'اردو', 'ئۇيغۇرچە', 'O\'zbek',
+  'Tiếng Việt',
+  'Cymraeg',
+  'isiXhosa',
+  'יידיש', 'Yorùbá',
+  'isiZulu'
+];
+
+// Add English translations as fallback for all languages
+languageList.forEach(language => {
+  if (!translations[language]) {
+    translations[language] = translations.English;
+  }
+});
+
 export const getTranslation = (language: string): Translation => {
   return translations[language] || translations.English;
 };
