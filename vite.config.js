@@ -5,12 +5,17 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    port: process.env.PORT || 3000,
-    strictPort: true
+    port: process.env.PORT || 3000
   },
   preview: {
     host: '0.0.0.0',
-    port: process.env.PORT || 3000,
-    strictPort: true
+    port: process.env.PORT || 3000
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
   }
 }) 
