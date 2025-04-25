@@ -3,9 +3,17 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    emptyOutDir: true,
+    sourcemap: false,
+    minify: 'terser',
+    target: 'es2015'
+  },
   server: {
-    host: true,
-    port: process.env.PORT || 3000
+    port: process.env.PORT || 3000,
+    host: true
   },
   preview: {
     host: true,
@@ -16,12 +24,5 @@ export default defineConfig({
       'localhost',
       '127.0.0.1'
     ]
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: undefined
-      }
-    }
   }
 }) 
