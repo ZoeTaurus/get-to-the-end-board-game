@@ -19,7 +19,7 @@ interface Player {
   username: string;
 }
 
-const socket = io('http://localhost:3001');
+const socket = io(window.location.origin);
 
 function App() {
   const [screen, setScreen] = useState<GameScreen>('home');
@@ -397,7 +397,10 @@ function App() {
     <div className="home-screen">
       <h1>Get To The End</h1>
       <div className="home-buttons">
-        <button onClick={() => setScreen('game')}>Play Game</button>
+        <button onClick={() => {
+          socket.emit('joinQueue', username);
+          setIsSearching(true);
+        }}>Play Game</button>
         <button onClick={() => setScreen('help')}>Help</button>
         <button onClick={handleLogout} className="logout-button">Logout</button>
       </div>
@@ -446,6 +449,11 @@ function App() {
       </div>
     </div>
   );
+
+  // Show loading screen when searching for opponent
+  if (isSearching) {
+    return <LoadingScreen />;
+  }
 
   // If not logged in, show login screen
   if (!isLoggedIn) {
