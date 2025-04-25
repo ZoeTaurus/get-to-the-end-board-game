@@ -81,46 +81,53 @@ function App() {
     });
 
     socket.on('moveMade', (data) => {
-      setIsMyTurn(data.nextTurn === socket.id);
+      const { row, col, selectedPiece, board: newBoardState } = data.move;
       
-      // Update board state with the move
-      const { row, col, selectedPiece } = data.move;
-      const newBoard = board.map(r => [...r]);
-      
-      if (selectedPiece && selectedPiece.row !== undefined && selectedPiece.col !== undefined) {
-        const movingPiece = {...newBoard[selectedPiece.row][selectedPiece.col]!};
-        
-        // Check if it's a capture move
-        if (newBoard[row][col]) {
-          if (movingPiece.type === 'circle') {
-            movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
-          }
-        }
-        
-        // Make the move
-        newBoard[row][col] = movingPiece;
-        newBoard[selectedPiece.row][selectedPiece.col] = null;
-        
-        setBoard(newBoard);
-        
-        // Check win condition
-        const winResult = checkWinCondition(newBoard, col);
-        if (!winResult) {
-          // Update turn if no winner
-          const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-          setCurrentPlayer(nextPlayer);
+      // Update the entire board state
+      if (newBoardState) {
+        setBoard(newBoardState);
+      } else {
+        // Fallback to manual move if board state isn't provided
+        const newBoard = board.map(r => [...r]);
+        if (selectedPiece && selectedPiece.row !== undefined && selectedPiece.col !== undefined) {
+          const movingPiece = {...newBoard[selectedPiece.row][selectedPiece.col]!};
           
-          // Update game message with correct player name
-          const nextPlayerName = data.nextTurn === socket.id ? username : opponent;
-          setGameMessage(`It's ${nextPlayerName}'s turn. Select a piece to move.`);
+          // Check if it's a capture move
+          if (newBoard[row][col]) {
+            if (movingPiece.type === 'circle') {
+              movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+            }
+          }
+          
+          newBoard[row][col] = movingPiece;
+          newBoard[selectedPiece.row][selectedPiece.col] = null;
+          setBoard(newBoard);
         }
       }
+
+      // Update turn state
+      setIsMyTurn(data.nextTurn === socket.id);
+      const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+      setCurrentPlayer(nextPlayer);
+      
+      // Clear selection states
+      setSelectedPiece(null);
+      setValidMoves([]);
+      setValidCaptures([]);
+      
+      // Update game message
+      const nextPlayerName = data.nextTurn === socket.id ? username : opponent;
+      setGameMessage(`It's ${nextPlayerName}'s turn. Select a piece to move.`);
+      
+      // Check for win condition
+      checkWinCondition(board, col);
     });
 
     socket.on('playerDisconnected', () => {
       alert('Opponent disconnected!');
       setGameStarted(false);
       setIsSearching(false);
+      setScreen('home');
     });
 
     return () => {
@@ -129,7 +136,7 @@ function App() {
       socket.off('moveMade');
       socket.off('playerDisconnected');
     };
-  }, []);
+  }, [board, currentPlayer, username, opponent]);
 
   // Handle login
   const handleLogin = (username: string) => {
@@ -340,7 +347,7 @@ function App() {
   };
 
   const handleCellClick = (rowIndex: number, colIndex: number) => {
-    if (winner) return;
+    if (winner || !isMyTurn || !gameStarted) return;
     
     const piece = board[rowIndex][colIndex];
     
@@ -353,7 +360,7 @@ function App() {
         setSelectedPiece(null);
         setValidMoves([]);
         setValidCaptures([]);
-        setGameMessage(`It's ${players[currentPlayer].username}'s turn. Select a piece to move.`);
+        setGameMessage(`It's your turn. Select a piece to move.`);
         return;
       }
       
@@ -371,42 +378,39 @@ function App() {
       const isValidCapture = validCaptures.some(([r, c]) => r === rowIndex && c === colIndex);
       
       if (isValidMove || isValidCapture) {
-        const newBoard = board.map(row => [...row]);
+        const newBoard = board.map(r => [...r]);
         const movingPiece = {...board[selectedRow][selectedCol]!};
         
         if (isValidCapture) {
           if (movingPiece.type === 'circle') {
             movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
           }
-          // Remove the captured piece and place the capturing piece
-          newBoard[rowIndex][colIndex] = movingPiece;
-          newBoard[selectedRow][selectedCol] = null;
-        } else {
-          // Regular move
-          newBoard[rowIndex][colIndex] = movingPiece;
-          newBoard[selectedRow][selectedCol] = null;
         }
+        
+        newBoard[rowIndex][colIndex] = movingPiece;
+        newBoard[selectedRow][selectedCol] = null;
+        
+        // Emit move to server with full board state
+        socket.emit('makeMove', {
+          gameId,
+          move: {
+            row: rowIndex,
+            col: colIndex,
+            selectedPiece: { row: selectedRow, col: selectedCol },
+            board: newBoard
+          }
+        });
         
         setBoard(newBoard);
         setSelectedPiece(null);
         setValidMoves([]);
         setValidCaptures([]);
-        
-        const winResult = checkWinCondition(newBoard, colIndex);
-        if (winResult) {
-          return;
-        }
+        setIsMyTurn(false);
         
         const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
         setCurrentPlayer(nextPlayer);
-        setGameMessage(`It's ${players[nextPlayer].username}'s turn. Select a piece to move.`);
-        return;
+        setGameMessage(`Waiting for ${opponent}'s move...`);
       }
-      
-      setSelectedPiece(null);
-      setValidMoves([]);
-      setValidCaptures([]);
-      setGameMessage(`It's ${players[currentPlayer].username}'s turn. Select a piece to move.`);
     } 
     else if (piece && piece.color === currentPlayer) {
       setSelectedPiece([rowIndex, colIndex]);
@@ -414,11 +418,6 @@ function App() {
       setValidMoves(moves);
       setValidCaptures(captures);
       setGameMessage(`Select where to move the piece.`);
-    } else {
-      setSelectedPiece(null);
-      setValidMoves([]);
-      setValidCaptures([]);
-      setGameMessage(`It's ${players[currentPlayer].username}'s turn. Select a piece to move.`);
     }
   };
 
