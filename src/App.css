@@ -112,6 +112,15 @@
   position: relative;
 }
 
+/* Remove 3D effect bars */
+.board::after {
+  display: none;
+}
+
+.board::before {
+  display: none;
+}
+
 .cell {
   position: relative;
   aspect-ratio: 1;
@@ -273,30 +282,6 @@
 @keyframes confetti {
   0% { transform: rotate(0deg) translate(0, 0); opacity: 1; }
   100% { transform: rotate(360deg) translate(300px, 1000px); opacity: 0; }
-}
-
-.board::after {
-  content: '';
-  position: absolute;
-  bottom: -48px;
-  left: -24px;
-  right: -24px;
-  height: 48px;
-  background: #3d1d06;
-  transform: rotateX(-90deg);
-  transform-origin: top;
-}
-
-.board::before {
-  content: '';
-  position: absolute;
-  top: -24px;
-  bottom: -24px;
-  right: -48px;
-  width: 48px;
-  background: #4d2609;
-  transform: rotateY(-90deg);
-  transform-origin: left;
 }
 
 @media (max-width: 1200px) {
@@ -557,39 +542,41 @@
     width: 100%;
   }
 
-  .board-container {
-    width: 100%;
-    height: calc(100vh - 200px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transform: scale(0.45);
-    margin-top: -100px;
-  }
-
   .board {
-    width: 90vh;
-    height: 60vh;
+    transform: rotate(0deg);
+    width: 90vw;
+    height: 60vw;
+    margin-bottom: 50px;
   }
 
   .piece {
-    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(1.5);
+    transform: translate(-50%, -50%) translateZ(4px) scale(1.5);
   }
 
   .piece.circle {
-    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.4);
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.4);
   }
 
   .piece:not(.circle):hover {
-    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(1.5);
+    transform: translate(-50%, -50%) translateZ(4px) scale(1.5);
   }
 
   .piece.circle:hover {
-    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.4);
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.4);
+  }
+
+  .board-container {
+    width: 100%;
+    height: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: scale(0.9);
+    margin-top: -50px;
   }
 
   .eaten-count {
-    transform: rotate(90deg) translateZ(5px) scale(0.8);
+    transform: translateZ(5px) scale(0.8);
     top: -20px;
     right: -20px;
     width: 40px;
@@ -639,26 +626,26 @@
     padding-top: 160px;
   }
 
-  .board-container {
-    transform: scale(0.35);
-    margin-top: -150px;
+  .board {
+    width: 85vw;
+    height: 56.67vw;
   }
 
-  .board {
-    width: 80vh;
-    height: 53.33vh;
+  .board-container {
+    transform: scale(0.85);
+    margin-top: -80px;
   }
 
   .piece {
-    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(1.2);
+    transform: translate(-50%, -50%) translateZ(4px) scale(1.2);
   }
 
   .piece.circle {
-    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.35);
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.35);
   }
 
   .eaten-count {
-    transform: rotate(90deg) translateZ(5px) scale(0.7);
+    transform: translateZ(5px) scale(0.7);
     top: -15px;
     right: -15px;
     width: 30px;
@@ -709,9 +696,14 @@
     padding-top: 100px;
   }
 
+  .board {
+    width: 70vh;
+    height: 46.67vh;
+  }
+
   .board-container {
-    transform: scale(0.3);
-    margin-top: -200px;
+    transform: scale(0.7);
+    margin-top: -100px;
   }
 
   .game-info-container {
