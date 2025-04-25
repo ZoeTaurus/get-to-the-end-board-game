@@ -3,7 +3,10 @@ builder = "NIXPACKS"
 buildCommand = "npm install && npm run build"
 
 [deploy]
-startCommand = "npm run preview"
+startCommand = "npm run preview -- --host"
 healthcheckPath = "/"
 healthcheckTimeout = 100
-restartPolicyType = "ON_FAILURE" 
+restartPolicyType = "ON_FAILURE"
+
+[nixpacks]
+nodejs = "18" 
