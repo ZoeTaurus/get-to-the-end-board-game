@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { io, Socket } from 'socket.io-client';
+import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import Login from './Login';
 
@@ -17,6 +19,8 @@ interface Player {
   username: string;
 }
 
+const socket = io('http://localhost:3001');
+
 function App() {
   const [screen, setScreen] = useState<GameScreen>('home');
   const [board, setBoard] = useState<(Piece | null)[][]>(
@@ -30,11 +34,12 @@ function App() {
   const [validCaptures, setValidCaptures] = useState<[number, number][]>([]);
   const [gameMessage, setGameMessage] = useState<string>('');
   const [showConfetti, setShowConfetti] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    // Check if user is already logged in from local storage
-    const savedLoginState = localStorage.getItem('isLoggedIn');
-    return savedLoginState === 'true';
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [opponent, setOpponent] = useState('');
+  const [gameId, setGameId] = useState('');
+  const [isMyTurn, setIsMyTurn] = useState(false);
   const [players, setPlayers] = useState<{red: Player, blue: Player}>(() => {
     // Try to get saved player data from local storage
     const savedPlayers = localStorage.getItem('players');
@@ -47,20 +52,49 @@ function App() {
     };
   });
 
+  useEffect(() => {
+    // Socket event listeners
+    socket.on('waiting', () => {
+      setIsSearching(true);
+    });
+
+    socket.on('gameStart', (data) => {
+      setIsSearching(false);
+      setGameStarted(true);
+      const isPlayer1 = data.players[0].id === socket.id;
+      setOpponent(isPlayer1 ? data.players[1].username : data.players[0].username);
+      setGameId(data.gameId);
+      setIsMyTurn(data.currentTurn === socket.id);
+    });
+
+    socket.on('moveMade', (data) => {
+      setIsMyTurn(data.nextTurn === socket.id);
+      // Update game state based on move
+      const { row, col, selectedPiece } = data.move;
+      handleMove(row, col, selectedPiece);
+    });
+
+    socket.on('playerDisconnected', () => {
+      alert('Opponent disconnected!');
+      setGameStarted(false);
+      setIsSearching(false);
+    });
+
+    return () => {
+      socket.off('waiting');
+      socket.off('gameStart');
+      socket.off('moveMade');
+      socket.off('playerDisconnected');
+    };
+  }, []);
+
   // Handle login
   const handleLogin = (username: string) => {
-    const updatedPlayers = {
-      ...players,
-      red: { ...players.red, username }
-    };
-    setPlayers(updatedPlayers);
+    setUsername(username);
     setIsLoggedIn(true);
-    
-    // Save to local storage
-    localStorage.setItem('players', JSON.stringify(updatedPlayers));
-    localStorage.setItem('isLoggedIn', 'true');
-    
-    initializeGame();
+    // Join queue when logged in
+    socket.emit('joinQueue', username);
+    setIsSearching(true);
   };
 
   // Handle logout
@@ -344,6 +378,19 @@ function App() {
       setValidCaptures([]);
       setGameMessage(`It's ${players[currentPlayer].username}'s turn. Select a piece to move.`);
     }
+  };
+
+  const handleMove = (row: number, col: number, piece: any) => {
+    if (!isMyTurn || !gameStarted) return;
+    
+    // Emit move to server
+    socket.emit('makeMove', {
+      gameId,
+      move: { row, col, piece }
+    });
+    
+    // Update local game state
+    // ... existing move logic ...
   };
 
   const HomeScreen = () => (

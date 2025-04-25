@@ -1,23 +1,29 @@
 {
   "name": "get-to-the-end",
-  "version": "1.0.0",
+  "private": true,
+  "version": "0.0.0",
   "description": "A board game where players try to reach the end or capture all opponent pieces",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "start": "vite preview --host",
-    "build": "vite build",
-    "preview": "vite preview --host",
-    "serve": "vite preview --host"
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "server": "node server.js",
+    "start": "node server.js"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-confetti": "^6.4.0",
-    "react-dom": "^18.3.1"
+    "express": "^4.18.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "socket.io": "^4.7.4",
+    "socket.io-client": "^4.7.4"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.4.1",
-    "vite": "^5.4.18"
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@vitejs/plugin-react": "^3.1.0",
+    "typescript": "^4.9.3",
+    "vite": "^4.2.0"
   },
   "engines": {
     "node": ">=18.0.0"
