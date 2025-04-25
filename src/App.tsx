@@ -52,6 +52,8 @@ function App() {
     };
   });
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number>(30);
+  const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Socket event listeners
@@ -439,6 +441,51 @@ function App() {
     // ... existing move logic ...
   };
 
+  // Add timer reset function
+  const resetTimer = useCallback(() => {
+    setTimeLeft(30);
+    if (timerId) {
+      clearInterval(timerId);
+    }
+    const newTimerId = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime <= 1) {
+          // Time's up - end game and declare other player as winner
+          const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+          setWinner(otherPlayer);
+          setGameMessage(`${players[otherPlayer].username} WINS by timeout!`);
+          clearInterval(newTimerId);
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+    setTimerId(newTimerId);
+  }, [currentPlayer, players]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerId) {
+        clearInterval(timerId);
+      }
+    };
+  }, [timerId]);
+
+  // Reset timer on turn change
+  useEffect(() => {
+    if (gameStarted && !winner) {
+      resetTimer();
+    }
+  }, [currentPlayer, gameStarted, winner, resetTimer]);
+
+  // Stop timer when game ends
+  useEffect(() => {
+    if (winner && timerId) {
+      clearInterval(timerId);
+    }
+  }, [winner, timerId]);
+
   const HomeScreen = () => (
     <div className="home-screen">
       <h1>Get To The End</h1>
@@ -547,6 +594,9 @@ function App() {
           <div className="game-status">
             <div className="player-indicator" style={{ backgroundColor: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
               {isMyTurn ? 'Your Turn' : `${opponent}'s Turn`}
+              <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px' }}>
+                Time left: {timeLeft}s
+              </div>
             </div>
             <div className="game-message" style={{ color: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
               {isMyTurn ? 'Select a piece to move.' : `Waiting for ${opponent}'s move...`}
