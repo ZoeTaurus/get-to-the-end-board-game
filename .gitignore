@@ -1,10 +1,10 @@
 # Dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.js
 
 # Production
-/dist
+dist
 /build
 
 # Misc
@@ -15,6 +15,4 @@
 .env.test.local
 .env.production.local
 
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log* 
+*.log 
