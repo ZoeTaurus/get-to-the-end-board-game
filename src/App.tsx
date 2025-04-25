@@ -67,7 +67,11 @@ function App() {
       const player2Name = data.players[1].username;
       setOpponent(isPlayer1 ? player2Name : player1Name);
       setGameId(data.gameId);
-      setIsMyTurn(data.currentTurn === socket.id);
+      
+      // Set initial turn state
+      const isMyTurnNow = data.currentTurn === socket.id;
+      setIsMyTurn(isMyTurnNow);
+      setCurrentPlayer(isPlayer1 ? 'red' : 'blue');
       
       // Update players with correct usernames
       setPlayers({
@@ -77,7 +81,7 @@ function App() {
       
       // Initialize game with correct player names
       initializeGame();
-      setGameMessage(`It's ${player1Name}'s turn. Select a piece to move.`);
+      setGameMessage(isMyTurnNow ? 'Your turn. Select a piece to move.' : `Waiting for ${isPlayer1 ? player2Name : player1Name}'s move...`);
     });
 
     socket.on('moveMade', (data) => {
@@ -106,9 +110,9 @@ function App() {
       }
 
       // Update turn state
-      setIsMyTurn(data.nextTurn === socket.id);
-      const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-      setCurrentPlayer(nextPlayer);
+      const isMyTurnNow = data.nextTurn === socket.id;
+      setIsMyTurn(isMyTurnNow);
+      setCurrentPlayer(prev => prev === 'red' ? 'blue' : 'red');
       
       // Clear selection states
       setSelectedPiece(null);
@@ -116,8 +120,7 @@ function App() {
       setValidCaptures([]);
       
       // Update game message
-      const nextPlayerName = data.nextTurn === socket.id ? username : opponent;
-      setGameMessage(`It's ${nextPlayerName}'s turn. Select a piece to move.`);
+      setGameMessage(isMyTurnNow ? 'Your turn. Select a piece to move.' : `Waiting for ${opponent}'s move...`);
       
       // Check for win condition
       checkWinCondition(board, col);
@@ -351,6 +354,9 @@ function App() {
     
     const piece = board[rowIndex][colIndex];
     
+    // Only allow selecting and moving pieces of your color
+    const myColor = username === players.red.username ? 'red' : 'blue';
+    
     if (selectedPiece) {
       const [selectedRow, selectedCol] = selectedPiece;
       const selectedPieceData = board[selectedRow][selectedCol];
@@ -360,17 +366,17 @@ function App() {
         setSelectedPiece(null);
         setValidMoves([]);
         setValidCaptures([]);
-        setGameMessage(`It's your turn. Select a piece to move.`);
+        setGameMessage('Your turn. Select a piece to move.');
         return;
       }
       
-      // Clicking another piece of the same color selects it instead
-      if (piece && piece.color === selectedPieceData?.color) {
+      // Clicking another piece of your color selects it instead
+      if (piece && piece.color === myColor) {
         setSelectedPiece([rowIndex, colIndex]);
         const { moves, captures } = calculateValidMoves(board, rowIndex, colIndex);
         setValidMoves(moves);
         setValidCaptures(captures);
-        setGameMessage(`Select where to move the piece.`);
+        setGameMessage('Select where to move the piece.');
         return;
       }
       
@@ -406,18 +412,16 @@ function App() {
         setValidMoves([]);
         setValidCaptures([]);
         setIsMyTurn(false);
-        
-        const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-        setCurrentPlayer(nextPlayer);
+        setCurrentPlayer(prev => prev === 'red' ? 'blue' : 'red');
         setGameMessage(`Waiting for ${opponent}'s move...`);
       }
     } 
-    else if (piece && piece.color === currentPlayer) {
+    else if (piece && piece.color === myColor) {
       setSelectedPiece([rowIndex, colIndex]);
       const { moves, captures } = calculateValidMoves(board, rowIndex, colIndex);
       setValidMoves(moves);
       setValidCaptures(captures);
-      setGameMessage(`Select where to move the piece.`);
+      setGameMessage('Select where to move the piece.');
     }
   };
 
