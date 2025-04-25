@@ -33,16 +33,15 @@ const languages = [
 
 interface LoginProps {
   onLogin: (username: string) => void;
+  selectedLanguage: string;
+  onLanguageChange: (language: string) => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChange }) => {
   const [email, setEmail] = useState(() => localStorage.getItem('email') || '');
   const [password, setPassword] = useState(() => localStorage.getItem('password') || '');
   const [username, setUsername] = useState(() => localStorage.getItem('username') || '');
   const [showUsernameInput, setShowUsernameInput] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState(() => 
-    localStorage.getItem('language') || 'English'
-  );
 
   const t = getTranslation(selectedLanguage);
 
@@ -59,8 +58,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLanguage = e.target.value;
-    setSelectedLanguage(newLanguage);
-    localStorage.setItem('language', newLanguage);
+    onLanguageChange(newLanguage);
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {

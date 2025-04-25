@@ -7,7 +7,7 @@ import { getTranslation, formatMessage } from './translations';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
-type GameScreen = 'home' | 'game' | 'help';
+type GameScreen = 'home' | 'game' | 'help' | 'login';
 
 interface Piece {
   type: PieceType;
@@ -60,6 +60,11 @@ function App() {
   );
 
   const t = getTranslation(selectedLanguage);
+
+  const handleLanguageChange = (newLanguage: string) => {
+    setSelectedLanguage(newLanguage);
+    localStorage.setItem('language', newLanguage);
+  };
 
   useEffect(() => {
     // Socket event listeners
@@ -152,7 +157,6 @@ function App() {
   const handleLogin = (username: string) => {
     setUsername(username);
     setIsLoggedIn(true);
-    // Remove automatic game search
     setScreen('home');
   };
 
@@ -177,6 +181,8 @@ function App() {
       // Clear saved credentials
       localStorage.removeItem('username');
       localStorage.removeItem('password');
+      setIsLoggedIn(false);
+      setScreen('login');
     }
   };
 
@@ -580,7 +586,11 @@ function App() {
 
   // If not logged in, show login screen
   if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
+    return <Login 
+      onLogin={handleLogin} 
+      selectedLanguage={selectedLanguage}
+      onLanguageChange={handleLanguageChange}
+    />;
   }
 
   // Show different screens based on state
