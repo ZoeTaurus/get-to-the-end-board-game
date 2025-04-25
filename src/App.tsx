@@ -124,9 +124,6 @@ function App() {
     });
 
     socket.on('playerDisconnected', () => {
-      if (!winner && gameStarted) {  // Only show disconnect message if game is in progress and hasn't ended
-        alert('Opponent disconnected!');
-      }
       setGameStarted(false);
       setIsSearching(false);
       setScreen('home');
