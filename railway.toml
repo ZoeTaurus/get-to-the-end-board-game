@@ -1,11 +1,8 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm install && npm run build"
 
 [deploy]
-startCommand = "node server.js"
-restartPolicyType = "ON_FAILURE"
-healthcheckTimeout = 100
+startCommand = "npm start"
 
 [nixpacks]
 nodejs = "18" 

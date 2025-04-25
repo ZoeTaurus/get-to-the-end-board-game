@@ -2,6 +2,7 @@ const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const { exec } = require('child_process');
 
 const app = express();
 const httpServer = createServer(app);
@@ -12,8 +13,22 @@ const io = new Server(httpServer, {
   }
 });
 
+// Build the application first
+console.log('Building application...');
+exec('npm run build', (error, stdout, stderr) => {
+  if (error) {
+    console.error(`Build error: ${error}`);
+    return;
+  }
+  console.log(`Build stdout: ${stdout}`);
+  if (stderr) {
+    console.error(`Build stderr: ${stderr}`);
+  }
+  console.log('Build complete');
+});
+
 // Serve static files from the dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static('dist'));
 
 // Serve index.html for all routes (for client-side routing)
 app.get('*', (req, res) => {
