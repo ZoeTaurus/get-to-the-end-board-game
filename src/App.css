@@ -517,4 +517,125 @@
 .login-form button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+  .game-content {
+    padding-top: 150px;
+  }
+
+  .game-info-container {
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .game-status {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .player-indicator {
+    font-size: 1.5rem;
+    padding: 12px 24px;
+    min-width: unset;
+    width: 100%;
+  }
+
+  .game-message {
+    font-size: 1.2rem;
+    padding: 12px 24px;
+    min-width: unset;
+    width: 100%;
+  }
+
+  .board-container {
+    transform: scale(0.8);
+    margin-top: -50px;
+  }
+
+  .home-screen h1 {
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .home-buttons {
+    flex-direction: column;
+    width: 100%;
+    padding: 0 20px;
+  }
+
+  .home-buttons button {
+    width: 100%;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    padding: 12px 24px;
+  }
+
+  .help-screen .help-content {
+    padding: 20px;
+    margin: 10px;
+    max-width: 100%;
+  }
+
+  .winner-announcement {
+    width: 90%;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .winner-announcement h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* iPhone SE and smaller devices */
+@media (max-width: 375px) {
+  .game-content {
+    padding-top: 120px;
+  }
+
+  .board-container {
+    transform: scale(0.6);
+    margin-top: -100px;
+  }
+
+  .player-indicator {
+    font-size: 1.2rem;
+    padding: 8px 16px;
+  }
+
+  .game-message {
+    font-size: 1rem;
+    padding: 8px 16px;
+  }
+
+  .home-screen h1 {
+    font-size: 2rem;
+  }
+}
+
+/* Prevent zooming on iOS devices */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Fix touch events on mobile */
+@media (hover: none) {
+  .cell {
+    cursor: default;
+  }
+
+  .cell:active {
+    transform: scale(0.95);
+  }
+
+  .home-buttons button:active {
+    transform: translateY(1px);
+  }
 } 

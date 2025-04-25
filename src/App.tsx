@@ -63,16 +63,31 @@ function App() {
       setGameStarted(true);
       setScreen('game');
       const isPlayer1 = data.players[0].id === socket.id;
-      setOpponent(isPlayer1 ? data.players[1].username : data.players[0].username);
+      const player1Name = data.players[0].username;
+      const player2Name = data.players[1].username;
+      setOpponent(isPlayer1 ? player2Name : player1Name);
       setGameId(data.gameId);
       setIsMyTurn(data.currentTurn === socket.id);
+      
+      // Update players with correct usernames
+      setPlayers({
+        red: { color: 'red', username: player1Name },
+        blue: { color: 'blue', username: player2Name }
+      });
+      
+      // Initialize game with correct player names
+      initializeGame();
+      setGameMessage(`It's ${player1Name}'s turn. Select a piece to move.`);
     });
 
     socket.on('moveMade', (data) => {
       setIsMyTurn(data.nextTurn === socket.id);
-      // Update game state based on move
       const { row, col, selectedPiece } = data.move;
       handleMove(row, col, selectedPiece);
+      
+      // Update game message with correct player name
+      const nextPlayerName = data.nextTurn === socket.id ? username : opponent;
+      setGameMessage(`It's ${nextPlayerName}'s turn. Select a piece to move.`);
     });
 
     socket.on('playerDisconnected', () => {
