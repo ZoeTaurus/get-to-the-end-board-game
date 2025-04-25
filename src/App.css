@@ -554,7 +554,7 @@
   }
 
   .board-container {
-    transform: translate(-52%, -45%);
+    transform: translate(-55%, -45%);
     padding-top: 0;
   }
 
@@ -565,17 +565,23 @@
   }
 
   .piece {
-    transform: translate(-50%, -50%) translateZ(4px) scale(1.2);
-    left: 48%;
+    width: 120%;
+    height: 120%;
+    transform: translate(-50%, -50%) translateZ(4px) scale(1.1);
+    left: 45%;
+    top: 48%;
   }
 
   .piece.circle {
+    width: 120%;
+    height: 120%;
     transform: translate(-50%, -50%) translateZ(4px) scale(0.4);
-    left: 48%;
+    left: 45%;
+    top: 48%;
   }
 
   .piece:not(.circle):hover {
-    transform: translate(-50%, -50%) translateZ(4px) scale(1.2);
+    transform: translate(-50%, -50%) translateZ(4px) scale(1.1);
   }
 
   .piece.circle:hover {
@@ -583,12 +589,8 @@
   }
 
   .eaten-count {
-    transform: translateZ(5px) scale(0.7);
+    left: 45%;
     top: -15px;
-    right: -15px;
-    width: 30px;
-    height: 30px;
-    font-size: 20px;
   }
 
   .home-screen h1 {
@@ -634,7 +636,7 @@
   }
 
   .board-container {
-    transform: translate(-52%, -45%) scale(0.95);
+    transform: translate(-55%, -45%) scale(0.95);
   }
 
   .board {
@@ -644,21 +646,19 @@
 
   .piece {
     transform: translate(-50%, -50%) translateZ(4px) scale(1.1);
-    left: 48%;
+    left: 45%;
+    top: 48%;
   }
 
   .piece.circle {
     transform: translate(-50%, -50%) translateZ(4px) scale(0.35);
-    left: 48%;
+    left: 45%;
+    top: 48%;
   }
 
   .eaten-count {
-    transform: translateZ(5px) scale(0.7);
+    left: 45%;
     top: -15px;
-    right: -15px;
-    width: 30px;
-    height: 30px;
-    font-size: 20px;
   }
 
   .player-indicator {
@@ -709,7 +709,7 @@
   }
 
   .board-container {
-    transform: translate(-52%, -45%) scale(0.8);
+    transform: translate(-55%, -45%) scale(0.8);
   }
 
   .board {
@@ -729,12 +729,14 @@
 
   .piece {
     transform: translate(-50%, -50%) translateZ(4px) scale(1.1);
-    left: 48%;
+    left: 45%;
+    top: 48%;
   }
 
   .piece.circle {
     transform: translate(-50%, -50%) translateZ(4px) scale(0.35);
-    left: 48%;
+    left: 45%;
+    top: 48%;
   }
 }
 
