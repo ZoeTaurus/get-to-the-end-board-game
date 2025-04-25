@@ -39,7 +39,7 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChange }) => {
   const [email, setEmail] = useState(() => localStorage.getItem('email') || '');
-  const [password, setPassword] = useState(() => localStorage.getItem('password') || '');
+  const [password, setPassword] = useState('');
   const [username, setUsername] = useState(() => localStorage.getItem('username') || '');
   const [showUsernameInput, setShowUsernameInput] = useState(false);
   const [error, setError] = useState('');
@@ -47,40 +47,49 @@ const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChan
   const t = getTranslation(selectedLanguage);
 
   useEffect(() => {
-    // Check if we have saved credentials
+    // Check if we have saved email and username
     const savedEmail = localStorage.getItem('email');
-    const savedPassword = localStorage.getItem('password');
     const savedUsername = localStorage.getItem('username');
 
-    if (savedEmail && savedPassword && savedUsername) {
+    if (savedEmail && savedUsername) {
       onLogin(savedUsername);
     }
   }, [onLogin]);
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newLanguage = e.target.value;
-    onLanguageChange(newLanguage);
+    onLanguageChange(e.target.value);
   };
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
-    if (!email.trim()) {
+    if (!email.trim() || !password.trim()) {
       setError(t.login.error);
       return;
     }
 
-    // Save email but not password
-    localStorage.setItem('email', email);
-    localStorage.removeItem('password');
+    try {
+      // Here you would typically make an API call to verify the email and password
+      // For now, we'll just validate the email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
 
-    // Check for saved username
-    const savedUsername = localStorage.getItem('username');
-    if (savedUsername) {
-      onLogin(savedUsername);
-    } else {
-      setShowUsernameInput(true);
+      // Save email but not password
+      localStorage.setItem('email', email);
+
+      // Check for saved username
+      const savedUsername = localStorage.getItem('username');
+      if (savedUsername) {
+        onLogin(savedUsername);
+      } else {
+        setShowUsernameInput(true);
+      }
+    } catch (err) {
+      setError(t.login.error);
     }
   };
 

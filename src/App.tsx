@@ -503,26 +503,11 @@ const App: React.FC = () => {
     onStartGame: () => void;
     onShowHelp: () => void;
     onLogout: () => void;
-    selectedLanguage: string;
-    onLanguageChange: (language: string) => void;
-  }> = ({ onStartGame, onShowHelp, onLogout, selectedLanguage, onLanguageChange }) => {
+  }> = ({ onStartGame, onShowHelp, onLogout }) => {
     const t = getTranslation(selectedLanguage);
     return (
       <div className="home-screen">
         <h1>{t.game.title}</h1>
-        <div className="language-selector">
-          <label>{t.login.language}</label>
-          <select
-            value={selectedLanguage}
-            onChange={(e) => onLanguageChange(e.target.value)}
-          >
-            {Object.entries(languageDisplayNames).map(([key, displayName]) => (
-              <option key={key} value={key}>
-                {displayName}
-              </option>
-            ))}
-          </select>
-        </div>
         <button onClick={onStartGame}>{t.game.startGame}</button>
         <button onClick={onShowHelp}>{t.help.title}</button>
         <button onClick={onLogout}>{t.game.logout}</button>
@@ -586,8 +571,6 @@ const App: React.FC = () => {
       onStartGame={() => setScreen('game')}
       onShowHelp={() => setScreen('help')}
       onLogout={handleLogout}
-      selectedLanguage={selectedLanguage}
-      onLanguageChange={handleLanguageChange}
     />;
   }
 
