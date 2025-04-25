@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import Login from './Login';
-import { getTranslation, formatMessage } from './translations';
+import { getTranslation, formatMessage, languageList } from './translations';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
@@ -22,7 +22,13 @@ interface Player {
 
 const socket = io(window.location.origin);
 
-function App() {
+const App: React.FC = () => {
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+    localStorage.getItem('language') || 'English'
+  );
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [currentScreen, setCurrentScreen] = useState<'home' | 'game' | 'help'>('home');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
   const [screen, setScreen] = useState<GameScreen>('home');
   const [board, setBoard] = useState<(Piece | null)[][]>(
     Array(4).fill(null).map(() => Array(6).fill(null))
@@ -35,14 +41,12 @@ function App() {
   const [validCaptures, setValidCaptures] = useState<[number, number][]>([]);
   const [gameMessage, setGameMessage] = useState<string>('');
   const [showConfetti, setShowConfetti] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [opponent, setOpponent] = useState('');
   const [gameId, setGameId] = useState('');
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [players, setPlayers] = useState<{red: Player, blue: Player}>(() => {
-    // Try to get saved player data from local storage
     const savedPlayers = localStorage.getItem('players');
     if (savedPlayers) {
       return JSON.parse(savedPlayers);
@@ -52,19 +56,31 @@ function App() {
       blue: { color: 'blue', username: 'Player 2' }
     };
   });
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(30);
   const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState(() => 
-    localStorage.getItem('language') || 'English'
-  );
+
+  const handleLanguageChange = (language: string) => {
+    setSelectedLanguage(language);
+    localStorage.setItem('language', language);
+  };
+
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setIsLoggedIn(false);
+    setScreen('home');
+    setShowLogoutConfirm(false);
+    localStorage.removeItem('username');
+    localStorage.removeItem('players');
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
+  };
 
   const t = getTranslation(selectedLanguage);
-
-  const handleLanguageChange = (newLanguage: string) => {
-    setSelectedLanguage(newLanguage);
-    localStorage.setItem('language', newLanguage);
-  };
 
   useEffect(() => {
     // Socket event listeners
@@ -158,32 +174,6 @@ function App() {
     setUsername(username);
     setIsLoggedIn(true);
     setScreen('home');
-  };
-
-  // Handle logout
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to logout?')) {
-      socket.disconnect();
-      setUsername('');
-      setGameId('');
-      setOpponent('');
-      setBoard(Array(4).fill(null).map(() => Array(6).fill(null)));
-      setSelectedPiece(null);
-      setGameMessage('');
-      setPlayers({
-        red: { color: 'red', username: '' },
-        blue: { color: 'blue', username: 'Player 2' }
-      });
-      setIsMyTurn(false);
-      setGameStarted(false);
-      setWinner(null);
-      setShowConfetti(false);
-      // Clear saved credentials
-      localStorage.removeItem('username');
-      localStorage.removeItem('password');
-      setIsLoggedIn(false);
-      setScreen('login');
-    }
   };
 
   // Initialize the game
@@ -509,75 +499,72 @@ function App() {
     }
   }, [winner, isMyTurn, opponent, players, t]);
 
-  const HomeScreen = () => (
-    <div className="home-screen">
-      <h1>Get To The End</h1>
-      <div className="home-buttons">
-        <button onClick={() => {
-          socket.emit('joinQueue', username);
-          setIsSearching(true);
-        }}>Play Game</button>
-        <button onClick={() => setScreen('help')}>Help</button>
-        <button onClick={handleLogout} className="logout-button">Logout</button>
+  const HomeScreen: React.FC<{
+    onStartGame: () => void;
+    onShowHelp: () => void;
+    onLogout: () => void;
+    selectedLanguage: string;
+    onLanguageChange: (language: string) => void;
+  }> = ({ onStartGame, onShowHelp, onLogout, selectedLanguage, onLanguageChange }) => {
+    const t = getTranslation(selectedLanguage);
+    return (
+      <div className="home-screen">
+        <h1>{t.game.title}</h1>
+        <div className="language-selector">
+          <label>{t.login.language}:</label>
+          <select
+            value={selectedLanguage}
+            onChange={(e) => onLanguageChange(e.target.value)}
+          >
+            {languageList.map((lang) => (
+              <option key={lang} value={lang}>
+                {lang}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button onClick={onStartGame}>{t.game.startGame}</button>
+        <button onClick={onShowHelp}>{t.help.title}</button>
+        <button onClick={onLogout}>{t.game.logout}</button>
       </div>
-      <p className="coming-soon">More stuff coming soon!</p>
-      
-      {/* Logout Confirmation Dialog */}
-      {showLogoutConfirm && (
-        <div className="logout-confirm-overlay">
-          <div className="logout-confirm-dialog">
-            <h2>Are you sure you want to logout?</h2>
-            <div className="logout-confirm-buttons">
-              <button onClick={handleLogout} className="confirm-yes">Yes</button>
-              <button onClick={() => setShowLogoutConfirm(false)} className="confirm-no">No</button>
-            </div>
+    );
+  };
+
+  const HelpScreen: React.FC<{
+    onBackToHome: () => void;
+    onLogout: () => void;
+    selectedLanguage: string;
+  }> = ({ onBackToHome, onLogout, selectedLanguage }) => {
+    const t = getTranslation(selectedLanguage);
+    return (
+      <div className="help-screen">
+        <h1>{t.help.title}</h1>
+        <div className="help-content">
+          <h2>{t.help.pieces}</h2>
+          <div className="piece-info">
+            <h3>{t.help.personPiece}</h3>
+            <p>{t.help.personMove}</p>
+            <p>{t.help.personEat}</p>
           </div>
+          <div className="piece-info">
+            <h3>{t.help.circlePiece}</h3>
+            <p>{t.help.circleMove}</p>
+            <p>{t.help.circleEat}</p>
+            <p>{t.help.circleLimit}</p>
+          </div>
+          <h2>{t.help.howToWin}</h2>
+          <p>{t.help.winByCapture}</p>
+          <p>{t.help.winByReach}</p>
+          <h2>{t.help.setup}</h2>
+          <p>{t.help.setupDescription}</p>
+          <p>{t.help.watchVideo}</p>
+          <button>{t.help.watchButton}</button>
         </div>
-      )}
-    </div>
-  );
-
-  const HelpScreen = () => (
-    <div className="help-screen">
-      <div className="help-content">
-        <h2>How to Play</h2>
-        
-        <h3>Pieces</h3>
-        <p><strong>Person-shaped piece:</strong></p>
-        <ul>
-          <li>Can move back, forth, and sideways</li>
-          <li>Can only eat opponent's pieces diagonally</li>
-        </ul>
-
-        <p><strong>Circle-shaped piece:</strong></p>
-        <ul>
-          <li>Can move in any direction</li>
-          <li>Can eat in any direction</li>
-          <li>Can only eat 2 pieces before getting full</li>
-        </ul>
-
-        <h3>How to Win</h3>
-        <ul>
-          <li>Eat all opponent's pieces, OR</li>
-          <li>Get to the other side of the board</li>
-        </ul>
-
-        <h3>Setup</h3>
-        <p>Starting from the left: Place 2 person-shaped pieces, then a circle-shaped piece, and finally another person-shaped piece.</p>
-
-        <div className="video-section">
-          <p>Still don't get it? Watch this video!</p>
-          <a href="https://youtu.be/ZJ1hJTOzmhg" target="_blank" rel="noopener noreferrer" className="video-button">
-            Watch Tutorial Video
-          </a>
-        </div>
-
-        <button onClick={() => setScreen('home')} className="back-button">
-          Back to Home
-        </button>
+        <button onClick={onBackToHome}>{t.game.backToHome}</button>
+        <button onClick={onLogout}>{t.game.logout}</button>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Show loading screen when searching for opponent
   if (isSearching) {
@@ -595,11 +582,21 @@ function App() {
 
   // Show different screens based on state
   if (screen === 'home') {
-    return <HomeScreen />;
+    return <HomeScreen
+      onStartGame={() => setScreen('game')}
+      onShowHelp={() => setScreen('help')}
+      onLogout={handleLogout}
+      selectedLanguage={selectedLanguage}
+      onLanguageChange={handleLanguageChange}
+    />;
   }
 
   if (screen === 'help') {
-    return <HelpScreen />;
+    return <HelpScreen
+      onBackToHome={() => setScreen('home')}
+      onLogout={handleLogout}
+      selectedLanguage={selectedLanguage}
+    />;
   }
 
   // Game screen (existing game content)
@@ -671,9 +668,20 @@ function App() {
             ))}
           </div>
         </div>
+        {showLogoutConfirm && (
+          <div className="logout-confirm-overlay">
+            <div className="logout-confirm-dialog">
+              <p>{t.logout.confirm}</p>
+              <div className="logout-confirm-buttons">
+                <button onClick={confirmLogout}>{t.logout.yes}</button>
+                <button onClick={cancelLogout}>{t.logout.no}</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
 
 export default App; 
