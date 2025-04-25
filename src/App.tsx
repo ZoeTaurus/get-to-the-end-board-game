@@ -124,19 +124,25 @@ function App() {
     });
 
     socket.on('playerDisconnected', () => {
-      if (!winner) {  // Only show disconnect message if game hasn't ended
+      if (!winner && gameStarted) {  // Only show disconnect message if game is in progress and hasn't ended
         alert('Opponent disconnected!');
-        setGameStarted(false);
-        setIsSearching(false);
-        setScreen('home');
       }
+      setGameStarted(false);
+      setIsSearching(false);
+      setScreen('home');
     });
+
+    // Clean up socket connection when game ends
+    if (winner) {
+      socket.disconnect();
+    }
 
     return () => {
       socket.off('waiting');
       socket.off('gameStart');
       socket.off('moveMade');
       socket.off('playerDisconnected');
+      socket.disconnect();
     };
   }, [board, currentPlayer, username, opponent]);
 
