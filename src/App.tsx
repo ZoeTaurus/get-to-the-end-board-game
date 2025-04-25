@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import Login from './Login';
-import { getTranslation, formatMessage, languageList } from './translations';
+import { getTranslation, formatMessage, languageList, languageDisplayNames } from './translations';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
@@ -511,14 +511,14 @@ const App: React.FC = () => {
       <div className="home-screen">
         <h1>{t.game.title}</h1>
         <div className="language-selector">
-          <label>{t.login.language}:</label>
+          <label>{t.login.language}</label>
           <select
             value={selectedLanguage}
             onChange={(e) => onLanguageChange(e.target.value)}
           >
-            {languageList.map((lang) => (
-              <option key={lang} value={lang}>
-                {lang}
+            {Object.entries(languageDisplayNames).map(([key, displayName]) => (
+              <option key={key} value={key}>
+                {displayName}
               </option>
             ))}
           </select>
