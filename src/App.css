@@ -554,7 +554,7 @@
   }
 
   .board-container {
-    transform: translate(-55%, -45%);
+    transform: translate(-49%, -45%);
     padding-top: 0;
   }
 
@@ -636,7 +636,7 @@
   }
 
   .board-container {
-    transform: translate(-55%, -45%) scale(0.95);
+    transform: translate(-49%, -45%) scale(0.95);
   }
 
   .board {
@@ -709,7 +709,7 @@
   }
 
   .board-container {
-    transform: translate(-55%, -45%) scale(0.8);
+    transform: translate(-49%, -45%) scale(0.8);
   }
 
   .board {
