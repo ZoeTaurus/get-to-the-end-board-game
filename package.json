@@ -4,26 +4,21 @@
   "version": "0.0.0",
   "description": "A board game where players try to reach the end or capture all opponent pieces",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
     "start": "node server.js"
   },
   "dependencies": {
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@vitejs/plugin-react": "^3.1.0",
     "express": "^4.18.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "socket.io": "^4.7.4",
     "socket.io-client": "^4.7.4",
     "typescript": "^4.9.3",
-    "@types/react": "^18.0.28",
-    "@types/react-dom": "^18.0.11",
-    "@vitejs/plugin-react": "^3.1.0",
     "vite": "^4.2.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
   }
 }
