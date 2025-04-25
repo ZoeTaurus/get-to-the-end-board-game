@@ -82,12 +82,39 @@ function App() {
 
     socket.on('moveMade', (data) => {
       setIsMyTurn(data.nextTurn === socket.id);
-      const { row, col, selectedPiece } = data.move;
-      handleMove(row, col, selectedPiece);
       
-      // Update game message with correct player name
-      const nextPlayerName = data.nextTurn === socket.id ? username : opponent;
-      setGameMessage(`It's ${nextPlayerName}'s turn. Select a piece to move.`);
+      // Update board state with the move
+      const { row, col, selectedPiece } = data.move;
+      const newBoard = board.map(r => [...r]);
+      
+      if (selectedPiece && selectedPiece.row !== undefined && selectedPiece.col !== undefined) {
+        const movingPiece = {...newBoard[selectedPiece.row][selectedPiece.col]!};
+        
+        // Check if it's a capture move
+        if (newBoard[row][col]) {
+          if (movingPiece.type === 'circle') {
+            movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+          }
+        }
+        
+        // Make the move
+        newBoard[row][col] = movingPiece;
+        newBoard[selectedPiece.row][selectedPiece.col] = null;
+        
+        setBoard(newBoard);
+        
+        // Check win condition
+        const winResult = checkWinCondition(newBoard, col);
+        if (!winResult) {
+          // Update turn if no winner
+          const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+          setCurrentPlayer(nextPlayer);
+          
+          // Update game message with correct player name
+          const nextPlayerName = data.nextTurn === socket.id ? username : opponent;
+          setGameMessage(`It's ${nextPlayerName}'s turn. Select a piece to move.`);
+        }
+      }
     });
 
     socket.on('playerDisconnected', () => {

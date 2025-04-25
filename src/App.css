@@ -522,7 +522,13 @@
 /* Mobile Responsive Design */
 @media (max-width: 768px) {
   .game-content {
-    padding-top: 150px;
+    padding-top: 180px;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
   }
 
   .game-info-container {
@@ -552,8 +558,43 @@
   }
 
   .board-container {
-    transform: scale(0.8);
-    margin-top: -50px;
+    width: 100%;
+    height: calc(100vh - 200px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: scale(0.45);
+    margin-top: -100px;
+  }
+
+  .board {
+    width: 90vh;
+    height: 60vh;
+  }
+
+  .piece {
+    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(1.5);
+  }
+
+  .piece.circle {
+    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.4);
+  }
+
+  .piece:not(.circle):hover {
+    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(1.5);
+  }
+
+  .piece.circle:hover {
+    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.4);
+  }
+
+  .eaten-count {
+    transform: rotate(90deg) translateZ(5px) scale(0.8);
+    top: -20px;
+    right: -20px;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
   }
 
   .home-screen h1 {
@@ -595,12 +636,34 @@
 /* iPhone SE and smaller devices */
 @media (max-width: 375px) {
   .game-content {
-    padding-top: 120px;
+    padding-top: 160px;
   }
 
   .board-container {
-    transform: scale(0.6);
-    margin-top: -100px;
+    transform: scale(0.35);
+    margin-top: -150px;
+  }
+
+  .board {
+    width: 80vh;
+    height: 53.33vh;
+  }
+
+  .piece {
+    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(1.2);
+  }
+
+  .piece.circle {
+    transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.35);
+  }
+
+  .eaten-count {
+    transform: rotate(90deg) translateZ(5px) scale(0.7);
+    top: -15px;
+    right: -15px;
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
   }
 
   .player-indicator {
@@ -637,5 +700,32 @@
 
   .home-buttons button:active {
     transform: translateY(1px);
+  }
+}
+
+/* Landscape mode */
+@media (max-height: 500px) and (orientation: landscape) {
+  .game-content {
+    padding-top: 100px;
+  }
+
+  .board-container {
+    transform: scale(0.3);
+    margin-top: -200px;
+  }
+
+  .game-info-container {
+    flex-direction: row;
+    padding: 5px 10px;
+  }
+
+  .game-status {
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .player-indicator, .game-message {
+    font-size: 1rem;
+    padding: 8px 16px;
   }
 } 
