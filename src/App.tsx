@@ -132,17 +132,11 @@ function App() {
       setScreen('home');
     });
 
-    // Clean up socket connection when game ends
-    if (winner) {
-      socket.disconnect();
-    }
-
     return () => {
       socket.off('waiting');
       socket.off('gameStart');
       socket.off('moveMade');
       socket.off('playerDisconnected');
-      socket.disconnect();
     };
   }, [board, currentPlayer, username, opponent]);
 
