@@ -14,14 +14,15 @@
   align-items: center;
   width: 100vw;
   height: 100vh;
-  padding-top: 150px;
+  padding-top: 0;
   box-sizing: border-box;
   position: relative;
+  overflow: hidden;
 }
 
 .game-info-container {
   position: fixed;
-  top: 20px;
+  top: 0;
   left: 0;
   right: 0;
   display: flex;
@@ -100,15 +101,16 @@
 }
 
 .board-container {
-  position: absolute;
+  position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -40%);
   width: 100%;
+  height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  z-index: 1;
 }
 
 .board {
@@ -116,8 +118,8 @@
   grid-template-rows: repeat(4, minmax(0, 1fr));
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0;
-  width: 120vh;
-  height: 80vh;
+  width: min(120vh, 90vw);
+  height: min(80vh, 60vw);
   transform: rotateX(30deg) rotate(90deg);
   transform-style: preserve-3d;
   transform-origin: center center;
@@ -551,15 +553,13 @@
   }
 
   .board-container {
-    position: absolute;
-    top: 55%;
-    transform: translate(-50%, -50%) scale(0.9);
+    transform: translate(-50%, -45%);
   }
 
   .board {
     transform: rotate(0deg);
-    width: 95vw;
-    height: 63.33vw;
+    width: 90vw;
+    height: 60vw;
   }
 
   .piece {
@@ -630,8 +630,7 @@
   }
 
   .board-container {
-    top: 52%;
-    transform: translate(-50%, -50%) scale(0.85);
+    transform: translate(-50%, -45%) scale(0.95);
   }
 
   .board {
@@ -699,19 +698,17 @@
     padding-top: 80px;
   }
 
+  .game-info-container {
+    padding: 5px;
+  }
+
   .board-container {
-    top: 60%;
-    transform: translate(-50%, -50%) scale(0.7);
+    transform: translate(-50%, -45%) scale(0.8);
   }
 
   .board {
-    width: 70vh;
-    height: 46.67vh;
-  }
-
-  .game-info-container {
-    flex-direction: row;
-    padding: 5px 10px;
+    width: min(90vh, 90vw);
+    height: min(60vh, 60vw);
   }
 
   .game-status {
