@@ -513,7 +513,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
   }
 
   .game-info-container {
@@ -542,15 +542,25 @@
     width: 100%;
   }
 
+  .board-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform: scale(0.9);
+    margin: 0 auto;
+    padding: 20px;
+  }
+
   .board {
     transform: rotate(0deg);
-    width: 90vw;
-    height: 60vw;
-    margin-bottom: 50px;
+    width: 95vw;
+    height: 63.33vw;
+    margin: 0 auto;
   }
 
   .piece {
-    transform: translate(-50%, -50%) translateZ(4px) scale(1.5);
+    transform: translate(-50%, -50%) translateZ(4px) scale(1.2);
   }
 
   .piece.circle {
@@ -558,30 +568,20 @@
   }
 
   .piece:not(.circle):hover {
-    transform: translate(-50%, -50%) translateZ(4px) scale(1.5);
+    transform: translate(-50%, -50%) translateZ(4px) scale(1.2);
   }
 
   .piece.circle:hover {
     transform: translate(-50%, -50%) translateZ(4px) scale(0.4);
   }
 
-  .board-container {
-    width: 100%;
-    height: auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transform: scale(0.9);
-    margin-top: -50px;
-  }
-
   .eaten-count {
-    transform: translateZ(5px) scale(0.8);
-    top: -20px;
-    right: -20px;
-    width: 40px;
-    height: 40px;
-    font-size: 24px;
+    transform: translateZ(5px) scale(0.7);
+    top: -15px;
+    right: -15px;
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
   }
 
   .home-screen h1 {
@@ -627,13 +627,12 @@
   }
 
   .board {
-    width: 85vw;
-    height: 56.67vw;
+    width: 90vw;
+    height: 60vw;
   }
 
   .board-container {
     transform: scale(0.85);
-    margin-top: -80px;
   }
 
   .piece {
@@ -719,5 +718,88 @@
   .player-indicator, .game-message {
     font-size: 1rem;
     padding: 8px 16px;
+  }
+}
+
+/* Logout Confirmation Dialog */
+.logout-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.logout-confirm-dialog {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 90%;
+  width: 400px;
+}
+
+.logout-confirm-dialog h2 {
+  color: #333;
+  margin-bottom: 25px;
+  font-size: 1.5rem;
+}
+
+.logout-confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.logout-confirm-buttons button {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.confirm-yes {
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  color: white;
+}
+
+.confirm-no {
+  background: linear-gradient(135deg, #666 0%, #444 100%);
+  color: white;
+}
+
+.confirm-yes:hover {
+  background: linear-gradient(135deg, #cc0000 0%, #990000 100%);
+  transform: translateY(-2px);
+}
+
+.confirm-no:hover {
+  background: linear-gradient(135deg, #444 0%, #333 100%);
+  transform: translateY(-2px);
+}
+
+/* Mobile styles for logout confirmation */
+@media (max-width: 768px) {
+  .logout-confirm-dialog {
+    width: 85%;
+    padding: 20px;
+  }
+
+  .logout-confirm-dialog h2 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+
+  .logout-confirm-buttons button {
+    padding: 10px 20px;
+    font-size: 1rem;
   }
 } 

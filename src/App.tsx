@@ -51,6 +51,7 @@ function App() {
       blue: { color: 'blue', username: 'Player 2' }
     };
   });
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     // Socket event listeners
@@ -146,7 +147,11 @@ function App() {
   };
 
   // Handle logout
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleLogoutConfirm = () => {
     // Reset all game states
     setIsLoggedIn(false);
     setGameStarted(false);
@@ -163,11 +168,16 @@ function App() {
       blue: { color: 'blue', username: 'Player 2' }
     });
     
-    // Remove login state but keep credentials
+    // Remove login state
     localStorage.removeItem('isLoggedIn');
     
-    // Reset the screen to home
+    // Reset the screen to home and close the confirmation dialog
     setScreen('home');
+    setShowLogoutConfirm(false);
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutConfirm(false);
   };
 
   // Initialize the game
@@ -439,9 +449,22 @@ function App() {
           setIsSearching(true);
         }}>Play Game</button>
         <button onClick={() => setScreen('help')}>Help</button>
-        <button onClick={handleLogout} className="logout-button">Logout</button>
+        <button onClick={handleLogoutClick} className="logout-button">Logout</button>
       </div>
       <p className="coming-soon">More stuff coming soon!</p>
+      
+      {/* Logout Confirmation Dialog */}
+      {showLogoutConfirm && (
+        <div className="logout-confirm-overlay">
+          <div className="logout-confirm-dialog">
+            <h2>Are you sure you want to logout?</h2>
+            <div className="logout-confirm-buttons">
+              <button onClick={handleLogoutConfirm} className="confirm-yes">Yes</button>
+              <button onClick={handleLogoutCancel} className="confirm-no">No</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
