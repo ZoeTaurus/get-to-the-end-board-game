@@ -1,0 +1,89 @@
+{
+    "game_name": "Get to the End",
+    "board_size": {
+        "width": 6,
+        "height": 4
+    },
+    "pieces": {
+        "person": {
+            "movement": {
+                "directions": ["forward", "backward", "left", "right"],
+                "can_jump": false
+            },
+            "capture": {
+                "directions": ["diagonal"],
+                "can_jump": false
+            }
+        },
+        "circle": {
+            "movement": {
+                "directions": ["all"],
+                "can_jump": false
+            },
+            "capture": {
+                "directions": ["all"],
+                "can_jump": false,
+                "max_captures": 2
+            }
+        }
+    },
+    "win_conditions": [
+        "capture_all_opponent_pieces",
+        "reach_opposite_end"
+    ],
+    "initial_setup": {
+        "player1": {
+            "color": "red",
+            "pieces": [
+                {"type": "person", "position": [0, 5]},
+                {"type": "person", "position": [1, 5]},
+                {"type": "circle", "position": [2, 5]},
+                {"type": "person", "position": [3, 5]}
+            ]
+        },
+        "player2": {
+            "color": "blue",
+            "pieces": [
+                {"type": "person", "position": [0, 0]},
+                {"type": "person", "position": [1, 0]},
+                {"type": "circle", "position": [2, 0]},
+                {"type": "person", "position": [3, 0]}
+            ]
+        }
+    },
+    "game_rules": {
+        "setup_instructions": [
+            "Place 2 person-shaped pieces",
+            "Place 1 circle-shaped piece",
+            "Place 1 person-shaped piece"
+        ],
+        "materials_needed": [
+            "pencil",
+            "ruler",
+            "2 different colored markers/pencils",
+            "scissors",
+            "paper"
+        ],
+        "board_creation": [
+            "Draw 3 vertical lines to make 4 strips",
+            "Draw 5 horizontal lines",
+            "Color squares like a chess board"
+        ],
+        "piece_creation": {
+            "shapes_needed": {
+                "circles": 2,
+                "people": 6
+            },
+            "coloring": {
+                "player1": {
+                    "circles": 1,
+                    "people": 3
+                },
+                "player2": {
+                    "circles": 1,
+                    "people": 3
+                }
+            }
+        }
+    }
+} 

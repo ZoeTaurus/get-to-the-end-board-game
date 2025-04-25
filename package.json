@@ -1,0 +1,25 @@
+{
+  "name": "get-to-the-end",
+  "version": "1.0.0",
+  "description": "A board game where players try to reach the end or capture all opponent pieces",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite preview --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "serve": "vite preview --host"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-confetti": "^6.4.0",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.4.1",
+    "vite": "^5.4.18"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
