@@ -2,7 +2,6 @@ const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const { exec } = require('child_process');
 
 const app = express();
 const httpServer = createServer(app);
@@ -13,24 +12,10 @@ const io = new Server(httpServer, {
   }
 });
 
-// Build the application first
-console.log('Building application...');
-exec('npm run build', (error, stdout, stderr) => {
-  if (error) {
-    console.error(`Build error: ${error}`);
-    return;
-  }
-  console.log(`Build stdout: ${stdout}`);
-  if (stderr) {
-    console.error(`Build stderr: ${stderr}`);
-  }
-  console.log('Build complete');
-});
-
 // Serve static files from the dist directory
-app.use(express.static('dist'));
+app.use(express.static(path.join(__dirname, 'dist')));
 
-// Serve index.html for all routes (for client-side routing)
+// Serve index.html for all routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
@@ -42,23 +27,17 @@ const activeGames = new Map();
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Handle player joining queue
   socket.on('joinQueue', (username) => {
     console.log('Player joined queue:', username);
-    
-    // Add player to waiting list
     waitingPlayers.set(socket.id, { username, socket });
 
-    // Check for available players
     if (waitingPlayers.size >= 2) {
       const players = Array.from(waitingPlayers.entries()).slice(0, 2);
       const [player1, player2] = players;
 
-      // Remove players from waiting list
       waitingPlayers.delete(player1[0]);
       waitingPlayers.delete(player2[0]);
 
-      // Create game room
       const gameId = `game_${Date.now()}`;
       activeGames.set(gameId, {
         players: [
@@ -68,11 +47,9 @@ io.on('connection', (socket) => {
         currentTurn: player1[0]
       });
 
-      // Join both players to game room
       player1[1].socket.join(gameId);
       player2[1].socket.join(gameId);
 
-      // Notify players of game start
       io.to(gameId).emit('gameStart', {
         gameId,
         players: [
@@ -82,20 +59,16 @@ io.on('connection', (socket) => {
         currentTurn: player1[0]
       });
     } else {
-      // Notify player they're waiting
       socket.emit('waiting');
     }
   });
 
-  // Handle game moves
   socket.on('makeMove', ({ gameId, move }) => {
     const game = activeGames.get(gameId);
     if (game && game.currentTurn === socket.id) {
-      // Update current turn
       const currentPlayerIndex = game.players.findIndex(p => p.id === socket.id);
       game.currentTurn = game.players[(currentPlayerIndex + 1) % 2].id;
       
-      // Broadcast move to both players
       io.to(gameId).emit('moveMade', {
         move,
         nextTurn: game.currentTurn
@@ -103,15 +76,10 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle disconnection
   socket.on('disconnect', () => {
-    // Remove from waiting players if present
     waitingPlayers.delete(socket.id);
-
-    // Handle active games
     activeGames.forEach((game, gameId) => {
       if (game.players.some(p => p.id === socket.id)) {
-        // Notify other player of disconnection
         io.to(gameId).emit('playerDisconnected');
         activeGames.delete(gameId);
       }
