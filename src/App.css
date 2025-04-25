@@ -554,7 +554,7 @@
   }
 
   .board-container {
-    transform: translate(-50%, -45%);
+    transform: translate(-52%, -45%);
     padding-top: 0;
   }
 
@@ -566,10 +566,12 @@
 
   .piece {
     transform: translate(-50%, -50%) translateZ(4px) scale(1.2);
+    left: 48%;
   }
 
   .piece.circle {
     transform: translate(-50%, -50%) translateZ(4px) scale(0.4);
+    left: 48%;
   }
 
   .piece:not(.circle):hover {
@@ -632,7 +634,7 @@
   }
 
   .board-container {
-    transform: translate(-50%, -45%) scale(0.95);
+    transform: translate(-52%, -45%) scale(0.95);
   }
 
   .board {
@@ -641,11 +643,13 @@
   }
 
   .piece {
-    transform: translate(-50%, -50%) translateZ(4px) scale(1.2);
+    transform: translate(-50%, -50%) translateZ(4px) scale(1.1);
+    left: 48%;
   }
 
   .piece.circle {
     transform: translate(-50%, -50%) translateZ(4px) scale(0.35);
+    left: 48%;
   }
 
   .eaten-count {
@@ -705,7 +709,7 @@
   }
 
   .board-container {
-    transform: translate(-50%, -45%) scale(0.8);
+    transform: translate(-52%, -45%) scale(0.8);
   }
 
   .board {
@@ -721,6 +725,16 @@
   .player-indicator, .game-message {
     font-size: 1rem;
     padding: 8px 16px;
+  }
+
+  .piece {
+    transform: translate(-50%, -50%) translateZ(4px) scale(1.1);
+    left: 48%;
+  }
+
+  .piece.circle {
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.35);
+    left: 48%;
   }
 }
 
