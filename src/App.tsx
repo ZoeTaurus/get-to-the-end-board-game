@@ -71,7 +71,7 @@ function App() {
       // Set initial turn state
       const isMyTurnNow = data.currentTurn === socket.id;
       setIsMyTurn(isMyTurnNow);
-      setCurrentPlayer(isPlayer1 ? 'red' : 'blue');
+      setCurrentPlayer('red'); // Game always starts with red
       
       // Update players with correct usernames
       setPlayers({
@@ -79,9 +79,8 @@ function App() {
         blue: { color: 'blue', username: player2Name }
       });
       
-      // Initialize game with correct player names
+      // Initialize game
       initializeGame();
-      setGameMessage(isMyTurnNow ? 'Your turn. Select a piece to move.' : `Waiting for ${isPlayer1 ? player2Name : player1Name}'s move...`);
     });
 
     socket.on('moveMade', (data) => {
@@ -118,9 +117,6 @@ function App() {
       setSelectedPiece(null);
       setValidMoves([]);
       setValidCaptures([]);
-      
-      // Update game message
-      setGameMessage(isMyTurnNow ? 'Your turn. Select a piece to move.' : `Waiting for ${opponent}'s move...`);
       
       // Check for win condition
       checkWinCondition(board, col);
@@ -366,7 +362,6 @@ function App() {
         setSelectedPiece(null);
         setValidMoves([]);
         setValidCaptures([]);
-        setGameMessage('Your turn. Select a piece to move.');
         return;
       }
       
@@ -376,7 +371,6 @@ function App() {
         const { moves, captures } = calculateValidMoves(board, rowIndex, colIndex);
         setValidMoves(moves);
         setValidCaptures(captures);
-        setGameMessage('Select where to move the piece.');
         return;
       }
       
@@ -413,7 +407,6 @@ function App() {
         setValidCaptures([]);
         setIsMyTurn(false);
         setCurrentPlayer(prev => prev === 'red' ? 'blue' : 'red');
-        setGameMessage(`Waiting for ${opponent}'s move...`);
       }
     } 
     else if (piece && piece.color === myColor) {
@@ -421,7 +414,6 @@ function App() {
       const { moves, captures } = calculateValidMoves(board, rowIndex, colIndex);
       setValidMoves(moves);
       setValidCaptures(captures);
-      setGameMessage('Select where to move the piece.');
     }
   };
 
@@ -532,9 +524,11 @@ function App() {
         <div className="game-info-container">
           <div className="game-status">
             <div className="player-indicator" style={{ backgroundColor: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
-              {players[currentPlayer].username}'s Turn
+              {isMyTurn ? 'Your Turn' : `${opponent}'s Turn`}
             </div>
-            <div className="game-message">{gameMessage}</div>
+            <div className="game-message">
+              {isMyTurn ? 'Select a piece to move.' : `Waiting for ${opponent}'s move...`}
+            </div>
           </div>
         </div>
         
