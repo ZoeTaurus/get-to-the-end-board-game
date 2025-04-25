@@ -61,6 +61,7 @@ function App() {
     socket.on('gameStart', (data) => {
       setIsSearching(false);
       setGameStarted(true);
+      setScreen('game');
       const isPlayer1 = data.players[0].id === socket.id;
       setOpponent(isPlayer1 ? data.players[1].username : data.players[0].username);
       setGameId(data.gameId);
