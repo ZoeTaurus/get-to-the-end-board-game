@@ -398,13 +398,8 @@ function App() {
         setValidMoves([]);
         setValidCaptures([]);
         
-        // Only update turn state if there's no winner
-        if (!winnerColor) {
-          setIsMyTurn(false);
-          setCurrentPlayer(prev => prev === 'red' ? 'blue' : 'red');
-        }
-
-        if (winnerColor === 'red' || winnerColor === 'blue') {
+        // Emit gameOver if there is a winner and it's my turn
+        if ((winnerColor === 'red' || winnerColor === 'blue') && isMyTurn) {
           socket.emit('gameOver', { gameId, winner: winnerColor, message: `${players[winnerColor].username} wins!` });
         }
       }
@@ -430,6 +425,9 @@ function App() {
     // ... existing move logic ...
   };
 
+  // Helper to get local player's color
+  const getMyColor = () => username === players.red.username ? 'red' : 'blue';
+
   // Add timer reset function
   const resetTimer = useCallback(() => {
     setTimeLeft(30);
@@ -439,10 +437,11 @@ function App() {
     const newTimerId = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
-          // Time's up - end game and declare other player as winner
-          const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-          setWinner(otherPlayer);
-          setGameMessage(`${players[otherPlayer].username} WINS by timeout!`);
+          // Only emit gameOver if it's my turn
+          if (isMyTurn) {
+            const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
+            socket.emit('gameOver', { gameId, winner: otherPlayer, message: `${players[otherPlayer].username} wins by timeout!` });
+          }
           clearInterval(newTimerId);
           return 0;
         }
@@ -450,7 +449,7 @@ function App() {
       });
     }, 1000);
     setTimerId(newTimerId);
-  }, [currentPlayer, players]);
+  }, [isMyTurn, getMyColor, players, gameId, timerId]);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -474,9 +473,6 @@ function App() {
       clearInterval(timerId);
     }
   }, [winner, timerId]);
-
-  // Helper to get local player's color
-  const getMyColor = () => username === players.red.username ? 'red' : 'blue';
 
   const HomeScreen = () => (
     <div className="home-screen">
