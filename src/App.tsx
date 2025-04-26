@@ -159,7 +159,7 @@ function App() {
   };
 
   const handleLogoutConfirm = () => {
-    setIsLoggedIn(false);
+    // Clear all game state
     setGameStarted(false);
     setWinner(null);
     setSelectedPiece(null);
@@ -171,9 +171,20 @@ function App() {
       red: { color: 'red', username: '' },
       blue: { color: 'blue', username: 'Player 2' }
     });
-    localStorage.removeItem('isLoggedIn');
+    
+    // Clear user state
+    setIsLoggedIn(false);
+    setUsername('');
+    
+    // Clear local storage
+    localStorage.removeItem('lastUsername');
+    
+    // Reset screen
     setScreen('home');
+    
+    // Close confirmation dialog
     setShowLogoutConfirm(false);
+    
     // Disconnect and reconnect socket for a clean state
     if (socket && socket.connected) {
       socket.disconnect();

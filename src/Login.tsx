@@ -1,189 +1,163 @@
 import React, { useState, useEffect } from 'react';
-import './Login.css';
-import { getTranslation, getLanguageDisplayName, languageDisplayNames } from './translations';
-
-// Language list in alphabetical order
-const languages = [
-  'Afrikaans', 'Shqip', 'አማርኛ', 'العربية', 'Հայերեն', 'Azərbaycan',
-  'Euskara', 'Беларуская', 'বাংলা', 'Bosanski', 'Български', 'မြန်မာ',
-  'Català', 'Cebuano', 'Chichewa', '中文', '繁體中文', 'Corsu', 'Hrvatski', 'Čeština',
-  'Dansk', 'Nederlands',
-  'English', 'Esperanto', 'Eesti',
-  'Filipino', 'Suomi', 'Français', 'Frysk',
-  'Galego', 'ქართული', 'Deutsch', 'Ελληνικά', 'ગુજરાતી',
-  'Kreyòl Ayisyen', 'Hausa', 'ʻŌlelo Hawaiʻi', 'עברית', 'हिन्दी', 'Hmoob', 'Magyar',
-  'Íslenska', 'Igbo', 'Bahasa Indonesia', 'Gaeilge', 'Italiano',
-  '日本語', 'Basa Jawa',
-  'ಕನ್ನಡ', 'Қазақ', 'ខ្មែរ', '한국어', 'Kurdî',
-  'Кыргызча',
-  'ລາວ', 'Latina', 'Latviešu', 'Lietuvių', 'Lëtzebuergesch',
-  'Македонски', 'Malagasy', 'Bahasa Melayu', 'മലയാളം', 'Malti', 'Māori', 'मराठी', 'Монгол', 'မြန်မာစာ',
-  'नेपाली', 'Norsk',
-  'ଓଡ଼ିଆ', 'پښتو', 'فارسی', 'Polski', 'Português', 'ਪੰਜਾਬੀ',
-  'Română', 'Русский',
-  'Gagana Sāmoa', 'Gàidhlig', 'Српски', 'Sesotho', 'Shona', 'سنڌي', 'සිංහල', 'Slovenčina', 'Slovenščina', 'Soomaali', 'Español', 'Basa Sunda', 'Kiswahili', 'Svenska',
-  'Тоҷикӣ', 'தமிழ்', 'తెలుగు', 'ไทย', 'Türkçe',
-  'Українська', 'اردو', 'ئۇيغۇرچە', 'O\'zbek',
-  'Tiếng Việt',
-  'Cymraeg',
-  'isiXhosa',
-  'יידיש', 'Yorùbá',
-  'isiZulu'
-];
+import './App.css';
 
 interface LoginProps {
   onLogin: (username: string) => void;
-  selectedLanguage: string;
-  onLanguageChange: (language: string) => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, selectedLanguage, onLanguageChange }) => {
-  const [email, setEmail] = useState(() => localStorage.getItem('email') || '');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState(() => localStorage.getItem('username') || '');
-  const [showUsernameInput, setShowUsernameInput] = useState(false);
-  const [error, setError] = useState('');
+interface User {
+  username: string;
+  password: string;
+}
 
-  const t = getTranslation(selectedLanguage);
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [users, setUsers] = useState<User[]>(() => {
+    const savedUsers = localStorage.getItem('users');
+    return savedUsers ? JSON.parse(savedUsers) : [];
+  });
 
   useEffect(() => {
-    // Check if we have saved email and username
-    const savedEmail = localStorage.getItem('email');
-    const savedUsername = localStorage.getItem('username');
-
-    if (savedEmail && savedUsername) {
-      onLogin(savedUsername);
+    // Load last used username if exists
+    const lastUsername = localStorage.getItem('lastUsername');
+    if (lastUsername) {
+      setUsername(lastUsername);
     }
-  }, [onLogin]);
+  }, []);
 
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onLanguageChange(e.target.value);
+  const validatePassword = (pass: string) => {
+    if (pass.length < 10) {
+      return 'Password must be at least 10 characters long';
+    }
+    if (!/[A-Z]/.test(pass)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/[0-9]/.test(pass)) {
+      return 'Password must contain at least one number';
+    }
+    if (!/[!@#$%^&*]/.test(pass)) {
+      return 'Password must contain at least one special character (!@#$%^&*)';
+    }
+    return '';
   };
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    if (!email.trim() || !password.trim()) {
-      setError(t.login.error);
-      return;
-    }
-
-    try {
-      // Here you would typically make an API call to verify the email and password
-      // For now, we'll just validate the email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        setError('Please enter a valid email address');
-        return;
-      }
-
-      // Save email but not password
-      localStorage.setItem('email', email);
-
-      // Check for saved username
-      const savedUsername = localStorage.getItem('username');
-      if (savedUsername) {
-        onLogin(savedUsername);
-      } else {
-        setShowUsernameInput(true);
-      }
-    } catch (err) {
-      setError(t.login.error);
-    }
-  };
-
-  const handleUsernameSubmit = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!username.trim() || username.length < 3 || username.length > 15) {
-      setError(t.login.error);
+    const user = users.find(u => u.username === username);
+    if (!user) {
+      setError('User not found');
       return;
     }
 
-    localStorage.setItem('username', username);
+    if (user.password !== password) {
+      setError('Incorrect password');
+      return;
+    }
+
+    localStorage.setItem('lastUsername', username);
     onLogin(username);
   };
 
-  if (showUsernameInput) {
-    return (
-      <div className="login-container">
-        <form onSubmit={handleUsernameSubmit} className="login-form">
-          <h2>{t.login.chooseUsername}</h2>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder={t.login.usernamePlaceholder}
-            minLength={3}
-            maxLength={15}
-            required
-          />
-          {error && <div className="error">{error}</div>}
-          <button type="submit">{t.login.startPlaying}</button>
-          
-          <div className="language-selector">
-            <div className="language-label">
-              <span className="globe-icon">🌐</span>
-              <span>{t.login.language}</span>
-            </div>
-            <select 
-              value={selectedLanguage}
-              onChange={handleLanguageChange}
-              className="language-dropdown"
-            >
-              {Object.entries(languageDisplayNames).map(([key, displayName]) => (
-                <option key={key} value={key}>
-                  {displayName}
-                </option>
-              ))}
-            </select>
-          </div>
-        </form>
-      </div>
-    );
-  }
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (users.some(u => u.username === username)) {
+      setError('Username already taken');
+      return;
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    const newUser: User = { username, password };
+    const updatedUsers = [...users, newUser];
+    setUsers(updatedUsers);
+    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    localStorage.setItem('lastUsername', username);
+    onLogin(username);
+  };
 
   return (
     <div className="login-container">
-      <form onSubmit={handleLoginSubmit} className="login-form">
-        <h2>{t.login.title}</h2>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder={t.login.emailPlaceholder}
-          required
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder={t.login.passwordPlaceholder}
-          required
-        />
-        {error && <div className="error">{error}</div>}
-        <button type="submit">{t.login.loginButton}</button>
-        
-        <div className="language-selector">
-          <div className="language-label">
-            <span className="globe-icon">🌐</span>
-            <span>{t.login.language}</span>
-          </div>
-          <select 
-            value={selectedLanguage}
-            onChange={handleLanguageChange}
-            className="language-dropdown"
-          >
-            {Object.entries(languageDisplayNames).map(([key, displayName]) => (
-              <option key={key} value={key}>
-                {displayName}
-              </option>
-            ))}
-          </select>
-        </div>
-      </form>
+      <div className="login-box">
+        <h1>Get To The End</h1>
+        {!isRegistering ? (
+          <>
+            <button 
+              className="register-link"
+              onClick={() => setIsRegistering(true)}
+            >
+              New user? Register here!
+            </button>
+            <form onSubmit={handleLogin}>
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button type="submit">Login</button>
+            </form>
+          </>
+        ) : (
+          <>
+            <button 
+              className="login-link"
+              onClick={() => setIsRegistering(false)}
+            >
+              Already have an account? Login here!
+            </button>
+            <form onSubmit={handleRegister}>
+              <input
+                type="text"
+                placeholder="Choose Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Password (min 10 chars, 1 uppercase, 1 number, 1 special)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <button type="submit">Register</button>
+            </form>
+          </>
+        )}
+        {error && <p className="error-message">{error}</p>}
+      </div>
     </div>
   );
 };

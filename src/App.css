@@ -517,60 +517,135 @@ button {
   transform: translateY(-2px);
 }
 
+/* Login/Register Styles */
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background-color: #f0f0f0;
 }
 
-.login-form {
+.login-box {
   background: white;
   padding: 2rem;
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 400px;
+  text-align: center;
+}
+
+.login-box h1 {
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.login-box form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-.login-form h2 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 1rem;
-  font-size: 2rem;
-}
-
-.login-form input {
-  padding: 12px;
-  border: 2px solid #e1e1e1;
-  border-radius: 6px;
+.login-box input {
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
   font-size: 1rem;
-  transition: border-color 0.3s ease;
 }
 
-.login-form input:focus {
-  outline: none;
-  border-color: #4CAF50;
-}
-
-.login-form button {
-  padding: 12px;
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+.login-box button {
+  padding: 0.8rem;
+  background-color: #4CAF50;
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 1rem;
+  border-radius: 5px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-size: 1rem;
+  transition: background-color 0.3s;
 }
 
-.login-form button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+.login-box button:hover {
+  background-color: #45a049;
+}
+
+.register-link, .login-link {
+  background: none;
+  border: none;
+  color: #4CAF50;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  padding: 0;
+}
+
+.error-message {
+  color: #ff4444;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Logout Button Styles */
+.logout-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 0.5rem 1rem;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.logout-button:hover {
+  background-color: #cc0000;
+}
+
+.logout-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+.logout-confirm-dialog {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.logout-confirm-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.logout-confirm-buttons button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.confirm-yes {
+  background-color: #ff4444;
+  color: white;
+}
+
+.confirm-no {
+  background-color: #4CAF50;
+  color: white;
 }
 
 /* MOBILE */
@@ -833,89 +908,6 @@ button {
     transform: translate(-50%, -50%) translateZ(4px) scale(0.35);
     left: 45%;
     top: 48%;
-  }
-}
-
-/* Logout Confirmation Dialog */
-.logout-confirm-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.logout-confirm-dialog {
-  background: white;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  max-width: 90%;
-  width: 400px;
-}
-
-.logout-confirm-dialog h2 {
-  color: #333;
-  margin-bottom: 25px;
-  font-size: 1.5rem;
-}
-
-.logout-confirm-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-}
-
-.logout-confirm-buttons button {
-  padding: 12px 30px;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.confirm-yes {
-  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
-  color: white;
-}
-
-.confirm-no {
-  background: linear-gradient(135deg, #666 0%, #444 100%);
-  color: white;
-}
-
-.confirm-yes:hover {
-  background: linear-gradient(135deg, #cc0000 0%, #990000 100%);
-  transform: translateY(-2px);
-}
-
-.confirm-no:hover {
-  background: linear-gradient(135deg, #444 0%, #333 100%);
-  transform: translateY(-2px);
-}
-
-/* Mobile styles for logout confirmation */
-@media (max-width: 768px) {
-  .logout-confirm-dialog {
-    width: 85%;
-    padding: 20px;
-  }
-
-  .logout-confirm-dialog h2 {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
-  }
-
-  .logout-confirm-buttons button {
-    padding: 10px 20px;
-    font-size: 1rem;
   }
 }
 
