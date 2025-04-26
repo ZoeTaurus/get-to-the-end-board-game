@@ -636,7 +636,7 @@ function App() {
         )}
         <div className="game-info-container">
           <div className="game-status">
-            <div className="player-indicator" style={{ backgroundColor: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
+            <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
               {isMyTurn ? 'Your Turn' : `${opponent}'s Turn`}
               <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
                 Time left: {timeLeft}s
