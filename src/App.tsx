@@ -88,41 +88,27 @@ function App() {
     });
 
     socket.on('moveMade', (data) => {
-      const { row, col, selectedPiece, board: newBoardState } = data.move;
+      const { row, col, selectedPiece, board: newBoardState, winner: moveWinner } = data.move;
       
-      // Update the entire board state
+      // Update the board state
       if (newBoardState) {
         setBoard(newBoardState);
-      } else {
-        // Fallback to manual move if board state isn't provided
-        const newBoard = board.map(r => [...r]);
-        if (selectedPiece && selectedPiece.row !== undefined && selectedPiece.col !== undefined) {
-          const movingPiece = {...newBoard[selectedPiece.row][selectedPiece.col]!};
-          
-          // Check if it's a capture move
-          if (newBoard[row][col]) {
-            if (movingPiece.type === 'circle') {
-              movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
-            }
-          }
-          
-          newBoard[row][col] = movingPiece;
-          newBoard[selectedPiece.row][selectedPiece.col] = null;
-          setBoard(newBoard);
-        }
       }
-
+      
       // Clear selection states
       setSelectedPiece(null);
       setValidMoves([]);
       setValidCaptures([]);
       
-      // Check for win condition first
-      const hasWinner = checkWinCondition(board, col);
-      
-      // Only update turn state if there's no winner
-      if (!hasWinner) {
-        // Update turn state
+      // If the move resulted in a win, update game state
+      if (moveWinner) {
+        setWinner(moveWinner);
+        setGameMessage(`${players[moveWinner].username} wins!`);
+        if (moveWinner === getMyColor()) {
+          setShowConfetti(true);
+        }
+      } else {
+        // Only update turn state if there's no winner
         const isMyTurnNow = data.nextTurn === socket.id;
         setIsMyTurn(isMyTurnNow);
         setCurrentPlayer(prev => prev === 'red' ? 'blue' : 'red');
@@ -138,9 +124,13 @@ function App() {
     socket.on('gameOver', (data) => {
       setWinner(data.winner);
       setGameMessage(data.message);
-      setGameStarted(false);
       if (data.winner === getMyColor()) {
         setShowConfetti(true);
+      }
+      // Stop the timer when game is over
+      if (timerId) {
+        clearInterval(timerId);
+        setTimerId(null);
       }
     });
 
@@ -151,7 +141,7 @@ function App() {
       socket.off('playerDisconnected');
       socket.off('gameOver');
     };
-  }, [board, currentPlayer, username, opponent]);
+  }, [board, currentPlayer, username, opponent, timerId]);
 
   useEffect(() => { isMyTurnRef.current = isMyTurn; }, [isMyTurn]);
 
@@ -327,12 +317,11 @@ function App() {
   };
 
   const handleCellClick = (rowIndex: number, colIndex: number) => {
+    // Don't allow moves if game is over
     if (!gameStarted || !isMyTurn || winner) return;
     
     const piece = board[rowIndex][colIndex];
-    
-    // Only allow selecting and moving pieces of your color
-    const myColor = username === players.red.username ? 'red' : 'blue';
+    const myColor = getMyColor();
     
     if (selectedPiece) {
       const [selectedRow, selectedCol] = selectedPiece;
@@ -371,7 +360,7 @@ function App() {
         newBoard[rowIndex][colIndex] = movingPiece;
         newBoard[selectedRow][selectedCol] = null;
         
-        // Check for win condition before emitting move
+        // Check for win condition
         const winnerColor = checkWinCondition(newBoard, colIndex);
         
         // Emit move to server with full board state
@@ -381,7 +370,8 @@ function App() {
             row: rowIndex,
             col: colIndex,
             selectedPiece: { row: selectedRow, col: selectedCol },
-            board: newBoard
+            board: newBoard,
+            winner: winnerColor // Include winner in move data
           }
         });
         
@@ -390,9 +380,13 @@ function App() {
         setValidMoves([]);
         setValidCaptures([]);
         
-        // Emit gameOver if there is a winner and it's my turn
-        if ((winnerColor === 'red' || winnerColor === 'blue') && isMyTurn) {
-          socket.emit('gameOver', { gameId, winner: winnerColor, message: `${players[winnerColor].username} wins!` });
+        // If there's a winner, emit gameOver
+        if (winnerColor) {
+          socket.emit('gameOver', { 
+            gameId, 
+            winner: winnerColor, 
+            message: `${players[winnerColor].username} wins!` 
+          });
         }
       }
     } 
@@ -422,17 +416,23 @@ function App() {
 
   // Add timer reset function
   const resetTimer = useCallback(() => {
-    setTimeLeft(30);
+    // Clear existing timer
     if (timerId) {
       clearInterval(timerId);
     }
+    
+    setTimeLeft(30);
     const newTimerId = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
-          // Only emit gameOver if it's my turn (using ref)
+          // Only emit gameOver if it's my turn
           if (isMyTurnRef.current) {
             const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
-            socket.emit('gameOver', { gameId, winner: otherPlayer, message: `${players[otherPlayer].username} wins by timeout!` });
+            socket.emit('gameOver', { 
+              gameId, 
+              winner: otherPlayer, 
+              message: `${players[otherPlayer].username} wins by timeout!` 
+            });
           }
           clearInterval(newTimerId);
           return 0;
@@ -443,6 +443,13 @@ function App() {
     setTimerId(newTimerId);
   }, [getMyColor, players, gameId, timerId]);
 
+  // Reset timer on turn change
+  useEffect(() => {
+    if (gameStarted && !winner) {
+      resetTimer();
+    }
+  }, [currentPlayer, gameStarted, winner, resetTimer]);
+
   // Clean up timer on unmount and logout
   useEffect(() => {
     return () => {
@@ -451,20 +458,6 @@ function App() {
       }
     };
   }, [timerId]);
-
-  // Reset timer on turn change
-  useEffect(() => {
-    if (gameStarted && !winner) {
-      resetTimer();
-    }
-  }, [currentPlayer, gameStarted, winner, resetTimer]);
-
-  // Stop timer when game ends
-  useEffect(() => {
-    if (winner && timerId) {
-      clearInterval(timerId);
-    }
-  }, [winner, timerId]);
 
   const HomeScreen = () => (
     <div className="home-screen">
