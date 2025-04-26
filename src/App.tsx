@@ -181,6 +181,13 @@ function App() {
     localStorage.removeItem('isLoggedIn');
     setScreen('home');
     setShowLogoutConfirm(false);
+    // Disconnect and reconnect socket for a clean state
+    if (socket && socket.connected) {
+      socket.disconnect();
+      setTimeout(() => {
+        socket.connect();
+      }, 100);
+    }
   };
 
   const handleLogoutCancel = () => {
