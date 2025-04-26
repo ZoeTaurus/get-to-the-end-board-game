@@ -609,20 +609,22 @@
   }
 
   .home-screen h1 {
-    font-size: 2.5rem;
-    margin-bottom: 32px;
+    font-size: 1.6rem;
+    margin-bottom: 18px;
+    font-weight: 700;
   }
 
   .home-buttons {
     max-width: 95vw;
-    gap: 14px;
-    margin-bottom: 24px;
+    gap: 8px;
+    margin-bottom: 10px;
   }
 
   .home-buttons button {
-    font-size: 1.1rem;
-    padding: 13px 0;
-    border-radius: 10px;
+    font-size: 1rem;
+    padding: 9px 0;
+    border-radius: 8px;
+    min-height: 38px;
   }
 
   .help-screen .help-content {
@@ -639,6 +641,15 @@
 
   .winner-announcement h2 {
     font-size: 1.5rem;
+  }
+
+  .coming-soon {
+    font-size: 0.85rem;
+    margin-top: 8px;
+    color: #b0b0b0;
+    font-style: italic;
+    animation: none;
+    text-shadow: none;
   }
 }
 
@@ -688,24 +699,25 @@
   }
 
   .home-screen h1 {
-    font-size: 1.5rem;
-    margin-bottom: 18px;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
   }
 
   .home-buttons {
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 5px;
+    margin-bottom: 6px;
   }
 
   .home-buttons button {
-    font-size: 0.95rem;
-    padding: 9px 0;
-    border-radius: 8px;
+    font-size: 0.85rem;
+    padding: 7px 0;
+    border-radius: 6px;
+    min-height: 30px;
   }
 
   .coming-soon {
-    font-size: 0.9rem;
-    margin-top: 10px;
+    font-size: 0.7rem;
+    margin-top: 4px;
   }
 }
 
