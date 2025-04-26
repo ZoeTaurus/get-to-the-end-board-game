@@ -21,6 +21,85 @@ interface Player {
 
 const socket = io(window.location.origin);
 
+// Add translations
+const translations = {
+  en: {
+    playGame: 'Play Game',
+    help: 'Help',
+    logout: 'Logout',
+    selectLanguage: 'Select Language:',
+    moreComingSoon: 'More stuff coming soon!',
+    yourTurn: 'Your Turn',
+    opponentTurn: (name: string) => `${name}'s Turn`,
+    selectPiece: 'Select a piece to move.',
+    waitingForMove: (name: string) => `Waiting for ${name}'s move...`,
+    timeLeft: (time: number) => `Time left: ${time}s`,
+    youWon: 'You WON!!!!',
+    youLost: 'Sorry, you lost.',
+    backToHome: 'Back to Home'
+  },
+  zh: {
+    playGame: '开始游戏',
+    help: '帮助',
+    logout: '退出',
+    selectLanguage: '选择语言:',
+    moreComingSoon: '更多内容即将推出！',
+    yourTurn: '轮到你了',
+    opponentTurn: (name: string) => `${name}的回合`,
+    selectPiece: '选择一个棋子移动。',
+    waitingForMove: (name: string) => `等待${name}移动...`,
+    timeLeft: (time: number) => `剩余时间: ${time}秒`,
+    youWon: '你赢了！',
+    youLost: '抱歉，你输了。',
+    backToHome: '返回主页'
+  },
+  pt: {
+    playGame: 'Jogar',
+    help: 'Ajuda',
+    logout: 'Sair',
+    selectLanguage: 'Selecione o idioma:',
+    moreComingSoon: 'Mais em breve!',
+    yourTurn: 'Sua vez',
+    opponentTurn: (name: string) => `Vez de ${name}`,
+    selectPiece: 'Selecione uma peça para mover.',
+    waitingForMove: (name: string) => `Aguardando ${name} mover...`,
+    timeLeft: (time: number) => `Tempo restante: ${time}s`,
+    youWon: 'Você GANHOU!',
+    youLost: 'Desculpe, você perdeu.',
+    backToHome: 'Voltar ao Início'
+  },
+  th: {
+    playGame: 'เริ่มเกม',
+    help: 'ช่วยเหลือ',
+    logout: 'ออกจากระบบ',
+    selectLanguage: 'เลือกภาษา:',
+    moreComingSoon: 'เร็วๆ นี้จะมีเพิ่มเติม!',
+    yourTurn: 'ตาคุณ',
+    opponentTurn: (name: string) => `ตาของ ${name}`,
+    selectPiece: 'เลือกตัวหมากที่จะเดิน',
+    waitingForMove: (name: string) => `รอ ${name} เดิน...`,
+    timeLeft: (time: number) => `เวลาที่เหลือ: ${time} วินาที`,
+    youWon: 'คุณชนะ!',
+    youLost: 'เสียใจด้วย คุณแพ้',
+    backToHome: 'กลับหน้าแรก'
+  },
+  ar: {
+    playGame: 'ابدأ اللعبة',
+    help: 'مساعدة',
+    logout: 'تسجيل الخروج',
+    selectLanguage: 'اختر اللغة:',
+    moreComingSoon: 'المزيد قريباً!',
+    yourTurn: 'دورك',
+    opponentTurn: (name: string) => `دور ${name}`,
+    selectPiece: 'اختر قطعة للتحرك.',
+    waitingForMove: (name: string) => `في انتظار تحرك ${name}...`,
+    timeLeft: (time: number) => `الوقت المتبقي: ${time} ثانية`,
+    youWon: 'لقد فزت!',
+    youLost: 'عذراً، لقد خسرت.',
+    backToHome: 'العودة للصفحة الرئيسية'
+  }
+};
+
 function App() {
   const [screen, setScreen] = useState<GameScreen>('home');
   const [board, setBoard] = useState<(Piece | null)[][]>(
@@ -452,9 +531,9 @@ function App() {
       });
     }, 1000);
     setTimerId(newTimerId);
-  }, [getMyColor, players, gameId, timerId]);
+  }, [gameId, players, socket]);
 
-  // Reset timer on turn change
+  // Reset timer on turn change and game start
   useEffect(() => {
     if (gameStarted && !winner) {
       resetTimer();
@@ -478,20 +557,20 @@ function App() {
           socket.emit('joinQueue', username);
           setIsSearching(true);
         }}>
-          Play Game
+          {translations[language].playGame}
         </button>
         <button type="button" onClick={() => setScreen('help')}>
-          Help
+          {translations[language].help}
         </button>
         <button
           type="button"
           onClick={handleLogoutClick}
           className="logout-button"
         >
-          Logout
+          {translations[language].logout}
         </button>
         <div className="language-select-container">
-          <label htmlFor="language-select">Select Language:</label>
+          <label htmlFor="language-select">{translations[language].selectLanguage}</label>
           <select 
             id="language-select"
             className="language-select"
@@ -506,7 +585,7 @@ function App() {
           </select>
         </div>
       </div>
-      <p className="coming-soon">More stuff coming soon!</p>
+      <p className="coming-soon">{translations[language].moreComingSoon}</p>
       {/* Logout Confirmation Dialog */}
       {showLogoutConfirm && (
         <div className="logout-confirm-overlay">
@@ -591,12 +670,14 @@ function App() {
           <div className="winner-announcement">
             {winner === getMyColor() ? (
               <>
-                <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>You WON!!!!</h2>
+                <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>
+                  {translations[language].youWon}
+                </h2>
                 {showConfetti && <ConfettiOverlay />}
               </>
             ) : (
               <>
-                <h2 style={{ color: '#888' }}>Sorry, you lost.</h2>
+                <h2 style={{ color: '#888' }}>{translations[language].youLost}</h2>
                 <div className="rain">
                   {Array.from({ length: 60 }).map((_, i) => (
                     <div
@@ -615,19 +696,19 @@ function App() {
             <button onClick={() => {
               initializeGame();
               setScreen('home');
-            }}>Back to Home</button>
+            }}>{translations[language].backToHome}</button>
           </div>
         )}
         <div className="game-info-container">
           <div className="game-status">
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? 'Your Turn' : `${opponent}'s Turn`}
+              {isMyTurn ? translations[language].yourTurn : translations[language].opponentTurn(opponent)}
               <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-                Time left: {timeLeft}s
+                {translations[language].timeLeft(timeLeft)}
               </div>
             </div>
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? 'Select a piece to move.' : `Waiting for ${opponent}'s move...`}
+              {isMyTurn ? translations[language].selectPiece : translations[language].waitingForMove(opponent)}
             </div>
           </div>
         </div>
