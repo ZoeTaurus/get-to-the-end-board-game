@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import LoadingScreen from './components/LoadingScreen';
 import './App.css';
@@ -54,6 +54,7 @@ function App() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(30);
   const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
+  const isMyTurnRef = useRef(isMyTurn);
 
   useEffect(() => {
     // Socket event listeners
@@ -151,6 +152,8 @@ function App() {
       socket.off('gameOver');
     };
   }, [board, currentPlayer, username, opponent]);
+
+  useEffect(() => { isMyTurnRef.current = isMyTurn; }, [isMyTurn]);
 
   // Handle login
   const handleLogin = (username: string) => {
@@ -310,34 +313,16 @@ function App() {
     const blueWin = newBoard.some((row, rowIndex) => 
       row[5] !== null && row[5].color === 'blue'  // Blue piece on rightmost column
     );
-
     const redWin = newBoard.some((row, rowIndex) => 
       row[0] !== null && row[0].color === 'red'  // Red piece on leftmost column
     );
-
-    if (blueWin || redWin) {
-      const winner = blueWin ? 'blue' : 'red';
-      setWinner(winner);
-      setGameMessage(`${players[winner].username} WINS by reaching the end!`);
-      return winner;
-    }
-
+    if (blueWin) return 'blue';
+    if (redWin) return 'red';
     // Check for capturing all opponent pieces
     const bluePiecesExist = newBoard.flat().some(cell => cell && cell.color === 'blue');
     const redPiecesExist = newBoard.flat().some(cell => cell && cell.color === 'red');
-
-    if (!bluePiecesExist) {
-      setWinner('red');
-      setGameMessage(`${players['red'].username} WINS by capturing all opponent pieces!`);
-      return 'red';
-    }
-
-    if (!redPiecesExist) {
-      setWinner('blue');
-      setGameMessage(`${players['blue'].username} WINS by capturing all opponent pieces!`);
-      return 'blue';
-    }
-
+    if (!bluePiecesExist) return 'red';
+    if (!redPiecesExist) return 'blue';
     return null;
   };
 
@@ -444,8 +429,8 @@ function App() {
     const newTimerId = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
-          // Only emit gameOver if it's my turn
-          if (isMyTurn) {
+          // Only emit gameOver if it's my turn (using ref)
+          if (isMyTurnRef.current) {
             const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
             socket.emit('gameOver', { gameId, winner: otherPlayer, message: `${players[otherPlayer].username} wins by timeout!` });
           }
@@ -456,9 +441,9 @@ function App() {
       });
     }, 1000);
     setTimerId(newTimerId);
-  }, [isMyTurn, getMyColor, players, gameId, timerId]);
+  }, [getMyColor, players, gameId, timerId]);
 
-  // Clean up timer on unmount
+  // Clean up timer on unmount and logout
   useEffect(() => {
     return () => {
       if (timerId) {
