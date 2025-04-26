@@ -239,10 +239,7 @@ button {
   height: 120%;
   transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.5);
   border-radius: 50%;
-  background-size: cover;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  border: 8px solid #ccc;
 }
 
 .piece.circle:hover {
@@ -273,20 +270,19 @@ button {
 }
 
 .eaten-count {
-  position: absolute;
-  top: -20px;
-  right: -20px;
+  width: 60px;
+  height: 60px;
+  font-size: 36px;
+  top: 50%;
+  left: 100%;
+  right: auto;
+  transform: translate(-60%, -50%);
   background: white;
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
+  border: 4px solid #333;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 28px;
-  border: 3px solid #333;
   font-weight: bold;
-  transform: rotate(90deg) translateZ(5px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   z-index: 2;
   pointer-events: none;
@@ -296,25 +292,34 @@ button {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   pointer-events: none;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .confetti-piece {
   position: absolute;
-  width: 10px;
-  height: 30px;
-  background: #ffd300;
-  top: 0;
-  opacity: 0;
-  animation: confetti 5s ease-in-out infinite;
+  width: 12px;
+  height: 24px;
+  border-radius: 3px;
+  opacity: 0.85;
+  animation: confetti-fall 2.5s linear forwards;
+  will-change: transform, opacity;
 }
 
-@keyframes confetti {
-  0% { transform: rotate(0deg) translate(0, 0); opacity: 1; }
-  100% { transform: rotate(360deg) translate(300px, 1000px); opacity: 0; }
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-40px) rotateZ(0deg) scale(1);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotateZ(360deg) scale(0.8);
+    opacity: 0.7;
+  }
 }
 
 @media (max-width: 1200px) {
@@ -619,6 +624,7 @@ button {
     width: 110%;
     height: 110%;
     transform: translate(-50%, -50%) translateZ(4px) scale(0.8);
+    border-width: 3px;
   }
 
   .piece:not(.circle):hover {
@@ -634,7 +640,10 @@ button {
     height: 40px;
     font-size: 22px;
     top: -12px;
+    left: auto;
     right: -12px;
+    transform: none;
+    border-width: 2px;
   }
 
   .home-screen h1 {
@@ -708,6 +717,7 @@ button {
     width: 100%;
     height: 100%;
     transform: translate(-50%, -50%) translateZ(4px) scale(1.0);
+    border-width: 2px;
   }
 
   .eaten-count {
@@ -715,7 +725,10 @@ button {
     height: 32px;
     font-size: 18px;
     top: -8px;
+    left: auto;
     right: -8px;
+    transform: none;
+    border-width: 1.5px;
   }
 
   .player-indicator {

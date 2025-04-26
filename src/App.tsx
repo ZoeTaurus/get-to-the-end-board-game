@@ -134,11 +134,23 @@ function App() {
       setScreen('home');
     });
 
+    socket.on('gameOver', (data) => {
+      setWinner(data.winner);
+      setGameMessage(data.message);
+      setGameStarted(false);
+      if (data.winner === getMyColor()) {
+        createConfetti();
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 2500);
+      }
+    });
+
     return () => {
       socket.off('waiting');
       socket.off('gameStart');
       socket.off('moveMade');
       socket.off('playerDisconnected');
+      socket.off('gameOver');
     };
   }, [board, currentPlayer, username, opponent]);
 
@@ -207,33 +219,26 @@ function App() {
     initializeGame();
   }, []);
 
-  // Function to create confetti elements
+  // Update createConfetti to use new animation and random colors/angles
   const createConfetti = useCallback(() => {
     const confetti = document.createElement('div');
     confetti.className = 'confetti';
     document.body.appendChild(confetti);
-
-    for (let i = 0; i < 100; i++) {
+    const colors = ['#ffd300', '#de561c', '#ff3366', '#4a90e2', '#00c48c', '#ffb900'];
+    for (let i = 0; i < 60; i++) {
       const piece = document.createElement('div');
       piece.className = 'confetti-piece';
-      piece.style.left = `${Math.random() * 100}%`;
-      piece.style.backgroundColor = ['#ffd300', '#de561c', '#ff3366', '#4a90e2'][Math.floor(Math.random() * 4)];
-      piece.style.animationDelay = `${Math.random() * 3}s`;
+      piece.style.left = `${Math.random() * 100}vw`;
+      piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+      piece.style.animationDelay = `${Math.random() * 0.7}s`;
+      piece.style.animationDuration = `${2 + Math.random() * 1.5}s`;
       confetti.appendChild(piece);
     }
-
     setTimeout(() => {
-      document.body.removeChild(confetti);
-    }, 5000);
+      if (confetti.parentNode) confetti.parentNode.removeChild(confetti);
+    }, 2500);
   }, []);
-
-  useEffect(() => {
-    if (winner) {
-      createConfetti();
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 5000);
-    }
-  }, [winner, createConfetti]);
 
   // Calculate valid moves for a selected piece
   const calculateValidMoves = (board: (Piece | null)[][], row: number, col: number) => {
@@ -330,7 +335,7 @@ function App() {
       const winner = blueWin ? 'blue' : 'red';
       setWinner(winner);
       setGameMessage(`${players[winner].username} WINS by reaching the end!`);
-      return true;
+      return winner;
     }
 
     // Check for capturing all opponent pieces
@@ -340,16 +345,16 @@ function App() {
     if (!bluePiecesExist) {
       setWinner('red');
       setGameMessage(`${players['red'].username} WINS by capturing all opponent pieces!`);
-      return true;
+      return 'red';
     }
 
     if (!redPiecesExist) {
       setWinner('blue');
       setGameMessage(`${players['blue'].username} WINS by capturing all opponent pieces!`);
-      return true;
+      return 'blue';
     }
 
-    return false;
+    return null;
   };
 
   const handleCellClick = (rowIndex: number, colIndex: number) => {
@@ -398,7 +403,7 @@ function App() {
         newBoard[selectedRow][selectedCol] = null;
         
         // Check for win condition before emitting move
-        const hasWinner = checkWinCondition(newBoard, colIndex);
+        const winnerColor = checkWinCondition(newBoard, colIndex);
         
         // Emit move to server with full board state
         socket.emit('makeMove', {
@@ -417,9 +422,13 @@ function App() {
         setValidCaptures([]);
         
         // Only update turn state if there's no winner
-        if (!hasWinner) {
+        if (!winnerColor) {
           setIsMyTurn(false);
           setCurrentPlayer(prev => prev === 'red' ? 'blue' : 'red');
+        }
+
+        if (winnerColor === 'red' || winnerColor === 'blue') {
+          socket.emit('gameOver', { gameId, winner: winnerColor, message: `${players[winnerColor].username} wins!` });
         }
       }
     } 
