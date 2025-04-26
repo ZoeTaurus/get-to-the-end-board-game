@@ -139,9 +139,7 @@ function App() {
       setGameMessage(data.message);
       setGameStarted(false);
       if (data.winner === getMyColor()) {
-        createConfetti();
         setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 2500);
       }
     });
 
@@ -217,27 +215,6 @@ function App() {
   // Start new game on component mount
   useEffect(() => {
     initializeGame();
-  }, []);
-
-  // Update createConfetti to use new animation and random colors/angles
-  const createConfetti = useCallback(() => {
-    const confetti = document.createElement('div');
-    confetti.className = 'confetti';
-    document.body.appendChild(confetti);
-    const colors = ['#ffd300', '#de561c', '#ff3366', '#4a90e2', '#00c48c', '#ffb900'];
-    for (let i = 0; i < 60; i++) {
-      const piece = document.createElement('div');
-      piece.className = 'confetti-piece';
-      piece.style.left = `${Math.random() * 100}vw`;
-      piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      piece.style.transform = `rotate(${Math.random() * 360}deg)`;
-      piece.style.animationDelay = `${Math.random() * 0.7}s`;
-      piece.style.animationDuration = `${2 + Math.random() * 1.5}s`;
-      confetti.appendChild(piece);
-    }
-    setTimeout(() => {
-      if (confetti.parentNode) confetti.parentNode.removeChild(confetti);
-    }, 2500);
   }, []);
 
   // Calculate valid moves for a selected piece
@@ -608,7 +585,7 @@ function App() {
             {winner === getMyColor() ? (
               <>
                 <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>You WON!!!!</h2>
-                {showConfetti && <div className="confetti" />}
+                {showConfetti && <ConfettiOverlay />}
               </>
             ) : (
               <>
@@ -692,5 +669,27 @@ function App() {
     </div>
   );
 }
+
+// Add ConfettiOverlay component
+const ConfettiOverlay = () => {
+  const colors = ['#ffd300', '#de561c', '#ff3366', '#4a90e2', '#00c48c', '#ffb900'];
+  return (
+    <div className="confetti">
+      {Array.from({ length: 60 }).map((_, i) => (
+        <div
+          key={i}
+          className="confetti-piece"
+          style={{
+            left: `${Math.random() * 100}vw`,
+            backgroundColor: colors[Math.floor(Math.random() * colors.length)],
+            transform: `rotate(${Math.random() * 360}deg)`,
+            animationDelay: `${Math.random() * 0.7}s`,
+            animationDuration: `${2 + Math.random() * 1.5}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
 export default App; 
