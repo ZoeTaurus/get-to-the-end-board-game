@@ -156,7 +156,6 @@ function App() {
   };
 
   const handleLogoutConfirm = () => {
-    // Reset all game states
     setIsLoggedIn(false);
     setGameStarted(false);
     setWinner(null);
@@ -165,17 +164,11 @@ function App() {
     setValidCaptures([]);
     setGameMessage('');
     setShowConfetti(false);
-    
-    // Reset players but keep the structure
     setPlayers({
       red: { color: 'red', username: '' },
       blue: { color: 'blue', username: 'Player 2' }
     });
-    
-    // Remove login state
     localStorage.removeItem('isLoggedIn');
-    
-    // Reset the screen to home and close the confirmation dialog
     setScreen('home');
     setShowLogoutConfirm(false);
   };
@@ -496,6 +489,9 @@ function App() {
     }
   }, [winner, timerId]);
 
+  // Helper to get local player's color
+  const getMyColor = () => username === players.red.username ? 'red' : 'blue';
+
   const HomeScreen = () => (
     <div className="home-screen">
       <h1>Get To The End</h1>
@@ -600,9 +596,29 @@ function App() {
       <div className="game-content">
         {winner && (
           <div className="winner-announcement">
-            <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>
-              {players[winner].username} WINS!
-            </h2>
+            {winner === getMyColor() ? (
+              <>
+                <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>You WON!!!!</h2>
+                {showConfetti && <div className="confetti" />}
+              </>
+            ) : (
+              <>
+                <h2 style={{ color: '#888' }}>Sorry, you lost.</h2>
+                <div className="rain">
+                  {Array.from({ length: 60 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="raindrop"
+                      style={{
+                        left: `${Math.random() * 100}vw`,
+                        animationDelay: `${Math.random()}s`,
+                        animationDuration: `${0.8 + Math.random() * 0.7}s`,
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
             <button onClick={() => {
               initializeGame();
               setScreen('home');
@@ -613,11 +629,11 @@ function App() {
           <div className="game-status">
             <div className="player-indicator" style={{ backgroundColor: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
               {isMyTurn ? 'Your Turn' : `${opponent}'s Turn`}
-              <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px' }}>
+              <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
                 Time left: {timeLeft}s
               </div>
             </div>
-            <div className="game-message" style={{ color: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
+            <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
               {isMyTurn ? 'Select a piece to move.' : `Waiting for ${opponent}'s move...`}
             </div>
           </div>
