@@ -55,6 +55,7 @@ function App() {
   const [timeLeft, setTimeLeft] = useState<number>(30);
   const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
   const isMyTurnRef = useRef(isMyTurn);
+  const [language, setLanguage] = useState('en');
 
   useEffect(() => {
     // Socket event listeners
@@ -490,6 +491,17 @@ function App() {
         >
           Logout
         </button>
+        <select 
+          className="language-select"
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+        >
+          <option value="en">English</option>
+          <option value="zh">中文 (Chinese)</option>
+          <option value="pt">Português (Portuguese)</option>
+          <option value="th">ไทย (Thai)</option>
+          <option value="ar">العربية (Arabic)</option>
+        </select>
       </div>
       <p className="coming-soon">More stuff coming soon!</p>
       {/* Logout Confirmation Dialog */}
