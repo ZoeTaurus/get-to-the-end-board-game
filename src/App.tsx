@@ -3,11 +3,10 @@ import { io, Socket } from 'socket.io-client';
 import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import Login from './Login';
-import { getTranslation, formatMessage, languageList, languageDisplayNames } from './translations';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
-type GameScreen = 'home' | 'game' | 'help' | 'login';
+type GameScreen = 'home' | 'game' | 'help';
 
 interface Piece {
   type: PieceType;
@@ -22,13 +21,7 @@ interface Player {
 
 const socket = io(window.location.origin);
 
-const App: React.FC = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(
-    localStorage.getItem('language') || 'English'
-  );
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [currentScreen, setCurrentScreen] = useState<'home' | 'game' | 'help'>('home');
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState<boolean>(false);
+function App() {
   const [screen, setScreen] = useState<GameScreen>('home');
   const [board, setBoard] = useState<(Piece | null)[][]>(
     Array(4).fill(null).map(() => Array(6).fill(null))
@@ -41,12 +34,14 @@ const App: React.FC = () => {
   const [validCaptures, setValidCaptures] = useState<[number, number][]>([]);
   const [gameMessage, setGameMessage] = useState<string>('');
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [opponent, setOpponent] = useState('');
   const [gameId, setGameId] = useState('');
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [players, setPlayers] = useState<{red: Player, blue: Player}>(() => {
+    // Try to get saved player data from local storage
     const savedPlayers = localStorage.getItem('players');
     if (savedPlayers) {
       return JSON.parse(savedPlayers);
@@ -56,31 +51,9 @@ const App: React.FC = () => {
       blue: { color: 'blue', username: 'Player 2' }
     };
   });
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(30);
   const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
-
-  const handleLanguageChange = (language: string) => {
-    setSelectedLanguage(language);
-    localStorage.setItem('language', language);
-  };
-
-  const handleLogout = () => {
-    setShowLogoutConfirm(true);
-  };
-
-  const confirmLogout = () => {
-    setIsLoggedIn(false);
-    setScreen('home');
-    setShowLogoutConfirm(false);
-    localStorage.removeItem('username');
-    localStorage.removeItem('players');
-  };
-
-  const cancelLogout = () => {
-    setShowLogoutConfirm(false);
-  };
-
-  const t = getTranslation(selectedLanguage);
 
   useEffect(() => {
     // Socket event listeners
@@ -173,7 +146,42 @@ const App: React.FC = () => {
   const handleLogin = (username: string) => {
     setUsername(username);
     setIsLoggedIn(true);
+    // Remove automatic game search
     setScreen('home');
+  };
+
+  // Handle logout
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    // Reset all game states
+    setIsLoggedIn(false);
+    setGameStarted(false);
+    setWinner(null);
+    setSelectedPiece(null);
+    setValidMoves([]);
+    setValidCaptures([]);
+    setGameMessage('');
+    setShowConfetti(false);
+    
+    // Reset players but keep the structure
+    setPlayers({
+      red: { color: 'red', username: '' },
+      blue: { color: 'blue', username: 'Player 2' }
+    });
+    
+    // Remove login state
+    localStorage.removeItem('isLoggedIn');
+    
+    // Reset the screen to home and close the confirmation dialog
+    setScreen('home');
+    setShowLogoutConfirm(false);
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutConfirm(false);
   };
 
   // Initialize the game
@@ -328,7 +336,7 @@ const App: React.FC = () => {
     if (blueWin || redWin) {
       const winner = blueWin ? 'blue' : 'red';
       setWinner(winner);
-      setGameMessage(formatMessage(t.game.wins, { player: players[winner].username }));
+      setGameMessage(`${players[winner].username} WINS by reaching the end!`);
       return true;
     }
 
@@ -338,13 +346,13 @@ const App: React.FC = () => {
 
     if (!bluePiecesExist) {
       setWinner('red');
-      setGameMessage(formatMessage(t.game.wins, { player: players['red'].username }));
+      setGameMessage(`${players['red'].username} WINS by capturing all opponent pieces!`);
       return true;
     }
 
     if (!redPiecesExist) {
       setWinner('blue');
-      setGameMessage(formatMessage(t.game.wins, { player: players['blue'].username }));
+      setGameMessage(`${players['blue'].username} WINS by capturing all opponent pieces!`);
       return true;
     }
 
@@ -455,7 +463,7 @@ const App: React.FC = () => {
           // Time's up - end game and declare other player as winner
           const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
           setWinner(otherPlayer);
-          setGameMessage(formatMessage(t.game.wins, { player: players[otherPlayer].username }));
+          setGameMessage(`${players[otherPlayer].username} WINS by timeout!`);
           clearInterval(newTimerId);
           return 0;
         }
@@ -488,69 +496,84 @@ const App: React.FC = () => {
     }
   }, [winner, timerId]);
 
-  // Update game messages with translations
-  useEffect(() => {
-    if (winner) {
-      setGameMessage(formatMessage(t.game.wins, { player: players[winner].username }));
-    } else if (isMyTurn) {
-      setGameMessage(t.game.selectPiece);
-    } else if (opponent) {
-      setGameMessage(formatMessage(t.game.waitingForMove, { opponent }));
-    }
-  }, [winner, isMyTurn, opponent, players, t]);
-
-  const HomeScreen: React.FC<{
-    onStartGame: () => void;
-    onShowHelp: () => void;
-    onLogout: () => void;
-  }> = ({ onStartGame, onShowHelp, onLogout }) => {
-    const t = getTranslation(selectedLanguage);
-    return (
-      <div className="home-screen">
-        <h1>Get To The End</h1>
-        <button onClick={onStartGame}>Play Game</button>
-        <button onClick={onShowHelp}>Help</button>
-        <button onClick={onLogout}>Logout</button>
-        <div className="coming-soon">More stuff coming soon!</div>
+  const HomeScreen = () => (
+    <div className="home-screen">
+      <h1>Get To The End</h1>
+      <div className="home-buttons">
+        <button type="button" onClick={() => {
+          socket.emit('joinQueue', username);
+          setIsSearching(true);
+        }}>
+          Play Game
+        </button>
+        <button type="button" onClick={() => setScreen('help')}>
+          Help
+        </button>
+        <button
+          type="button"
+          onClick={handleLogoutClick}
+          className="logout-button"
+        >
+          Logout
+        </button>
       </div>
-    );
-  };
-
-  const HelpScreen: React.FC<{
-    onBackToHome: () => void;
-    onLogout: () => void;
-    selectedLanguage: string;
-  }> = ({ onBackToHome, onLogout, selectedLanguage }) => {
-    const t = getTranslation(selectedLanguage);
-    return (
-      <div className="help-screen">
-        <h1>{t.help.title}</h1>
-        <div className="help-content">
-          <h2>{t.help.pieces}</h2>
-          <div className="piece-info">
-            <h3>{t.help.personPiece}</h3>
-            <p>{t.help.personMove}</p>
-            <p>{t.help.personEat}</p>
+      <p className="coming-soon">More stuff coming soon!</p>
+      {/* Logout Confirmation Dialog */}
+      {showLogoutConfirm && (
+        <div className="logout-confirm-overlay">
+          <div className="logout-confirm-dialog">
+            <h2>Are you sure you want to logout?</h2>
+            <div className="logout-confirm-buttons">
+              <button onClick={handleLogoutConfirm} className="confirm-yes">Yes</button>
+              <button onClick={handleLogoutCancel} className="confirm-no">No</button>
+            </div>
           </div>
-          <div className="piece-info">
-            <h3>{t.help.circlePiece}</h3>
-            <p>{t.help.circleMove}</p>
-            <p>{t.help.circleEat}</p>
-            <p>{t.help.circleLimit}</p>
-          </div>
-          <h2>{t.help.howToWin}</h2>
-          <p>{t.help.winByCapture}</p>
-          <p>{t.help.winByReach}</p>
-          <h2>{t.help.setup}</h2>
-          <p>{t.help.setupDescription}</p>
-          <p>{t.help.watchVideo}</p>
-          <button>{t.help.watchButton}</button>
         </div>
-        <button onClick={onBackToHome}>{t.game.backToHome}</button>
-        <button onClick={onLogout}>{t.game.logout}</button>
+      )}
+    </div>
+  );
+
+  const HelpScreen = () => (
+    <div className="help-screen">
+      <div className="help-content">
+        <h2>How to Play</h2>
+        
+        <h3>Pieces</h3>
+        <p><strong>Person-shaped piece:</strong></p>
+        <ul>
+          <li>Can move back, forth, and sideways</li>
+          <li>Can only eat opponent's pieces diagonally</li>
+        </ul>
+
+        <p><strong>Circle-shaped piece:</strong></p>
+        <ul>
+          <li>Can move in any direction</li>
+          <li>Can eat in any direction</li>
+          <li>Can only eat 2 pieces before getting full</li>
+        </ul>
+
+        <h3>How to Win</h3>
+        <ul>
+          <li>Eat all opponent's pieces, OR</li>
+          <li>Get to the other side of the board</li>
+        </ul>
+
+        <h3>Setup</h3>
+        <p>Starting from the left: Place 2 person-shaped pieces, then a circle-shaped piece, and finally another person-shaped piece.</p>
+
+        <div className="video-section">
+          <p>Still don't get it? Watch this video!</p>
+          <a href="https://youtu.be/ZJ1hJTOzmhg" target="_blank" rel="noopener noreferrer" className="video-button">
+            Watch Tutorial Video
+          </a>
+        </div>
+
+        <button onClick={() => setScreen('home')} className="back-button">
+          Back to Home
+        </button>
       </div>
-    );
-  };
+    </div>
+  );
 
   // Show loading screen when searching for opponent
   if (isSearching) {
@@ -559,28 +582,16 @@ const App: React.FC = () => {
 
   // If not logged in, show login screen
   if (!isLoggedIn) {
-    return <Login 
-      onLogin={handleLogin} 
-      selectedLanguage={selectedLanguage}
-      onLanguageChange={handleLanguageChange}
-    />;
+    return <Login onLogin={handleLogin} />;
   }
 
   // Show different screens based on state
   if (screen === 'home') {
-    return <HomeScreen
-      onStartGame={() => setScreen('game')}
-      onShowHelp={() => setScreen('help')}
-      onLogout={handleLogout}
-    />;
+    return <HomeScreen />;
   }
 
   if (screen === 'help') {
-    return <HelpScreen
-      onBackToHome={() => setScreen('home')}
-      onLogout={handleLogout}
-      selectedLanguage={selectedLanguage}
-    />;
+    return <HelpScreen />;
   }
 
   // Game screen (existing game content)
@@ -590,24 +601,24 @@ const App: React.FC = () => {
         {winner && (
           <div className="winner-announcement">
             <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>
-              {formatMessage(t.game.wins, { player: players[winner].username })}
+              {players[winner].username} WINS!
             </h2>
             <button onClick={() => {
               initializeGame();
               setScreen('home');
-            }}>{t.game.backToHome}</button>
+            }}>Back to Home</button>
           </div>
         )}
         <div className="game-info-container">
           <div className="game-status">
             <div className="player-indicator" style={{ backgroundColor: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? t.game.yourTurn : formatMessage(t.game.opponentTurn, { opponent })}
+              {isMyTurn ? 'Your Turn' : `${opponent}'s Turn`}
               <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px' }}>
-                {formatMessage(t.game.timeLeft, { seconds: timeLeft.toString() })}
+                Time left: {timeLeft}s
               </div>
             </div>
             <div className="game-message" style={{ color: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? t.game.selectPiece : formatMessage(t.game.waitingForMove, { opponent })}
+              {isMyTurn ? 'Select a piece to move.' : `Waiting for ${opponent}'s move...`}
             </div>
           </div>
         </div>
@@ -652,20 +663,9 @@ const App: React.FC = () => {
             ))}
           </div>
         </div>
-        {showLogoutConfirm && (
-          <div className="logout-confirm-overlay">
-            <div className="logout-confirm-dialog">
-              <p>{t.logout.confirm}</p>
-              <div className="logout-confirm-buttons">
-                <button onClick={confirmLogout}>{t.logout.yes}</button>
-                <button onClick={cancelLogout}>{t.logout.no}</button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
-};
+}
 
 export default App; 
