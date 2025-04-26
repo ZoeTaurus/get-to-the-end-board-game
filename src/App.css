@@ -325,74 +325,68 @@
   justify-content: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 20px;
+  padding: 0 20px;
   text-align: center;
 }
 
 .home-screen h1 {
-  font-size: 4.5rem;
-  color: #2c3e50;
-  margin-bottom: 40px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-  font-weight: bold;
+  font-size: 4rem;
+  color: #222;
+  margin-bottom: 48px;
+  font-weight: 900;
   letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .home-buttons {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 22px;
   width: 100%;
-  max-width: 300px;
-  margin-bottom: 30px;
+  max-width: 340px;
+  margin-bottom: 38px;
 }
 
 .home-buttons button {
-  padding: 15px 0;
-  font-size: 1.5rem;
+  padding: 18px 0;
+  font-size: 1.4rem;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s cubic-bezier(.4,0,.2,1);
   width: 100%;
-  font-weight: bold;
+  font-weight: 700;
   letter-spacing: 1px;
-  text-transform: uppercase;
+  box-shadow: 0 2px 12px rgba(44,62,80,0.07);
+  outline: none;
 }
 
 .home-buttons button:first-child {
   background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 }
 
 .home-buttons button:nth-child(2) {
   background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
 }
 
 .home-buttons .logout-button {
   background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
 }
 
 .home-buttons button:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-}
-
-.home-buttons button:active {
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 24px rgba(44,62,80,0.13);
 }
 
 .coming-soon {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: #7f8c8d;
-  margin-top: 20px;
+  margin-top: 18px;
   font-style: italic;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.04);
   animation: pulse 2s infinite;
   letter-spacing: 1px;
 }
@@ -615,13 +609,20 @@
   }
 
   .home-screen h1 {
-    font-size: 3rem;
-    margin-bottom: 30px;
+    font-size: 2.5rem;
+    margin-bottom: 32px;
+  }
+
+  .home-buttons {
+    max-width: 95vw;
+    gap: 14px;
+    margin-bottom: 24px;
   }
 
   .home-buttons button {
-    padding: 12px 0;
-    font-size: 1.3rem;
+    font-size: 1.1rem;
+    padding: 13px 0;
+    border-radius: 10px;
   }
 
   .help-screen .help-content {
@@ -687,13 +688,24 @@
   }
 
   .home-screen h1 {
-    font-size: 2.5rem;
-    margin-bottom: 25px;
+    font-size: 1.5rem;
+    margin-bottom: 18px;
+  }
+
+  .home-buttons {
+    gap: 8px;
+    margin-bottom: 12px;
   }
 
   .home-buttons button {
-    padding: 10px 0;
-    font-size: 1.2rem;
+    font-size: 0.95rem;
+    padding: 9px 0;
+    border-radius: 8px;
+  }
+
+  .coming-soon {
+    font-size: 0.9rem;
+    margin-top: 10px;
   }
 }
 
