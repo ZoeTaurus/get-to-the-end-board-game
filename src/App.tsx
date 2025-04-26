@@ -437,7 +437,6 @@ function App() {
     const newTimerId = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
-          // Only emit gameOver if it's my turn
           if (isMyTurnRef.current) {
             const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
             socket.emit('gameOver', { 
@@ -491,17 +490,21 @@ function App() {
         >
           Logout
         </button>
-        <select 
-          className="language-select"
-          value={language}
-          onChange={(e) => setLanguage(e.target.value)}
-        >
-          <option value="en">English</option>
-          <option value="zh">中文 (Chinese)</option>
-          <option value="pt">Português (Portuguese)</option>
-          <option value="th">ไทย (Thai)</option>
-          <option value="ar">العربية (Arabic)</option>
-        </select>
+        <div className="language-select-container">
+          <label htmlFor="language-select">Select Language:</label>
+          <select 
+            id="language-select"
+            className="language-select"
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+          >
+            <option value="en">English</option>
+            <option value="zh">中文 (Chinese)</option>
+            <option value="pt">Português (Portuguese)</option>
+            <option value="th">ไทย (Thai)</option>
+            <option value="ar">العربية (Arabic)</option>
+          </select>
+        </div>
       </div>
       <p className="coming-soon">More stuff coming soon!</p>
       {/* Logout Confirmation Dialog */}

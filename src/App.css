@@ -298,29 +298,27 @@ button {
   height: 100vh;
   pointer-events: none;
   z-index: 2000;
+  overflow: hidden;
 }
 
 .confetti-piece {
   position: absolute;
-  width: 12px;
-  height: 24px;
-  border-radius: 3px;
-  opacity: 0.85;
-  animation: confetti-fall 2.5s linear forwards;
-  will-change: transform, opacity;
+  width: 10px;
+  height: 10px;
+  background-color: #f00;
+  opacity: 0.8;
+  animation: confetti-fall 3s linear forwards;
+  transform-origin: center;
 }
 
 @keyframes confetti-fall {
   0% {
-    transform: translateY(-40px) rotateZ(0deg) scale(1);
-    opacity: 1;
-  }
-  80% {
+    transform: translateY(-100vh) rotate(0deg);
     opacity: 1;
   }
   100% {
-    transform: translateY(100vh) rotateZ(360deg) scale(0.8);
-    opacity: 0.7;
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
   }
 }
 
@@ -419,28 +417,35 @@ button {
 }
 
 .language-select {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
-  color: white !important;
+  background: #f0f0f0 !important;
+  color: #666 !important;
   text-align-last: center !important;
   appearance: none !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
-  padding-right: 30px !important;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e") !important;
+  padding: 12px 30px !important;
+  font-size: 1.2rem !important;
+  margin-top: 20px !important;
+  border: 1px solid #ddd !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e") !important;
   background-repeat: no-repeat !important;
   background-position: right 10px center !important;
   background-size: 20px !important;
+  box-shadow: none !important;
+  min-width: 200px !important;
+  max-width: 300px !important;
 }
 
 .language-select:hover {
-  transform: translateY(-2px) scale(1.04) !important;
-  box-shadow: 0 8px 32px rgba(44,62,80,0.18) !important;
+  transform: none !important;
+  box-shadow: none !important;
+  background-color: #e8e8e8 !important;
 }
 
 .language-select option {
   background: white;
   color: #222;
-  font-size: 1.5rem;
+  font-size: 1rem;
   padding: 10px;
 }
 
@@ -975,4 +980,18 @@ button {
   0% { top: -20px; opacity: 0.7; }
   80% { opacity: 0.7; }
   100% { top: 100vh; opacity: 0; }
+}
+
+.language-select-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.language-select-container label {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 8px;
 } 
