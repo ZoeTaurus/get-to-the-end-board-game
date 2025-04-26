@@ -235,15 +235,15 @@ button {
 }
 
 .piece.circle {
-  width: 120%;
-  height: 120%;
-  transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.5);
+  width: 100%;
+  height: 100%;
+  transform: translate(-50%, -50%) translateZ(4px) rotate(-90deg) scale(0.8);
   border-radius: 50%;
   border: 8px solid #ccc;
 }
 
 .piece.circle:hover {
-  transform: translate(-50%, -50%) translateZ(20px) rotate(-90deg) scale(0.8);
+  transform: translate(-50%, -50%) translateZ(20px) rotate(-90deg) scale(1.0);
 }
 
 .piece:not(.circle):hover {
@@ -623,8 +623,8 @@ button {
   }
 
   .piece.circle {
-    width: 110%;
-    height: 110%;
+    width: 80%;
+    height: 80%;
     transform: translate(-50%, -50%) translateZ(4px) scale(0.8);
     border-width: 3px;
   }
@@ -634,7 +634,7 @@ button {
   }
 
   .piece.circle:hover {
-    transform: translate(-50%, -50%) translateZ(4px) scale(0.25);
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.9);
   }
 
   .eaten-count {
@@ -717,10 +717,14 @@ button {
   }
 
   .piece.circle {
-    width: 100%;
-    height: 100%;
-    transform: translate(-50%, -50%) translateZ(4px) scale(1.0);
+    width: 70%;
+    height: 70%;
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.7);
     border-width: 2px;
+  }
+
+  .piece.circle:hover {
+    transform: translate(-50%, -50%) translateZ(4px) scale(0.8);
   }
 
   .eaten-count {
