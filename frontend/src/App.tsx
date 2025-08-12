@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import Login from './Login';
+import TimerService from './timerService';
 
 type PlayerColor = 'red' | 'blue';
 type PieceType = 'person' | 'circle';
@@ -36,8 +37,8 @@ const App: React.FC = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(30);
   
-  // Simple timer that actually ends the game
-  const [gameTimer, setGameTimer] = useState<NodeJS.Timeout | null>(null);
+  // Timer service instance
+  const timerServiceRef = useRef(new TimerService());
   
   // Player state
   const [players, setPlayers] = useState<Record<PlayerColor, Player>>({
@@ -108,41 +109,12 @@ const App: React.FC = () => {
     return () => clearInterval(displayTimer);
   }, [gameStarted, winner]);
 
-  // ACTUAL GAME TIMER - This one ends the game when it reaches 0
+  // Stop internal timer when game ends
   useEffect(() => {
-    if (!gameStarted || winner) {
-      return;
+    if (winner || !gameStarted) {
+      timerServiceRef.current.stopTimer();
     }
-
-    // Clear any existing timer
-    if (gameTimer) {
-      clearInterval(gameTimer);
-    }
-
-    // Start new timer that counts down from 30
-    const newTimer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          // Time's up! End the game
-          const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-          setWinner(otherPlayer);
-          setGameMessage(`${otherPlayer} wins by timeout!`);
-          clearInterval(newTimer);
-          return 30;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    setGameTimer(newTimer);
-
-    // Cleanup function
-    return () => {
-      if (newTimer) {
-        clearInterval(newTimer);
-      }
-    };
-  }, [gameStarted, winner, currentPlayer]); // Reset timer when currentPlayer changes (new turn)
+  }, [winner, gameStarted]);
 
   // Reset display timer when turns change
   useEffect(() => {
@@ -172,7 +144,13 @@ const App: React.FC = () => {
   const startGame = () => {
     setGameStarted(true);
     setScreen('game');
-    setTimeLeft(30); // Reset display timer
+    
+    // Start the internal timer with timeout callback
+    timerServiceRef.current.startTimer(() => {
+      const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+      setWinner(otherPlayer);
+      setGameMessage(`${otherPlayer} wins by timeout!`);
+    });
   };
 
   // Function to create confetti elements
@@ -316,6 +294,14 @@ const App: React.FC = () => {
           const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
           setCurrentPlayer(nextPlayer);
           setGameMessage(`It's ${players[nextPlayer].username}'s turn`);
+          
+          // Reset internal timer for next player
+          timerServiceRef.current.resetTimer(() => {
+            const otherPlayer = nextPlayer === 'red' ? 'blue' : 'red';
+            setWinner(otherPlayer);
+            setGameMessage(`${otherPlayer} wins by timeout!`);
+          });
+          
           setTimeLeft(30); // Update display immediately
         }
       }

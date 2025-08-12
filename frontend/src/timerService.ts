@@ -1,23 +1,24 @@
 class TimerService {
   private timerId: NodeJS.Timeout | null = null;
   private onTimeout: (() => void) | null = null;
+  private timeLeft: number = 30; // Stored as a class property
 
   startTimer(onTimeout: () => void) {
     this.stopTimer();
     this.onTimeout = onTimeout;
+    this.timeLeft = 30; // Initialize when starting
     
-    let timeLeft = 30;
     console.log('Timer started: 30 seconds');
     
     this.timerId = setInterval(() => {
-      timeLeft -= 1;
-      console.log('Timer tick:', timeLeft);
+      this.timeLeft -= 1;
+      console.log('Timer tick:', this.timeLeft);
       
-      if (timeLeft <= 0) {
+      if (this.timeLeft <= 0) {
         console.log('Timer reached 0! Ending game...');
         this.stopTimer();
         if (this.onTimeout) {
-          this.onTimeout(); // This will show the lose/win messages
+          this.onTimeout();
         }
       }
     }, 1000);
@@ -26,19 +27,19 @@ class TimerService {
   resetTimer(onTimeout: () => void) {
     this.stopTimer();
     this.onTimeout = onTimeout;
+    this.timeLeft = 30; // Initialize when resetting
     
-    let timeLeft = 30;
     console.log('Timer reset: 30 seconds');
     
     this.timerId = setInterval(() => {
-      timeLeft -= 1;
-      console.log('Timer tick:', timeLeft);
+      this.timeLeft -= 1;
+      console.log('Timer tick:', this.timeLeft);
       
-      if (timeLeft <= 0) {
+      if (this.timeLeft <= 0) {
         console.log('Timer reached 0! Ending game...');
         this.stopTimer();
         if (this.onTimeout) {
-          this.onTimeout(); // This will show the lose/win messages
+          this.onTimeout();
         }
       }
     }, 1000);
