@@ -25,6 +25,10 @@ class TimerService {
 
   resetTimer() {
     this.currentTime = 30;
+    // Restart the timer with the existing callback
+    if (this.onTimeout) {
+      this.startTimer(this.onTimeout);
+    }
   }
 
   stopTimer() {
