@@ -107,7 +107,7 @@ const App: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(displayTimer);
-  }, [gameStarted, winner, currentPlayer]);
+  }, [gameStarted, winner]);
 
   // Internal timer that actually ends the game (separate from display)
   useEffect(() => {
@@ -115,6 +115,13 @@ const App: React.FC = () => {
       timerServiceRef.current.stopTimer();
     }
   }, [winner, gameStarted]);
+
+  // Reset display timer when turns change
+  useEffect(() => {
+    if (gameStarted && !winner) {
+      setTimeLeft(30);
+    }
+  }, [currentPlayer, gameStarted, winner]);
 
   const handleLogin = (username: string) => {
     if (!username.trim()) {
