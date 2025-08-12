@@ -47,7 +47,7 @@ const App: React.FC = () => {
 
   // Initialize game when it starts
   const initializeGame = useCallback(() => {
-    const newBoard: (Piece | null)[][] = Array(5).fill(null).map(() => Array(5).fill(null));
+    const newBoard: (Piece | null)[][] = Array(4).fill(null).map(() => Array(6).fill(null));
     
     // Initialize red pieces (left side)
     newBoard[0][0] = { type: 'person', color: 'red', eatenCount: 0 };
@@ -56,10 +56,10 @@ const App: React.FC = () => {
     newBoard[3][0] = { type: 'circle', color: 'red', eatenCount: 0 };
     
     // Initialize blue pieces (right side)
-    newBoard[0][4] = { type: 'person', color: 'blue', eatenCount: 0 };
-    newBoard[1][4] = { type: 'person', color: 'blue', eatenCount: 0 };
-    newBoard[2][4] = { type: 'person', color: 'blue', eatenCount: 0 };
-    newBoard[3][4] = { type: 'circle', color: 'blue', eatenCount: 0 };
+    newBoard[0][5] = { type: 'person', color: 'blue', eatenCount: 0 };
+    newBoard[1][5] = { type: 'person', color: 'blue', eatenCount: 0 };
+    newBoard[2][5] = { type: 'person', color: 'blue', eatenCount: 0 };
+    newBoard[3][5] = { type: 'circle', color: 'blue', eatenCount: 0 };
     
     setBoard(newBoard);
     setCurrentPlayer('red');
@@ -232,7 +232,7 @@ const App: React.FC = () => {
   };
 
   const isValidPosition = (row: number, col: number): boolean => {
-    return row >= 0 && row < 5 && col >= 0 && col < 5;
+    return row >= 0 && row < 4 && col >= 0 && col < 6;
   };
 
   // Check win conditions
@@ -246,44 +246,6 @@ const App: React.FC = () => {
         }
       }
     }
-    
-    // Check if any piece has reached the opposite side
-    for (let col = 0; col < board[0].length; col++) {
-      // Check if red piece reached the right side (col 4)
-      if (board[0][col] && board[0][col]?.color === 'red') {
-        return 'red';
-      }
-      if (board[1][col] && board[1][col]?.color === 'red') {
-        return 'red';
-      }
-      if (board[2][col] && board[2][col]?.color === 'red') {
-        return 'red';
-      }
-      if (board[3][col] && board[3][col]?.color === 'red') {
-        return 'red';
-      }
-      if (board[4][col] && board[4][col]?.color === 'red') {
-        return 'red';
-      }
-      
-      // Check if blue piece reached the left side (col 0)
-      if (board[0][col] && board[0][col]?.color === 'blue') {
-        return 'blue';
-      }
-      if (board[1][col] && board[1][col]?.color === 'blue') {
-        return 'blue';
-      }
-      if (board[2][col] && board[2][col]?.color === 'blue') {
-        return 'blue';
-      }
-      if (board[3][col] && board[3][col]?.color === 'blue') {
-        return 'blue';
-      }
-      if (board[4][col] && board[4][col]?.color === 'blue') {
-        return 'blue';
-      }
-    }
-    
     return null;
   };
 
