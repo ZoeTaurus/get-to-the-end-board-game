@@ -180,7 +180,7 @@ const App: React.FC = () => {
         timerRef.current = null;
       }
     };
-  }, [gameStarted, currentPlayer, winner, players]);
+  }, [gameStarted, currentPlayer, winner]); // Removed players dependency
 
   // Calculate valid moves for a selected piece
   const calculateValidMoves = (row: number, col: number, piece: Piece): { moves: Position[], captures: Position[] } => {
