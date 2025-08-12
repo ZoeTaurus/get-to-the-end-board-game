@@ -90,6 +90,25 @@ const App: React.FC = () => {
     }
   }, [showConfetti]);
 
+  // Simple countdown display
+  useEffect(() => {
+    if (!gameStarted || winner) {
+      setTimeLeft(30);
+      return;
+    }
+
+    const countdown = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          return 30; // Reset to 30 for next turn
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdown);
+  }, [gameStarted, winner, currentPlayer]);
+
   // Stop timer when game ends
   useEffect(() => {
     if (winner || !gameStarted) {
@@ -119,14 +138,11 @@ const App: React.FC = () => {
     setScreen('game');
     
     // Start the timer
-    timerService.current.startTimer(
-      (time) => setTimeLeft(time), // onTick callback
-      () => { // onTimeout callback
-        const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-        setWinner(otherPlayer);
-        setGameMessage(`${otherPlayer} wins by timeout!`);
-      }
-    );
+    timerService.current.startTimer(() => {
+      const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+      setWinner(otherPlayer);
+      setGameMessage(`${otherPlayer} wins by timeout!`);
+    });
   };
 
   // Function to create confetti elements
