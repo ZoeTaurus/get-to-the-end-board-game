@@ -1,36 +1,55 @@
 class TimerService {
-  private currentTime: number = 30;
-  private intervalId: NodeJS.Timeout | null = null;
+  private timerId: NodeJS.Timeout | null = null;
+  private onTimeout: (() => void) | null = null;
 
-  startTimer() {
-    this.currentTime = 30;
-    this.intervalId = setInterval(() => {
-      this.currentTime--; // Count down from 30
-      if (this.currentTime === 0) { // Check if time = 0
-        console.log('Timer reached 0, ending game!'); // Debug log
-        this.endGame(); // End game if it = 0
+  startTimer(onTimeout: () => void) {
+    this.stopTimer();
+    this.onTimeout = onTimeout;
+    
+    let timeLeft = 30;
+    console.log('Timer started: 30 seconds');
+    
+    this.timerId = setInterval(() => {
+      timeLeft -= 1;
+      console.log('Timer tick:', timeLeft);
+      
+      if (timeLeft <= 0) {
+        console.log('Timer reached 0! Ending game...');
+        this.stopTimer();
+        if (this.onTimeout) {
+          this.onTimeout(); // This will show the lose/win messages
+        }
       }
     }, 1000);
   }
 
-  resetTimer() {
-    this.currentTime = 30;
+  resetTimer(onTimeout: () => void) {
+    this.stopTimer();
+    this.onTimeout = onTimeout;
+    
+    let timeLeft = 30;
+    console.log('Timer reset: 30 seconds');
+    
+    this.timerId = setInterval(() => {
+      timeLeft -= 1;
+      console.log('Timer tick:', timeLeft);
+      
+      if (timeLeft <= 0) {
+        console.log('Timer reached 0! Ending game...');
+        this.stopTimer();
+        if (this.onTimeout) {
+          this.onTimeout(); // This will show the lose/win messages
+        }
+      }
+    }, 1000);
   }
 
   stopTimer() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = null;
     }
-  }
-
-  private endGame() {
-    // End the game when timer reaches 0
-    console.log('endGame called, dispatching gameTimeout event'); // Debug log
-    this.stopTimer();
-    // Emit a custom event that the React app can listen to
-    window.dispatchEvent(new CustomEvent('gameTimeout'));
   }
 }
 
-export default new TimerService();
+export default TimerService;

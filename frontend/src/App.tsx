@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import Login from './Login';
-import timerService from './timerService';
+import TimerService from './timerService';
 
 type PlayerColor = 'red' | 'blue';
 type PieceType = 'person' | 'circle';
@@ -38,7 +38,7 @@ const App: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState<number>(30);
   
   // Timer service
-  const timerServiceRef = useRef(timerService);
+  const timerServiceRef = useRef(new TimerService());
   
   // Player state
   const [players, setPlayers] = useState<Record<PlayerColor, Player>>({
@@ -116,18 +116,6 @@ const App: React.FC = () => {
     }
   }, [winner, gameStarted]);
 
-  // Listen for timer timeout events from the timer service
-  useEffect(() => {
-    const handleGameTimeout = () => {
-      const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-      setWinner(otherPlayer);
-      setGameMessage(`${otherPlayer} wins by timeout!`);
-    };
-
-    window.addEventListener('gameTimeout', handleGameTimeout);
-    return () => window.removeEventListener('gameTimeout', handleGameTimeout);
-  }, [currentPlayer]);
-
   // Reset display timer when turns change
   useEffect(() => {
     if (gameStarted && !winner) {
@@ -152,12 +140,17 @@ const App: React.FC = () => {
     setScreen('home');
   };
 
+  // Start game function
   const startGame = () => {
     setGameStarted(true);
     setScreen('game');
     
-    // Start the timer
-    timerServiceRef.current.startTimer();
+    // Start the internal timer with timeout callback
+    timerServiceRef.current.startTimer(() => {
+      const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+      setWinner(otherPlayer);
+      setGameMessage(`${otherPlayer} wins by timeout!`);
+    });
   };
 
   // Function to create confetti elements
@@ -297,13 +290,20 @@ const App: React.FC = () => {
         }
 
         // Switch turns
-        const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-        setCurrentPlayer(nextPlayer);
-        setGameMessage(`It's ${players[nextPlayer].username}'s turn`);
-        
-                  // Reset timer for next player (just reset the time, don't restart)
-          timerServiceRef.current.resetTimer();
-        setTimeLeft(30);
+        if (!checkWinCondition(newBoard)) {
+          const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+          setCurrentPlayer(nextPlayer);
+          setGameMessage(`It's ${players[nextPlayer].username}'s turn`);
+          
+          // Reset internal timer for next player
+          timerServiceRef.current.resetTimer(() => {
+            const otherPlayer = nextPlayer === 'red' ? 'blue' : 'red';
+            setWinner(otherPlayer);
+            setGameMessage(`${otherPlayer} wins by timeout!`);
+          });
+          
+          setTimeLeft(30); // Also update display immediately
+        }
       }
       return;
     }
