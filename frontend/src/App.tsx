@@ -145,9 +145,13 @@ const App: React.FC = () => {
     setGameStarted(true);
     setScreen('game');
     
+    console.log('Starting game, starting timer...');
+    
     // Start the internal timer with timeout callback
     timerServiceRef.current.startTimer(() => {
+      console.log('TIMEOUT CALLBACK CALLED! Setting winner...');
       const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+      console.log('Setting winner to:', otherPlayer);
       setWinner(otherPlayer);
       setGameMessage(`${otherPlayer} wins by timeout!`);
     });
@@ -296,8 +300,11 @@ const App: React.FC = () => {
           setGameMessage(`It's ${players[nextPlayer].username}'s turn`);
           
           // Reset internal timer for next player
+          console.log('Resetting timer for next player:', nextPlayer);
           timerServiceRef.current.resetTimer(() => {
+            console.log('TIMEOUT CALLBACK CALLED ON TURN SWITCH! Setting winner...');
             const otherPlayer = nextPlayer === 'red' ? 'blue' : 'red';
+            console.log('Setting winner to:', otherPlayer);
             setWinner(otherPlayer);
             setGameMessage(`${otherPlayer} wins by timeout!`);
           });
