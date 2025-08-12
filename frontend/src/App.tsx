@@ -183,9 +183,9 @@ const App: React.FC = () => {
         timerRef.current = null;
       }
     };
-  }, [gameStarted, winner, currentPlayer]); // Added currentPlayer back
+  }, [gameStarted, winner]); // Only depend on game state, not currentPlayer
 
-  // Separate effect to reset timer when turn changes
+  // Reset timer when turn changes (separate effect)
   useEffect(() => {
     if (gameStarted && !winner) {
       setTimeLeft(30);
