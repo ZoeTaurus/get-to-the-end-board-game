@@ -137,7 +137,7 @@ const App: React.FC = () => {
     }
   }, [winner, createConfetti]);
 
-  // Timer effect: reset on turn change or game start
+  // Timer effect: simple countdown that resets on turn change
   useEffect(() => {
     // Clear any existing timer
     if (timerRef.current) {
@@ -157,7 +157,10 @@ const App: React.FC = () => {
     // Start new timer
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) {
+        const timer = prev - 1;
+        
+        // If timer hits 0, end the game
+        if (timer === 0) {
           // Clear the timer
           if (timerRef.current) {
             clearInterval(timerRef.current);
@@ -169,7 +172,8 @@ const App: React.FC = () => {
           setGameMessage(`${otherPlayer} wins by timeout!`);
           return 0;
         }
-        return prev - 1;
+        
+        return timer;
       });
     }, 1000);
 
