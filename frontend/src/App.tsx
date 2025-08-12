@@ -270,15 +270,9 @@ const App: React.FC = () => {
         setCurrentPlayer(nextPlayer);
         setGameMessage(`It's ${players[nextPlayer].username}'s turn`);
         
-        // Restart timer for next player
-        timerService.current.startTimer(
-          (time) => setTimeLeft(time), // onTick callback
-          () => { // onTimeout callback
-            const otherPlayer = nextPlayer === 'red' ? 'blue' : 'red';
-            setWinner(otherPlayer);
-            setGameMessage(`${otherPlayer} wins by timeout!`);
-          }
-        );
+        // Reset timer for next player (just reset the time, don't restart)
+        timerService.current.resetTimer();
+        setTimeLeft(30);
       }
       return;
     }
