@@ -1,35 +1,42 @@
 class TimerService {
-  private timerId: NodeJS.Timeout | null = null;
+  private currentTime: number = 30;
+  private intervalId: NodeJS.Timeout | null = null;
+  private onTimeout: (() => void) | null = null;
 
   startTimer(onTimeout: () => void) {
-    this.stopTimer();
+    this.onTimeout = onTimeout;
+    this.currentTime = 30;
     
-    let timeLeft = 30;
-    console.log('Internal timer started with 30 seconds');
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
     
-    this.timerId = setInterval(() => {
-      timeLeft -= 1;
-      console.log('Internal timer tick:', timeLeft);
+    this.intervalId = setInterval(() => {
+      this.currentTime--;
       
-      if (timeLeft <= 0) {
-        console.log('Internal timer reached 0, ending game');
+      if (this.currentTime <= 0) {
         this.stopTimer();
-        onTimeout();
+        if (this.onTimeout) {
+          this.onTimeout();
+        }
       }
     }, 1000);
   }
 
+  resetTimer() {
+    this.currentTime = 30;
+  }
+
   stopTimer() {
-    if (this.timerId) {
-      clearInterval(this.timerId);
-      this.timerId = null;
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
     }
   }
 
-  resetTimer(onTimeout: () => void) {
-    this.stopTimer();
-    this.startTimer(onTimeout);
+  getCurrentTime(): number {
+    return this.currentTime;
   }
 }
 
-export default TimerService;
+export default new TimerService();

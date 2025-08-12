@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import Login from './Login';
-import TimerService from './timerService';
+import timerService from './timerService';
 
 type PlayerColor = 'red' | 'blue';
 type PieceType = 'person' | 'circle';
@@ -38,7 +38,7 @@ const App: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState<number>(30);
   
   // Timer service
-  const timerService = useRef(new TimerService());
+  const timerServiceRef = useRef(timerService);
   
   // Player state
   const [players, setPlayers] = useState<Record<PlayerColor, Player>>({
@@ -112,7 +112,7 @@ const App: React.FC = () => {
   // Internal timer that actually ends the game (separate from display)
   useEffect(() => {
     if (winner || !gameStarted) {
-      timerService.current.stopTimer();
+      timerServiceRef.current.stopTimer();
     }
   }, [winner, gameStarted]);
 
@@ -138,7 +138,7 @@ const App: React.FC = () => {
     setScreen('game');
     
     // Start the timer
-    timerService.current.startTimer(() => {
+    timerServiceRef.current.startTimer(() => {
       const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
       setWinner(otherPlayer);
       setGameMessage(`${otherPlayer} wins by timeout!`);
@@ -286,12 +286,8 @@ const App: React.FC = () => {
         setCurrentPlayer(nextPlayer);
         setGameMessage(`It's ${players[nextPlayer].username}'s turn`);
         
-        // Reset timer for next player (just reset the time, don't restart)
-        timerService.current.resetTimer(() => {
-          const otherPlayer = nextPlayer === 'red' ? 'blue' : 'red';
-          setWinner(otherPlayer);
-          setGameMessage(`${otherPlayer} wins by timeout!`);
-        });
+                  // Reset timer for next player (just reset the time, don't restart)
+          timerServiceRef.current.resetTimer();
         setTimeLeft(30);
       }
       return;
