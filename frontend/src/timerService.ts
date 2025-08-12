@@ -24,11 +24,9 @@ class TimerService {
   }
 
   resetTimer() {
+    // Just reset the time value, don't restart the interval
+    // This allows the timer to continue counting down naturally
     this.currentTime = 30;
-    // Restart the timer with the existing callback
-    if (this.onTimeout) {
-      this.startTimer(this.onTimeout);
-    }
   }
 
   stopTimer() {
