@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import Login from './Login';
 
@@ -34,6 +34,8 @@ const App: React.FC = () => {
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMessage, setGameMessage] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number>(30);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Player state
   const [players, setPlayers] = useState<Record<PlayerColor, Player>>({
@@ -134,6 +136,51 @@ const App: React.FC = () => {
       setTimeout(() => setShowConfetti(false), 5000);
     }
   }, [winner, createConfetti]);
+
+  // Timer effect: reset on turn change or game start
+  useEffect(() => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    // Don't start timer if game hasn't started or there's a winner
+    if (!gameStarted || winner) {
+      setTimeLeft(30);
+      return;
+    }
+
+    // Reset timer to 30 seconds
+    setTimeLeft(30);
+    
+    // Start new timer
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          // Clear the timer
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+          // End the game if timer runs out
+          const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+          setWinner(otherPlayer);
+          setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Cleanup function
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [gameStarted, currentPlayer, winner, players]);
 
   // Calculate valid moves for a selected piece
   const calculateValidMoves = (row: number, col: number, piece: Piece): { moves: Position[], captures: Position[] } => {
@@ -347,7 +394,7 @@ const App: React.FC = () => {
             <div className="player-indicator" style={{ backgroundColor: currentPlayer === 'red' ? '#ff4444' : '#4444ff' }}>
               {players[currentPlayer].username}'s Turn
             </div>
-            <div className="game-message">{gameMessage}</div>
+            <div className="game-message">{gameMessage} <span style={{marginLeft: 20, color: '#888'}}>Time left: {timeLeft}s</span></div>
           </div>
         </div>
         
