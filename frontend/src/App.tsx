@@ -166,7 +166,7 @@ const App: React.FC = () => {
           // End the game if timer runs out
           const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
           setWinner(otherPlayer);
-          setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
+          setGameMessage(`${otherPlayer} wins by timeout!`);
           return 0;
         }
         return prev - 1;
@@ -180,7 +180,7 @@ const App: React.FC = () => {
         timerRef.current = null;
       }
     };
-  }, [gameStarted, winner, players]); // Removed currentPlayer to prevent constant resets
+  }, [gameStarted, winner]); // Removed players dependency to prevent constant resets
 
   // Separate effect to reset timer when turn changes
   useEffect(() => {
@@ -194,9 +194,6 @@ const App: React.FC = () => {
     const moves: Position[] = [];
     const captures: Position[] = [];
     
-    // Debug: Show the piece being analyzed
-    alert(`Calculating moves for ${piece.color} ${piece.type} at [${row}][${col}]`);
-    
     // Define all possible directions
     const personMoveDirections = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // up, down, left, right
     const personCaptureDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]]; // diagonals
@@ -205,14 +202,12 @@ const App: React.FC = () => {
     // Check captures first (since they take priority)
     if (piece.eatenCount < 2) { // Only check captures if the piece hasn't eaten 2 pieces yet
       const captureDirections = piece.type === 'person' ? personCaptureDirections : circleDirections;
-      
       for (const [dx, dy] of captureDirections) {
         const newRow = row + dx;
         const newCol = col + dy;
         
         if (isValidPosition(newRow, newCol)) {
           const targetPiece = board[newRow][newCol];
-          
           if (targetPiece && targetPiece.color !== piece.color) {
             captures.push({ row: newRow, col: newCol });
           }
@@ -223,22 +218,15 @@ const App: React.FC = () => {
     // Then check moves if no captures are available
     if (captures.length === 0) {
       const moveDirections = piece.type === 'person' ? personMoveDirections : circleDirections;
-      
       for (const [dx, dy] of moveDirections) {
         const newRow = row + dx;
         const newCol = col + dy;
         
-        if (isValidPosition(newRow, newCol)) {
-          const targetPiece = board[newRow][newCol];
-          
-          if (!targetPiece) {
-            moves.push({ row: newRow, col: newCol });
-          }
+        if (isValidPosition(newRow, newCol) && !board[newRow][newCol]) {
+          moves.push({ row: newRow, col: newCol });
         }
       }
     }
-    
-    alert(`Final result: ${moves.length} moves, ${captures.length} captures for ${piece.color} ${piece.type} at [${row}][${col}]`);
     
     return { moves, captures };
   };
@@ -266,9 +254,6 @@ const App: React.FC = () => {
     if (winner || !gameStarted) return;
 
     const clickedPiece = board[row][col];
-    
-    // Debug: Show what's being clicked
-    alert(`Clicked at [${row}][${col}]: ${clickedPiece ? `${clickedPiece.color} ${clickedPiece.type}` : 'No piece'}`);
     
     // If a piece is already selected
     if (selectedPiece) {
@@ -322,14 +307,10 @@ const App: React.FC = () => {
 
     // If no piece is selected yet
     if (clickedPiece && clickedPiece.color === currentPlayer) {
-      alert(`Selecting ${clickedPiece.color} ${clickedPiece.type} piece`);
       setSelectedPiece({ row, col });
       const { moves, captures } = calculateValidMoves(row, col, clickedPiece);
-      alert(`Calculated ${moves.length} moves and ${captures.length} captures`);
       setValidMoves(moves);
       setValidCaptures(captures);
-    } else {
-      alert(`Cannot select piece: ${clickedPiece ? `Wrong color: ${clickedPiece.color}` : 'No piece here'}`);
     }
   };
 
