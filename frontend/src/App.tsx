@@ -90,14 +90,14 @@ const App: React.FC = () => {
     }
   }, [showConfetti]);
 
-  // Simple countdown display
+  // Simple countdown display (dummy timer that just shows numbers)
   useEffect(() => {
     if (!gameStarted || winner) {
       setTimeLeft(30);
       return;
     }
 
-    const countdown = setInterval(() => {
+    const displayTimer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
           return 30; // Reset to 30 for next turn
@@ -106,10 +106,10 @@ const App: React.FC = () => {
       });
     }, 1000);
 
-    return () => clearInterval(countdown);
+    return () => clearInterval(displayTimer);
   }, [gameStarted, winner, currentPlayer]);
 
-  // Stop timer when game ends
+  // Internal timer that actually ends the game (separate from display)
   useEffect(() => {
     if (winner || !gameStarted) {
       timerService.current.stopTimer();
@@ -287,7 +287,11 @@ const App: React.FC = () => {
         setGameMessage(`It's ${players[nextPlayer].username}'s turn`);
         
         // Reset timer for next player (just reset the time, don't restart)
-        timerService.current.resetTimer();
+        timerService.current.resetTimer(() => {
+          const otherPlayer = nextPlayer === 'red' ? 'blue' : 'red';
+          setWinner(otherPlayer);
+          setGameMessage(`${otherPlayer} wins by timeout!`);
+        });
         setTimeLeft(30);
       }
       return;

@@ -1,10 +1,8 @@
 class TimerService {
   private timerId: NodeJS.Timeout | null = null;
-  private onTimeout: (() => void) | null = null;
 
   startTimer(onTimeout: () => void) {
     this.stopTimer();
-    this.onTimeout = onTimeout;
     
     let timeLeft = 30;
     
@@ -13,9 +11,7 @@ class TimerService {
       
       if (timeLeft <= 0) {
         this.stopTimer();
-        if (this.onTimeout) {
-          this.onTimeout();
-        }
+        onTimeout();
       }
     }, 1000);
   }
@@ -27,11 +23,9 @@ class TimerService {
     }
   }
 
-  resetTimer() {
+  resetTimer(onTimeout: () => void) {
     this.stopTimer();
-    if (this.onTimeout) {
-      this.startTimer(this.onTimeout);
-    }
+    this.startTimer(onTimeout);
   }
 }
 
