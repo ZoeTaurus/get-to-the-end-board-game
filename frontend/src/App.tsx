@@ -157,15 +157,14 @@ const App: React.FC = () => {
     // Start new timer
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
-        const timer = prev - 1;
+        const newTime = prev - 1;
         
-        // If timer hits 0, end the game
-        if (timer === 0) {
+        // If timer hits 0, end the game immediately
+        if (newTime <= 0) {
           // Clear the timer
-          if (timerRef.current) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
-          }
+          clearInterval(timerRef.current!);
+          timerRef.current = null;
+          
           // End the game if timer runs out
           const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
           setWinner(otherPlayer);
@@ -173,7 +172,7 @@ const App: React.FC = () => {
           return 0;
         }
         
-        return timer;
+        return newTime;
       });
     }, 1000);
 
@@ -184,7 +183,7 @@ const App: React.FC = () => {
         timerRef.current = null;
       }
     };
-  }, [gameStarted, winner]); // Removed players dependency to prevent constant resets
+  }, [gameStarted, winner, currentPlayer]); // Added currentPlayer back
 
   // Separate effect to reset timer when turn changes
   useEffect(() => {
