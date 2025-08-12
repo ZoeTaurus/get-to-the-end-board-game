@@ -34,7 +34,18 @@ class TimerService {
   }
 
   resetTimer() {
+    // Stop the current timer
+    this.stopTimer();
+    // Reset the time
     this.currentTime = 30;
+    // Update the display immediately
+    if (this.onTick) {
+      this.onTick(this.currentTime);
+    }
+    // Restart the timer with the same callbacks
+    if (this.onTick && this.onTimeout) {
+      this.startTimer(this.onTick, this.onTimeout);
+    }
   }
 
   getCurrentTime(): number {
