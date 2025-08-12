@@ -194,6 +194,9 @@ const App: React.FC = () => {
     const moves: Position[] = [];
     const captures: Position[] = [];
     
+    // Debug: Log the piece being analyzed
+    console.log(`Calculating moves for ${piece.color} ${piece.type} at [${row}][${col}]`);
+    
     // Define all possible directions
     const personMoveDirections = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // up, down, left, right
     const personCaptureDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]]; // diagonals
@@ -202,15 +205,24 @@ const App: React.FC = () => {
     // Check captures first (since they take priority)
     if (piece.eatenCount < 2) { // Only check captures if the piece hasn't eaten 2 pieces yet
       const captureDirections = piece.type === 'person' ? personCaptureDirections : circleDirections;
+      console.log(`Using ${piece.type} capture directions:`, captureDirections);
+      
       for (const [dx, dy] of captureDirections) {
         const newRow = row + dx;
         const newCol = col + dy;
         
+        console.log(`Checking capture at [${newRow}][${newCol}]`);
+        
         if (isValidPosition(newRow, newCol)) {
           const targetPiece = board[newRow][newCol];
+          console.log(`Target piece at [${newRow}][${newCol}]:`, targetPiece);
+          
           if (targetPiece && targetPiece.color !== piece.color) {
             captures.push({ row: newRow, col: newCol });
+            console.log(`Added capture at [${newRow}][${newCol}]`);
           }
+        } else {
+          console.log(`Position [${newRow}][${newCol}] is invalid`);
         }
       }
     }
@@ -218,20 +230,32 @@ const App: React.FC = () => {
     // Then check moves if no captures are available
     if (captures.length === 0) {
       const moveDirections = piece.type === 'person' ? personMoveDirections : circleDirections;
+      console.log(`Using ${piece.type} move directions:`, moveDirections);
+      
       for (const [dx, dy] of moveDirections) {
         const newRow = row + dx;
         const newCol = col + dy;
         
-        if (isValidPosition(newRow, newCol) && !board[newRow][newCol]) {
-          moves.push({ row: newRow, col: newCol });
+        console.log(`Checking move at [${newRow}][${newCol}]`);
+        
+        if (isValidPosition(newRow, newCol)) {
+          const targetPiece = board[newRow][newCol];
+          console.log(`Target at [${newRow}][${newCol}]:`, targetPiece);
+          
+          if (!targetPiece) {
+            moves.push({ row: newRow, col: newCol });
+            console.log(`Added move at [${newRow}][${newCol}]`);
+          } else {
+            console.log(`Position [${newRow}][${newCol}] is occupied by:`, targetPiece);
+          }
+        } else {
+          console.log(`Position [${newRow}][${newCol}] is invalid`);
         }
       }
     }
     
-    // Debug: Log moves for the problematic blue piece
-    if (row === 3 && col === 5 && piece.color === 'blue') {
-      console.log('Blue piece at [3][5] - Type:', piece.type, 'Moves:', moves, 'Captures:', captures);
-    }
+    console.log(`Final moves for ${piece.color} ${piece.type} at [${row}][${col}]:`, moves);
+    console.log(`Final captures for ${piece.color} ${piece.type} at [${row}][${col}]:`, captures);
     
     return { moves, captures };
   };
@@ -259,6 +283,11 @@ const App: React.FC = () => {
     if (winner || !gameStarted) return;
 
     const clickedPiece = board[row][col];
+    
+    // Debug: Log what's being clicked
+    console.log(`Clicked at [${row}][${col}]:`, clickedPiece);
+    console.log('Current player:', currentPlayer);
+    console.log('Board state:', board);
     
     // If a piece is already selected
     if (selectedPiece) {
@@ -312,10 +341,15 @@ const App: React.FC = () => {
 
     // If no piece is selected yet
     if (clickedPiece && clickedPiece.color === currentPlayer) {
+      console.log('Selecting piece:', clickedPiece);
       setSelectedPiece({ row, col });
       const { moves, captures } = calculateValidMoves(row, col, clickedPiece);
+      console.log('Calculated moves:', moves);
+      console.log('Calculated captures:', captures);
       setValidMoves(moves);
       setValidCaptures(captures);
+    } else {
+      console.log('Cannot select piece:', clickedPiece ? `Wrong color: ${clickedPiece.color}` : 'No piece here');
     }
   };
 
