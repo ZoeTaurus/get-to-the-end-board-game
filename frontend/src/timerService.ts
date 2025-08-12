@@ -1,31 +1,18 @@
 class TimerService {
   private currentTime: number = 30;
   private intervalId: NodeJS.Timeout | null = null;
-  private onTimeout: (() => void) | null = null;
 
-  startTimer(onTimeout: () => void) {
-    this.onTimeout = onTimeout;
+  startTimer() {
     this.currentTime = 30;
-    
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-    }
-    
     this.intervalId = setInterval(() => {
-      this.currentTime--;
-      
-      if (this.currentTime <= 0) {
-        this.stopTimer();
-        if (this.onTimeout) {
-          this.onTimeout();
-        }
+      this.currentTime--; // Count down from 30
+      if (this.currentTime === 0) { // Check if time = 0
+        this.endGame(); // End game if it = 0
       }
     }, 1000);
   }
 
   resetTimer() {
-    // Just reset the time value, don't restart the interval
-    // This allows the timer to continue counting down naturally
     this.currentTime = 30;
   }
 
@@ -36,8 +23,11 @@ class TimerService {
     }
   }
 
-  getCurrentTime(): number {
-    return this.currentTime;
+  private endGame() {
+    // End the game when timer reaches 0
+    this.stopTimer();
+    // Emit a custom event that the React app can listen to
+    window.dispatchEvent(new CustomEvent('gameTimeout'));
   }
 }
 

@@ -116,6 +116,18 @@ const App: React.FC = () => {
     }
   }, [winner, gameStarted]);
 
+  // Listen for timer timeout events from the timer service
+  useEffect(() => {
+    const handleGameTimeout = () => {
+      const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+      setWinner(otherPlayer);
+      setGameMessage(`${otherPlayer} wins by timeout!`);
+    };
+
+    window.addEventListener('gameTimeout', handleGameTimeout);
+    return () => window.removeEventListener('gameTimeout', handleGameTimeout);
+  }, [currentPlayer]);
+
   // Reset display timer when turns change
   useEffect(() => {
     if (gameStarted && !winner) {
@@ -145,11 +157,7 @@ const App: React.FC = () => {
     setScreen('game');
     
     // Start the timer
-    timerServiceRef.current.startTimer(() => {
-      const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-      setWinner(otherPlayer);
-      setGameMessage(`${otherPlayer} wins by timeout!`);
-    });
+    timerServiceRef.current.startTimer();
   };
 
   // Function to create confetti elements
