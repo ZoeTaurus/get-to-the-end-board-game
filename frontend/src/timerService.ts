@@ -10,6 +10,8 @@ class TimerService {
     this.onTick = onTick;
     this.onTimeout = onTimeout;
     
+    console.log('Timer started with 30 seconds');
+    
     this.timerId = setInterval(() => {
       this.currentTime -= 1;
       
@@ -18,9 +20,13 @@ class TimerService {
       }
       
       if (this.currentTime <= 0) {
+        console.log('Timer reached 0, calling timeout callback');
         this.stopTimer();
         if (this.onTimeout) {
+          console.log('Executing timeout callback');
           this.onTimeout();
+        } else {
+          console.log('No timeout callback found');
         }
       }
     }, 1000);
