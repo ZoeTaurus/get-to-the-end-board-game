@@ -59,7 +59,7 @@ const App: React.FC = () => {
     newBoard[0][5] = { type: 'person', color: 'blue', eatenCount: 0 };
     newBoard[1][5] = { type: 'person', color: 'blue', eatenCount: 0 };
     newBoard[2][5] = { type: 'person', color: 'blue', eatenCount: 0 };
-    newBoard[3][5] = { type: 'circle', color: 'blue', eatenCount: 0 };
+    newBoard[3][5] = { type: 'person', color: 'blue', eatenCount: 0 };
     
     setBoard(newBoard);
     setCurrentPlayer('red');
