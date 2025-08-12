@@ -30,8 +30,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   }, []);
 
   const validatePassword = (pass: string) => {
-    if (pass.length < 6) {
-      return 'Password must be at least 6 characters long';
+    if (pass.length < 4) {
+      return 'Password must be at least 4 characters long';
     }
     return '';
   };
@@ -131,7 +131,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               />
               <input
                 type="password"
-                placeholder="Password (min 6 characters)"
+                placeholder="Password (min 4 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
