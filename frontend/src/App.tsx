@@ -180,7 +180,14 @@ const App: React.FC = () => {
         timerRef.current = null;
       }
     };
-  }, [gameStarted, currentPlayer, winner]); // Removed players dependency
+  }, [gameStarted, winner]); // Removed currentPlayer dependency
+
+  // Separate effect to reset timer when turn changes
+  useEffect(() => {
+    if (gameStarted && !winner) {
+      setTimeLeft(30);
+    }
+  }, [currentPlayer, gameStarted, winner]);
 
   // Calculate valid moves for a selected piece
   const calculateValidMoves = (row: number, col: number, piece: Piece): { moves: Position[], captures: Position[] } => {
