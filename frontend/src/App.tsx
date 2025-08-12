@@ -180,7 +180,7 @@ const App: React.FC = () => {
         timerRef.current = null;
       }
     };
-  }, [gameStarted, winner, currentPlayer, players]); // Added back currentPlayer and players dependencies
+  }, [gameStarted, winner, players]); // Removed currentPlayer to prevent constant resets
 
   // Separate effect to reset timer when turn changes
   useEffect(() => {
@@ -193,11 +193,6 @@ const App: React.FC = () => {
   const calculateValidMoves = (row: number, col: number, piece: Piece): { moves: Position[], captures: Position[] } => {
     const moves: Position[] = [];
     const captures: Position[] = [];
-    
-    // Debug logging for the problematic blue piece
-    if (row === 3 && col === 5 && piece.color === 'blue') {
-      console.log('Debugging blue piece at [3][5]:', piece);
-    }
     
     // Define all possible directions
     const personMoveDirections = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // up, down, left, right
@@ -233,12 +228,9 @@ const App: React.FC = () => {
       }
     }
     
-    // Debug logging for the problematic blue piece
+    // Debug: Log moves for the problematic blue piece
     if (row === 3 && col === 5 && piece.color === 'blue') {
-      console.log('Valid moves:', moves);
-      console.log('Valid captures:', captures);
-      console.log('Piece type:', piece.type);
-      console.log('Eaten count:', piece.eatenCount);
+      console.log('Blue piece at [3][5] - Type:', piece.type, 'Moves:', moves, 'Captures:', captures);
     }
     
     return { moves, captures };
