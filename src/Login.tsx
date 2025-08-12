@@ -30,17 +30,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   }, []);
 
   const validatePassword = (pass: string) => {
-    if (pass.length < 10) {
-      return 'Password must be at least 10 characters long';
-    }
-    if (!/[A-Z]/.test(pass)) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!/[0-9]/.test(pass)) {
-      return 'Password must contain at least one number';
-    }
-    if (!/[!@#$%^&*]/.test(pass)) {
-      return 'Password must contain at least one special character (!@#$%^&*)';
+    if (pass.length < 6) {
+      return 'Password must be at least 6 characters long';
     }
     return '';
   };
@@ -140,7 +131,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               />
               <input
                 type="password"
-                placeholder="Password (min 10 chars, 1 uppercase, 1 number, 1 special)"
+                placeholder="Password (min 6 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
