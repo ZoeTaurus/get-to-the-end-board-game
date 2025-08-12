@@ -90,6 +90,13 @@ const App: React.FC = () => {
     }
   }, [showConfetti]);
 
+  // Stop timer when game ends
+  useEffect(() => {
+    if (winner || !gameStarted) {
+      timerService.current.stopTimer();
+    }
+  }, [winner, gameStarted]);
+
   const handleLogin = (username: string) => {
     if (!username.trim()) {
       alert('Please enter a valid username');
@@ -263,8 +270,15 @@ const App: React.FC = () => {
         setCurrentPlayer(nextPlayer);
         setGameMessage(`It's ${players[nextPlayer].username}'s turn`);
         
-        // Reset timer for next player
-        timerService.current.resetTimer();
+        // Restart timer for next player
+        timerService.current.startTimer(
+          (time) => setTimeLeft(time), // onTick callback
+          () => { // onTimeout callback
+            const otherPlayer = nextPlayer === 'red' ? 'blue' : 'red';
+            setWinner(otherPlayer);
+            setGameMessage(`${otherPlayer} wins by timeout!`);
+          }
+        );
       }
       return;
     }
