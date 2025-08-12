@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import Login from './Login';
+import TimerService from './timerService';
 
 type PlayerColor = 'red' | 'blue';
 type PieceType = 'person' | 'circle';
@@ -35,7 +36,9 @@ const App: React.FC = () => {
   const [gameMessage, setGameMessage] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(30);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Timer service
+  const timerService = useRef(new TimerService());
   
   // Player state
   const [players, setPlayers] = useState<Record<PlayerColor, Player>>({
@@ -107,6 +110,16 @@ const App: React.FC = () => {
   const startGame = () => {
     setGameStarted(true);
     setScreen('game');
+    
+    // Start the timer
+    timerService.current.startTimer(
+      (time) => setTimeLeft(time), // onTick callback
+      () => { // onTimeout callback
+        const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+        setWinner(otherPlayer);
+        setGameMessage(`${otherPlayer} wins by timeout!`);
+      }
+    );
   };
 
   // Function to create confetti elements
@@ -136,61 +149,6 @@ const App: React.FC = () => {
       setTimeout(() => setShowConfetti(false), 5000);
     }
   }, [winner, createConfetti]);
-
-  // Timer effect: simple countdown that resets on turn change
-  useEffect(() => {
-    // Clear any existing timer
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
-    // Don't start timer if game hasn't started or there's a winner
-    if (!gameStarted || winner) {
-      setTimeLeft(30);
-      return;
-    }
-
-    // Reset timer to 30 seconds
-    setTimeLeft(30);
-    
-    // Start new timer
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        const newTime = prev - 1;
-        
-        // If timer hits 0, end the game immediately
-        if (newTime <= 0) {
-          // Clear the timer
-          clearInterval(timerRef.current!);
-          timerRef.current = null;
-          
-          // End the game if timer runs out
-          const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-          setWinner(otherPlayer);
-          setGameMessage(`${otherPlayer} wins by timeout!`);
-          return 0;
-        }
-        
-        return newTime;
-      });
-    }, 1000);
-
-    // Cleanup function
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [gameStarted, winner]); // Only depend on game state, not currentPlayer
-
-  // Reset timer when turn changes (separate effect)
-  useEffect(() => {
-    if (gameStarted && !winner) {
-      setTimeLeft(30);
-    }
-  }, [currentPlayer, gameStarted, winner]);
 
   // Calculate valid moves for a selected piece
   const calculateValidMoves = (row: number, col: number, piece: Piece): { moves: Position[], captures: Position[] } => {
@@ -304,6 +262,9 @@ const App: React.FC = () => {
         const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
         setCurrentPlayer(nextPlayer);
         setGameMessage(`It's ${players[nextPlayer].username}'s turn`);
+        
+        // Reset timer for next player
+        timerService.current.resetTimer();
       }
       return;
     }
