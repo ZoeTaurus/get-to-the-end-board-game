@@ -1,12 +1,12 @@
-import { EventEmitter } from "events";
-
-class TurnTimer extends EventEmitter {
+class TurnTimer {
   private timerId: NodeJS.Timeout | null = null;
   private timeLeft: number;
   private gameOver = false;
 
-  constructor(private readonly duration: number) {
-    super();
+  constructor(
+    private readonly duration: number,
+    private readonly onTimeout: () => void // THIS will directly call your win logic
+  ) {
     this.timeLeft = duration;
   }
 
@@ -15,7 +15,7 @@ class TurnTimer extends EventEmitter {
 
     this.stop();
     this.timeLeft = this.duration;
-    console.log(`🕒 New turn: ${this.duration} seconds`);
+    console.log(`🕒 New turn started: ${this.duration} seconds`);
 
     this.timerId = setInterval(() => {
       this.timeLeft--;
@@ -31,10 +31,12 @@ class TurnTimer extends EventEmitter {
   private triggerTimeout() {
     if (this.gameOver) return;
 
+    console.log("💥 TIMER HIT 0 — TRIGGERING WIN SEQUENCE");
     this.gameOver = true;
     this.stop();
-    console.log("💥 TIMER HIT 0 — EMITTING TIMEOUT EVENT");
-    this.emit("timeout"); // <-- broadcast to other code
+
+    // 🔥 DIRECTLY CALL THE WIN FUNCTION HERE
+    this.onTimeout();
   }
 
   stop() {

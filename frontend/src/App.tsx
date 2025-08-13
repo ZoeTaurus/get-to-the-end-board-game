@@ -204,10 +204,7 @@ const App: React.FC = () => {
     
     // Start the internal timer with timeout callback
     const currentPlayerAtStart = currentPlayer; // Capture current player
-    timerRef.current = new TurnTimer(30);
-    
-    // Listen for timeout event
-    timerRef.current.on('timeout', () => {
+    timerRef.current = new TurnTimer(30, () => {
       console.log('💥 TIMER HIT 0 — Player timed out, setting winner');
       
       // For local games, directly set the winner (opposite player wins)
@@ -367,10 +364,7 @@ const App: React.FC = () => {
           // Reset internal timer for next player
           console.log('Resetting timer for next player:', nextPlayer);
           const nextPlayerAtStart = nextPlayer; // Capture next player
-          timerRef.current = new TurnTimer(30);
-          
-          // Listen for timeout event
-          timerRef.current.on('timeout', () => {
+          timerRef.current = new TurnTimer(30, () => {
             console.log('💥 TURN SWITCH TIMER HIT 0 — Player timed out, setting winner');
             
             // For local games, directly set the winner (opposite player wins)
