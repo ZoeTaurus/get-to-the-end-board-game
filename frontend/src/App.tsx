@@ -52,6 +52,7 @@ class TurnTimer {
       this.onTimeUpdate(this.timeLeft);
 
       if (this.timeLeft <= 0) {
+        console.log('🕐 TurnTimer: Time hit 0, calling onTimeout callback');
         this.stop();
         this.onTimeout();
       }
@@ -135,7 +136,7 @@ const App: React.FC = () => {
     if (!gameStarted || winner) return;
 
     const currentPlayerAtStart = currentPlayer;
-    console.log('🕒 Timer useEffect triggered for player:', currentPlayerAtStart, 'gameStarted:', gameStarted, 'winner:', winner);
+    console.log('🕒 Timer useEffect triggered for player:', currentPlayerAtStart);
 
     // Stop any existing timer
     if (timerRef.current) {
@@ -170,7 +171,7 @@ const App: React.FC = () => {
     return () => {
       timerRef.current?.stop();
     };
-  }, [currentPlayer, gameStarted, winner, players]);
+  }, [currentPlayer, gameStarted, players]);
 
   // Stop internal timer when game ends
   useEffect(() => {
@@ -228,24 +229,14 @@ const App: React.FC = () => {
 
   // Start game function
   const startGame = () => {
-    console.log('🎮 startGame called - setting up game...');
     setGameStarted(true);
     setScreen('game');
     setWinner(null);
     setGameMessage('');
     setShowConfetti(false);
-    setTimeLeft(30);
     
     console.log('Starting game...');
   };
-
-  // Ensure timer starts when game starts
-  useEffect(() => {
-    if (gameStarted && !winner) {
-      console.log('🎯 Game started, initializing timer...');
-      // The main timer useEffect will handle the rest
-    }
-  }, [gameStarted, winner]);
 
   // Function to create confetti elements
   const createConfetti = useCallback(() => {
