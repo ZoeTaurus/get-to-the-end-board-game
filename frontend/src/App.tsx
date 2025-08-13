@@ -466,6 +466,23 @@ const App: React.FC = () => {
   // Game screen (existing game content)
   return (
     <div className="app">
+      {/* TEST MESSAGE - REMOVE AFTER TESTING */}
+      <div style={{
+        position: 'fixed',
+        top: '10px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'red',
+        color: 'white',
+        padding: '10px 20px',
+        borderRadius: '5px',
+        zIndex: 9999,
+        fontSize: '18px',
+        fontWeight: 'bold'
+      }}>
+        🚨 I LIKE FARTS 🚨
+      </div>
+      
       <div className="game-content">
         {winner && (
           <div className="winner-announcement">
