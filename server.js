@@ -7,13 +7,16 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
+// Trust proxy for Railway deployment
+app.set('trust proxy', true);
+
 // Security middleware
 const rateLimit = require('express-rate-limit');
 
-// Rate limiting to prevent brute force attacks
+// Rate limiting to prevent brute force attacks (more lenient)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 20, // limit each IP to 20 requests per windowMs (was 5)
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -21,7 +24,7 @@ const loginLimiter = rateLimit({
 
 const generalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 200, // limit each IP to 200 requests per windowMs (was 100)
   message: 'Too many requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -100,10 +103,10 @@ io.use((socket, next) => {
   
   console.log(`🔍 New connection attempt from IP: ${clientIP}, User-Agent: ${userAgent}`);
   
-  // Rate limit connections per IP
+  // Rate limit connections per IP (more lenient)
   if (connectedIPs.has(clientIP)) {
     const lastConnection = connectedIPs.get(clientIP);
-    if (now - lastConnection < 1000) { // 1 second between connections
+    if (now - lastConnection < 100) { // 100ms between connections (was 1000ms)
       console.log(`🚫 Rate limit exceeded for IP: ${clientIP}`);
       return next(new Error('Connection rate limit exceeded'));
     }
