@@ -131,9 +131,11 @@ const App: React.FC = () => {
     }
   }, [showConfetti]);
 
-  // Timer logic - handles 30-second turns per player
+  // Timer logic - handles 30-second turns per player - FORCE DEPLOY TEST
   useEffect(() => {
     if (!gameStarted || winner) return;
+
+    console.log('🚀 FORCE DEPLOY TEST - Timer useEffect running with new code!');
 
     const currentPlayerAtStart = currentPlayer;
     console.log('🕒 Timer useEffect triggered for player:', currentPlayerAtStart);
