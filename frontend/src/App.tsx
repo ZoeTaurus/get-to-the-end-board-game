@@ -148,9 +148,10 @@ const App: React.FC = () => {
     console.log('Starting game, starting timer...');
     
     // Start the internal timer with timeout callback
+    const currentPlayerAtStart = currentPlayer; // Capture current player
     timerRef.current = new TurnTimer(30, () => {
       console.log('TIMEOUT CALLBACK CALLED! Setting winner...');
-      const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+      const otherPlayer = currentPlayerAtStart === 'red' ? 'blue' : 'red';
       console.log('Setting winner to:', otherPlayer);
       setWinner(otherPlayer);
       setGameMessage(`${otherPlayer} wins by timeout!`);
@@ -302,9 +303,10 @@ const App: React.FC = () => {
           
           // Reset internal timer for next player
           console.log('Resetting timer for next player:', nextPlayer);
+          const nextPlayerAtStart = nextPlayer; // Capture next player
           timerRef.current = new TurnTimer(30, () => {
             console.log('TIMEOUT CALLBACK CALLED ON TURN SWITCH! Setting winner...');
-            const otherPlayer = nextPlayer === 'red' ? 'blue' : 'red';
+            const otherPlayer = nextPlayerAtStart === 'red' ? 'blue' : 'red';
             console.log('Setting winner to:', otherPlayer);
             setWinner(otherPlayer);
             setGameMessage(`${otherPlayer} wins by timeout!`);
