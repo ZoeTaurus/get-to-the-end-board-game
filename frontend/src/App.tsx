@@ -3,6 +3,13 @@ import './App.css';
 import Login from './Login';
 import TurnTimer from './timerService';
 
+// Add socket type to window
+declare global {
+  interface Window {
+    socket: any;
+  }
+}
+
 type PlayerColor = 'red' | 'blue';
 type PieceType = 'person' | 'circle';
 type Screen = 'home' | 'game' | 'login' | 'help';
@@ -142,9 +149,34 @@ const App: React.FC = () => {
   }, [currentPlayer, gameStarted, winner]);
 
   // Handle timeout messages from server
+  const handleTimeoutMessage = (data: any) => {
+    console.log('⏰ Received timeout message:', data);
+    
+    // Determine which player wins (the one who didn't timeout)
+    const currentPlayerAtTimeout = currentPlayer;
+    const winner = currentPlayerAtTimeout === 'red' ? 'blue' : 'red';
+    
+    console.log('Setting winner to:', winner, 'Current player was:', currentPlayerAtTimeout);
+    
+    // Set the winner to trigger the UI
+    setWinner(winner);
+    setGameMessage(`${winner} wins by timeout!`);
+    
+    // Show confetti for the winner (other player)
+    setShowConfetti(true);
+    
+    console.log('Win sequence triggered - winner:', winner, 'confetti:', true);
+  };
+
+  // Handle timeout messages from server
   useEffect(() => {
-    // TODO: Implement socket timeout handling when socket is available
-    console.log('⏰ Timeout handler ready - waiting for socket connection');
+    if (window.socket) {
+      window.socket.on('timeout', handleTimeoutMessage);
+      
+      return () => {
+        window.socket.off('timeout', handleTimeoutMessage);
+      };
+    }
   }, [currentPlayer]);
 
   const handleLogin = (username: string) => {
@@ -174,19 +206,15 @@ const App: React.FC = () => {
     // Start the internal timer with timeout callback
     const currentPlayerAtStart = currentPlayer; // Capture current player
     timerRef.current = new TurnTimer(30, () => {
-      console.log('💥 TIMER HIT 0 — Setting winner and triggering win sequence');
-      // When timer hits 0, the other player wins
-      const otherPlayer = currentPlayerAtStart === 'red' ? 'blue' : 'red';
-      console.log('Setting winner to:', otherPlayer, 'Current player was:', currentPlayerAtStart);
-      
-      // Set the winner to trigger the UI
-      setWinner(otherPlayer);
-      setGameMessage(`${otherPlayer} wins by timeout!`);
-      
-      // Show confetti for the winner (other player)
-      setShowConfetti(true);
-      
-      console.log('Win sequence triggered - winner:', otherPlayer, 'confetti:', true);
+      console.log('💥 TIMER HIT 0 — Broadcasting timeout message to server');
+      // Broadcast timeout message to server
+      if (window.socket) {
+        window.socket.emit('timeout', {
+          gameId: 'local',
+          player: currentPlayerAtStart
+        });
+      }
+      console.log('Timeout message sent to server');
     });
     timerRef.current.startRound();
   };
@@ -337,19 +365,15 @@ const App: React.FC = () => {
           console.log('Resetting timer for next player:', nextPlayer);
           const nextPlayerAtStart = nextPlayer; // Capture next player
           timerRef.current = new TurnTimer(30, () => {
-            console.log('💥 TURN SWITCH TIMER HIT 0 — Setting winner and triggering win sequence');
-            // When timer hits 0, the other player wins
-            const otherPlayer = nextPlayerAtStart === 'red' ? 'blue' : 'red';
-            console.log('Setting winner to:', otherPlayer, 'Current player was:', nextPlayerAtStart);
-            
-            // Set the winner to trigger the UI
-            setWinner(otherPlayer);
-            setGameMessage(`${otherPlayer} wins by timeout!`);
-            
-            // Show confetti for the winner (other player)
-            setShowConfetti(true);
-            
-            console.log('Win sequence triggered - winner:', otherPlayer, 'confetti:', true);
+            console.log('💥 TURN SWITCH TIMER HIT 0 — Broadcasting timeout message to server');
+            // Broadcast timeout message to server
+            if (window.socket) {
+              window.socket.emit('timeout', {
+                gameId: 'local',
+                player: nextPlayerAtStart
+              });
+            }
+            console.log('Timeout message sent to server');
           });
           timerRef.current.startRound();
           
