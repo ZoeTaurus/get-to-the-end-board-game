@@ -454,35 +454,48 @@ const App: React.FC = () => {
     return <Login onLogin={handleLogin} />;
   }
 
+  // TEST MESSAGE - REMOVE AFTER TESTING
+  const testMessage = (
+    <div style={{
+      position: 'fixed',
+      top: '10px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      background: 'red',
+      color: 'white',
+      padding: '10px 20px',
+      borderRadius: '5px',
+      zIndex: 9999,
+      fontSize: '18px',
+      fontWeight: 'bold'
+    }}>
+      🚨 I LIKE FARTS 🚨
+    </div>
+  );
+
   // Show different screens based on state
   if (screen === 'home') {
-    return <HomeScreen />;
+    return (
+      <>
+        {testMessage}
+        <HomeScreen />
+      </>
+    );
   }
 
   if (screen === 'help') {
-    return <HelpScreen />;
+    return (
+      <>
+        {testMessage}
+        <HelpScreen />
+      </>
+    );
   }
 
   // Game screen (existing game content)
   return (
     <div className="app">
-      {/* TEST MESSAGE - REMOVE AFTER TESTING */}
-      <div style={{
-        position: 'fixed',
-        top: '10px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'red',
-        color: 'white',
-        padding: '10px 20px',
-        borderRadius: '5px',
-        zIndex: 9999,
-        fontSize: '18px',
-        fontWeight: 'bold'
-      }}>
-        🚨 I LIKE FARTS 🚨
-      </div>
-      
+      {testMessage}
       <div className="game-content">
         {winner && (
           <div className="winner-announcement">
