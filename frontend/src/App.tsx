@@ -34,17 +34,23 @@ interface Piece {
 const App: React.FC = () => {
   // Game state
   const [board, setBoard] = useState<(Piece | null)[][]>([]);
-  const [currentPlayer, setCurrentPlayer] = useState<PlayerColor>('red');
+  const [currentPlayer, setCurrentPlayer] = useState<'red' | 'blue'>('red');
   const [selectedPiece, setSelectedPiece] = useState<Position | null>(null);
   const [validMoves, setValidMoves] = useState<Position[]>([]);
   const [validCaptures, setValidCaptures] = useState<Position[]>([]);
-  const [winner, setWinner] = useState<PlayerColor | null>(null);
+  const [winner, setWinner] = useState<'red' | 'blue' | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMessage, setGameMessage] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number>(30);
+  const [players, setPlayers] = useState<Record<'red' | 'blue', { username: string; color: 'red' | 'blue' }>>({
+    red: { username: 'Red Player', color: 'red' },
+    blue: { username: 'Blue Player', color: 'blue' }
+  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [screen, setScreen] = useState<'home' | 'game' | 'help'>('home');
   
-  // Timer service instance - we'll create a new one for each turn
+  // Timer state
+  const [timeLeft, setTimeLeft] = useState<number>(30);
   const timerRef = useRef<TurnTimer | null>(null);
 
   // End game function for timeout
@@ -62,14 +68,6 @@ const App: React.FC = () => {
     
     console.log("Win sequence triggered - winner:", winner, "confetti:", true);
   };
-  
-  // Player state
-  const [players, setPlayers] = useState<Record<PlayerColor, Player>>({
-    red: { username: '', color: 'red' },
-    blue: { username: '', color: 'blue' }
-  });
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [screen, setScreen] = useState<Screen>('home');
 
   // Initialize game when it starts
   const initializeGame = useCallback(() => {
@@ -113,9 +111,9 @@ const App: React.FC = () => {
     }
   }, [showConfetti]);
 
-  // Update timer display every second
+  // Timer logic - handles 30-second turns per player
   useEffect(() => {
-    if (!gameStarted) return;
+    if (!gameStarted || winner) return;
 
     const currentPlayerAtStart = currentPlayer;
 
@@ -123,8 +121,6 @@ const App: React.FC = () => {
       // Timeout => opposite player wins
       const losingPlayer = currentPlayerAtStart;
       const winningPlayer = losingPlayer === 'red' ? 'blue' : 'red';
-
-      clearInterval(displayTimer);
 
       setWinner(winningPlayer);
       setGameMessage(`${winningPlayer} wins by timeout!`);
@@ -148,7 +144,7 @@ const App: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(displayTimer);
-  }, [currentPlayer, gameStarted]);
+  }, [currentPlayer, gameStarted, winner]);
 
   // Stop internal timer when game ends
   useEffect(() => {
@@ -156,13 +152,6 @@ const App: React.FC = () => {
       timerRef.current?.stop();
     }
   }, [winner, gameStarted]);
-
-  // Reset display timer when turns change
-  useEffect(() => {
-    if (gameStarted && !winner) {
-      // setTimeLeft(30); // This line is removed as per the edit hint
-    }
-  }, [currentPlayer, gameStarted, winner]);
 
   // Handle timeout messages from server
   const handleTimeoutMessage = (data: any) => {
@@ -218,7 +207,6 @@ const App: React.FC = () => {
     setWinner(null);
     setGameMessage('');
     setShowConfetti(false);
-    setTimeLeft(30);
     
     console.log('Starting game...');
   };
