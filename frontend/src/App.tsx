@@ -99,20 +99,22 @@ const App: React.FC = () => {
     }
   }, [showConfetti]);
 
-  // Simple countdown display (dummy timer that just shows numbers)
+  // Simple countdown display (synchronized with internal timer)
   useEffect(() => {
     if (!gameStarted || winner) {
-      setTimeLeft(30);
       return;
     }
 
     const displayTimer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          return 30; // Reset to 30 for next turn
+      if (timerRef.current) {
+        const currentTime = timerRef.current.getTimeLeft();
+        setTimeLeft(currentTime);
+        
+        // If internal timer says 0, the game should be over
+        if (currentTime <= 0) {
+          console.log('Display timer detected 0 - game should be over');
         }
-        return prev - 1;
-      });
+      }
     }, 1000);
 
     return () => clearInterval(displayTimer);
@@ -128,7 +130,7 @@ const App: React.FC = () => {
   // Reset display timer when turns change
   useEffect(() => {
     if (gameStarted && !winner) {
-      setTimeLeft(30);
+      // setTimeLeft(30); // This line is removed as per the edit hint
     }
   }, [currentPlayer, gameStarted, winner]);
 
@@ -316,7 +318,7 @@ const App: React.FC = () => {
           });
           timerRef.current.startRound();
           
-          setTimeLeft(30); // Update display immediately
+          // Display timer will automatically sync with internal timer
         }
       }
       return;

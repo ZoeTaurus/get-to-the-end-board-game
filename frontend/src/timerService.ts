@@ -1,7 +1,7 @@
 class TurnTimer {
   private timerId: NodeJS.Timeout | null = null;
   private timeLeft: number;
-  private gameOver = false; // prevents further turns after time's up
+  private gameOver = false;
 
   constructor(
     private readonly duration: number,
@@ -12,38 +12,42 @@ class TurnTimer {
 
   startRound() {
     if (this.gameOver) {
-      console.warn("🚫 Cannot start a new round — game is already over.");
+      console.warn("🚫 Tried to start a new round, but the game is already over.");
       return;
     }
 
     this.stop();
     this.timeLeft = this.duration;
-    console.log(`🕒 New turn: ${this.duration} seconds`);
+    console.log(`🕒 New turn started: ${this.duration} seconds`);
 
     this.timerId = setInterval(() => {
       this.timeLeft--;
+      console.log(`⏳ Time left: ${this.timeLeft}`);
 
-      if (this.timeLeft > 0) {
-        console.log(`⏳ Time left: ${this.timeLeft}`);
-      } else {
-        this.triggerGameOver();
+      if (this.timeLeft <= 0) {
+        this.endGameDueToTimeout();
       }
     }, 1000);
   }
 
-  private triggerGameOver() {
-    if (this.gameOver) return; // prevent multiple triggers
+  private endGameDueToTimeout() {
+    if (this.gameOver) return;
 
-    console.log("⏰ Time's up — GAME OVER!");
-    this.stop();
+    console.log("💥 TIMER HIT 0 — TRIGGERING GAME OVER");
     this.gameOver = true;
-    this.onTimeout();
+    this.stop();
+    try {
+      this.onTimeout();
+    } catch (err) {
+      console.error("❌ Error running game over callback:", err);
+    }
   }
 
   stop() {
     if (this.timerId) {
       clearInterval(this.timerId);
       this.timerId = null;
+      console.log("🛑 Timer stopped");
     }
   }
 
