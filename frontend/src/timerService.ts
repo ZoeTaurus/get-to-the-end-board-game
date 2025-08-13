@@ -1,4 +1,4 @@
-// Internal timer
+// ---- TurnTimer Class ----
 class TurnTimer {
   public timeLeft: number;
   private timerId: NodeJS.Timeout | null = null;
@@ -15,11 +15,11 @@ class TurnTimer {
     this.timeLeft = this.duration;
 
     this.timerId = setInterval(() => {
-      this.timeLeft--;
+      this.timeLeft -= 1;
 
       if (this.timeLeft <= 0) {
         this.stop();
-        this.onTimeout();
+        this.onTimeout(); // Trigger the win sequence
       }
     }, 1000);
   }

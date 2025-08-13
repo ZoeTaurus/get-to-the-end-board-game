@@ -113,26 +113,42 @@ const App: React.FC = () => {
     }
   }, [showConfetti]);
 
-  // Simple countdown display (synchronized with internal timer)
+  // Update timer display every second
   useEffect(() => {
-    if (!gameStarted || winner) {
-      return;
-    }
+    if (!gameStarted) return;
+
+    const currentPlayerAtStart = currentPlayer;
+
+    timerRef.current = new TurnTimer(30, () => {
+      // Timeout => opposite player wins
+      const losingPlayer = currentPlayerAtStart;
+      const winningPlayer = losingPlayer === 'red' ? 'blue' : 'red';
+
+      clearInterval(displayTimer);
+
+      setWinner(winningPlayer);
+      setGameMessage(`${winningPlayer} wins by timeout!`);
+      setShowConfetti(true);
+      setGameStarted(false);
+
+      console.log('Timeout handled. Winner:', winningPlayer);
+    });
+
+    timerRef.current.start();
 
     const displayTimer = setInterval(() => {
       if (timerRef.current) {
         const currentTime = timerRef.current.timeLeft;
         setTimeLeft(currentTime);
-        
-        // If internal timer says 0, the game should be over
+
         if (currentTime <= 0) {
-          console.log('Display timer detected 0 - game should be over');
+          clearInterval(displayTimer);
         }
       }
     }, 1000);
 
     return () => clearInterval(displayTimer);
-  }, [gameStarted, winner]);
+  }, [currentPlayer, gameStarted]);
 
   // Stop internal timer when game ends
   useEffect(() => {
@@ -199,29 +215,12 @@ const App: React.FC = () => {
   const startGame = () => {
     setGameStarted(true);
     setScreen('game');
+    setWinner(null);
+    setGameMessage('');
+    setShowConfetti(false);
+    setTimeLeft(30);
     
-    console.log('Starting game, starting timer...');
-    
-    // Start the internal timer with timeout callback
-    const currentPlayerAtStart = currentPlayer; // Capture current player
-    timerRef.current = new TurnTimer(30, () => {
-      console.log('💥 TIMEOUT DETECTED — YOU WIN MESSAGE TRIGGERED');
-      
-      // For local games, directly set the winner (opposite player wins)
-      const winner = currentPlayerAtStart === 'red' ? 'blue' : 'red';
-      
-      // Update all necessary state to trigger UI
-      setWinner(winner);
-      setGameMessage(`${winner} wins by timeout!`);
-      setShowConfetti(true);
-      
-      // Force a re-render by updating game state
-      setGameStarted(false);
-      
-      console.log('Timeout handled locally - winner:', winner, 'UI updated');
-    });
-    
-    timerRef.current.start();
+    console.log('Starting game...');
   };
 
   // Function to create confetti elements
@@ -366,28 +365,8 @@ const App: React.FC = () => {
           setCurrentPlayer(nextPlayer);
           setGameMessage(`It's ${players[nextPlayer].username}'s turn`);
           
-          // Reset internal timer for next player
-          console.log('Resetting timer for next player:', nextPlayer);
-          const nextPlayerAtStart = nextPlayer; // Capture next player
-          timerRef.current = new TurnTimer(30, () => {
-            console.log('💥 TURN SWITCH TIMEOUT DETECTED — YOU WIN MESSAGE TRIGGERED');
-            
-            // For local games, directly set the winner (opposite player wins)
-            const winner = nextPlayerAtStart === 'red' ? 'blue' : 'red';
-            
-            // Update all necessary state to trigger UI
-            setWinner(winner);
-            setGameMessage(`${winner} wins by timeout!`);
-            setShowConfetti(true);
-            
-            // Force a re-render by updating game state
-            setGameStarted(false);
-            
-            console.log('Turn switch timeout handled locally - winner:', winner, 'UI updated');
-          });
-          timerRef.current.start();
-          
-          // Display timer will automatically sync with internal timer
+          // Timer will automatically reset for next player via useEffect
+          console.log('Switching to next player:', nextPlayer);
         }
       }
       return;
