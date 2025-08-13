@@ -205,15 +205,20 @@ const App: React.FC = () => {
     // Start the internal timer with timeout callback
     const currentPlayerAtStart = currentPlayer; // Capture current player
     timerRef.current = new TurnTimer(30, () => {
-      console.log('💥 TIMER HIT 0 — Player timed out, setting winner');
+      console.log('💥 TIMEOUT DETECTED — YOU WIN MESSAGE TRIGGERED');
       
       // For local games, directly set the winner (opposite player wins)
       const winner = currentPlayerAtStart === 'red' ? 'blue' : 'red';
+      
+      // Update all necessary state to trigger UI
       setWinner(winner);
       setGameMessage(`${winner} wins by timeout!`);
       setShowConfetti(true);
       
-      console.log('Timeout handled locally - winner:', winner);
+      // Force a re-render by updating game state
+      setGameStarted(false);
+      
+      console.log('Timeout handled locally - winner:', winner, 'UI updated');
     });
     
     timerRef.current.startRound();
@@ -365,15 +370,20 @@ const App: React.FC = () => {
           console.log('Resetting timer for next player:', nextPlayer);
           const nextPlayerAtStart = nextPlayer; // Capture next player
           timerRef.current = new TurnTimer(30, () => {
-            console.log('💥 TURN SWITCH TIMER HIT 0 — Player timed out, setting winner');
+            console.log('💥 TURN SWITCH TIMEOUT DETECTED — YOU WIN MESSAGE TRIGGERED');
             
             // For local games, directly set the winner (opposite player wins)
             const winner = nextPlayerAtStart === 'red' ? 'blue' : 'red';
+            
+            // Update all necessary state to trigger UI
             setWinner(winner);
             setGameMessage(`${winner} wins by timeout!`);
             setShowConfetti(true);
             
-            console.log('Turn switch timeout handled locally - winner:', winner);
+            // Force a re-render by updating game state
+            setGameStarted(false);
+            
+            console.log('Turn switch timeout handled locally - winner:', winner, 'UI updated');
           });
           timerRef.current.startRound();
           
