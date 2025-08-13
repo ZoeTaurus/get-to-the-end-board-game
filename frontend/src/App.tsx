@@ -121,7 +121,7 @@ const App: React.FC = () => {
 
     const displayTimer = setInterval(() => {
       if (timerRef.current) {
-        const currentTime = timerRef.current.getTimeLeft();
+        const currentTime = timerRef.current.timeLeft;
         setTimeLeft(currentTime);
         
         // If internal timer says 0, the game should be over

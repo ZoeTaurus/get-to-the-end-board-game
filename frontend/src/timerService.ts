@@ -1,11 +1,12 @@
+// Internal timer
 class TurnTimer {
   private timerId: NodeJS.Timeout | null = null;
-  private timeLeft: number;
   private gameOver = false;
+  public timeLeft: number;
 
   constructor(
     private readonly duration: number,
-    private readonly onTimeout: () => void // THIS will directly call your win logic
+    private readonly onTimeout: () => void // directly triggers win
   ) {
     this.timeLeft = duration;
   }
@@ -15,14 +16,13 @@ class TurnTimer {
 
     this.stop();
     this.timeLeft = this.duration;
-    console.log(`🕒 New turn started: ${this.duration} seconds`);
+    console.log(`🕒 Turn started: ${this.duration} seconds`);
 
     this.timerId = setInterval(() => {
       this.timeLeft--;
+      console.log(`⏳ Time left: ${this.timeLeft}`);
 
-      if (this.timeLeft > 0) {
-        console.log(`⏳ Time left: ${this.timeLeft}`);
-      } else {
+      if (this.timeLeft <= 0) {
         this.triggerTimeout();
       }
     }, 1000);
@@ -31,12 +31,10 @@ class TurnTimer {
   private triggerTimeout() {
     if (this.gameOver) return;
 
-    console.log("💥 TIMER HIT 0 — TRIGGERING WIN SEQUENCE");
     this.gameOver = true;
     this.stop();
-
-    // 🔥 DIRECTLY CALL THE WIN FUNCTION HERE
-    this.onTimeout();
+    console.log("💥 TIMEOUT — triggering win sequence!");
+    this.onTimeout(); // 🔥 guaranteed call
   }
 
   stop() {
@@ -44,10 +42,6 @@ class TurnTimer {
       clearInterval(this.timerId);
       this.timerId = null;
     }
-  }
-
-  getTimeLeft() {
-    return this.timeLeft;
   }
 }
 
