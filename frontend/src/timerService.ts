@@ -1,27 +1,28 @@
 class TurnTimer {
   private timerId: NodeJS.Timeout | null = null;
   private timeLeft: number;
-  
+
   constructor(
     private readonly duration: number,
-    private readonly onTimeout: () => void
+    private readonly onTimeout: () => void // called when time runs out
   ) {
     this.timeLeft = duration;
   }
 
-  startNewRound() {
+  startRound() {
+    // Stop any running timer first
     this.stop();
     this.timeLeft = this.duration;
-    console.log(`New round: ${this.duration} seconds`);
+    console.log(`🕒 New turn: ${this.duration} seconds`);
 
     this.timerId = setInterval(() => {
       this.timeLeft -= 1;
-      console.log('Time left:', this.timeLeft);
+      console.log(`Time left: ${this.timeLeft}`);
 
       if (this.timeLeft <= 0) {
+        console.log("⏰ Time's up — GAME OVER!");
         this.stop();
-        console.log("⏰ Timer reached 0 — ending game!");
-        this.onTimeout();
+        this.onTimeout(); // End game here
       }
     }, 1000);
   }
@@ -31,6 +32,10 @@ class TurnTimer {
       clearInterval(this.timerId);
       this.timerId = null;
     }
+  }
+
+  getTimeLeft() {
+    return this.timeLeft;
   }
 }
 

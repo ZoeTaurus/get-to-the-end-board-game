@@ -37,9 +37,9 @@ const App: React.FC = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(30);
   
-  // Timer service instance - we'll create a new one for each turn
+  // Timer service
   const timerRef = useRef<TurnTimer | null>(null);
-  
+
   // Player state
   const [players, setPlayers] = useState<Record<PlayerColor, Player>>({
     red: { username: '', color: 'red' },
@@ -47,6 +47,15 @@ const App: React.FC = () => {
   });
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [screen, setScreen] = useState<Screen>('home');
+
+  // End game function for timeout
+  const endGame = (winner: 'red' | 'blue') => {
+    console.log("🏆 Game Over! Player loses by timeout.");
+    setWinner(winner);
+    setGameMessage(`${winner} wins by timeout!`);
+    setShowConfetti(true);
+    setScreen('home');
+  };
 
   // Initialize game when it starts
   const initializeGame = useCallback(() => {
@@ -137,27 +146,6 @@ const App: React.FC = () => {
     setIsLoggedIn(true);
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('players', JSON.stringify(updatedPlayers));
-    setScreen('home');
-  };
-
-  // Start game function
-  const startGame = () => {
-    setGameStarted(true);
-    setScreen('game');
-    
-    console.log('Starting game, starting timer...');
-    
-    // Start the internal timer with timeout callback
-    const currentPlayerAtStart = currentPlayer; // Capture current player
-    timerRef.current = new TurnTimer(30, () => {
-      console.log('🏆 Time\'s up — player loses!');
-      const otherPlayer = currentPlayerAtStart === 'red' ? 'blue' : 'red';
-      setWinner(otherPlayer);
-      setGameMessage(`${otherPlayer} wins by timeout!`);
-      setShowConfetti(true);
-      setScreen('home');
-    });
-    timerRef.current.startNewRound();
   };
 
   // Function to create confetti elements
@@ -313,7 +301,7 @@ const App: React.FC = () => {
             setShowConfetti(true);
             setScreen('home');
           });
-          timerRef.current.startNewRound();
+          timerRef.current.startRound();
           
           setTimeLeft(30); // Update display immediately
         }
