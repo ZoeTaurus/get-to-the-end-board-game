@@ -37,16 +37,8 @@ const App: React.FC = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(30);
   
-  // Timer service
+  // Timer service instance - we'll create a new one for each turn
   const timerRef = useRef<TurnTimer | null>(null);
-
-  // Player state
-  const [players, setPlayers] = useState<Record<PlayerColor, Player>>({
-    red: { username: '', color: 'red' },
-    blue: { username: '', color: 'blue' }
-  });
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [screen, setScreen] = useState<Screen>('home');
 
   // End game function for timeout
   const endGame = (winner: 'red' | 'blue') => {
@@ -56,6 +48,14 @@ const App: React.FC = () => {
     setShowConfetti(true);
     setScreen('home');
   };
+  
+  // Player state
+  const [players, setPlayers] = useState<Record<PlayerColor, Player>>({
+    red: { username: '', color: 'red' },
+    blue: { username: '', color: 'blue' }
+  });
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [screen, setScreen] = useState<Screen>('home');
 
   // Initialize game when it starts
   const initializeGame = useCallback(() => {
@@ -146,6 +146,23 @@ const App: React.FC = () => {
     setIsLoggedIn(true);
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('players', JSON.stringify(updatedPlayers));
+    setScreen('home');
+  };
+
+  // Start game function
+  const startGame = () => {
+    setGameStarted(true);
+    setScreen('game');
+    
+    console.log('Starting game, starting timer...');
+    
+    // Start the internal timer with timeout callback
+    const currentPlayerAtStart = currentPlayer; // Capture current player
+    timerRef.current = new TurnTimer(30, () => {
+      const otherPlayer = currentPlayerAtStart === 'red' ? 'blue' : 'red';
+      endGame(otherPlayer);
+    });
+    timerRef.current.startRound();
   };
 
   // Function to create confetti elements
@@ -294,12 +311,8 @@ const App: React.FC = () => {
           console.log('Resetting timer for next player:', nextPlayer);
           const nextPlayerAtStart = nextPlayer; // Capture next player
           timerRef.current = new TurnTimer(30, () => {
-            console.log('🏆 Time\'s up — player loses!');
             const otherPlayer = nextPlayerAtStart === 'red' ? 'blue' : 'red';
-            setWinner(otherPlayer);
-            setGameMessage(`${otherPlayer} wins by timeout!`);
-            setShowConfetti(true);
-            setScreen('home');
+            endGame(otherPlayer);
           });
           timerRef.current.startRound();
           
