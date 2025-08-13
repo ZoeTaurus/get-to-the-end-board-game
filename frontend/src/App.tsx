@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import Login from './Login';
-import TurnTimer from './timerService';
+
 
 // Add socket type to window
 declare global {
@@ -29,6 +29,48 @@ interface Piece {
   type: PieceType;
   color: PlayerColor;
   eatenCount: number;
+}
+
+// ---- TurnTimer Class (Corrected) ----
+// The class is moved inside the component to have access to the component's state setters.
+class TurnTimer {
+  public timeLeft: number;
+  private timerId: NodeJS.Timeout | null = null;
+  private onTimeUpdate: (newTime: number) => void;
+  private onTimeout: () => void;
+
+  constructor(
+    private readonly duration: number,
+    onTimeUpdate: (newTime: number) => void,
+    onTimeout: () => void
+  ) {
+    this.timeLeft = duration;
+    this.onTimeUpdate = onTimeUpdate;
+    this.onTimeout = onTimeout;
+  }
+
+  start() {
+    this.stop();
+    this.timeLeft = this.duration;
+    this.onTimeUpdate(this.timeLeft);
+
+    this.timerId = setInterval(() => {
+      this.timeLeft -= 1;
+      this.onTimeUpdate(this.timeLeft);
+
+      if (this.timeLeft <= 0) {
+        this.stop();
+        this.onTimeout();
+      }
+    }, 1000);
+  }
+
+  stop() {
+    if (this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = null;
+    }
+  }
 }
 
 const App: React.FC = () => {
@@ -128,7 +170,7 @@ const App: React.FC = () => {
     setTimeLeft(30);
     console.log('⏰ Reset time display to 30 seconds');
 
-    timerRef.current = new TurnTimer(30, () => {
+    const onTimeout = () => {
       // Timeout => opposite player wins
       const losingPlayer = currentPlayerAtStart;
       const winningPlayer = losingPlayer === 'red' ? 'blue' : 'red';
@@ -141,23 +183,16 @@ const App: React.FC = () => {
       setGameStarted(false);
 
       console.log('Timeout handled. Winner:', winningPlayer);
-    });
+    };
 
+    timerRef.current = new TurnTimer(30, setTimeLeft, onTimeout);
     timerRef.current.start();
     console.log('🚀 Started new timer for player:', currentPlayerAtStart);
 
-    const displayTimer = setInterval(() => {
-      if (timerRef.current) {
-        const currentTime = timerRef.current.timeLeft;
-        setTimeLeft(currentTime);
-
-        if (currentTime <= 0) {
-          clearInterval(displayTimer);
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(displayTimer);
+    // Cleanup function for when the component unmounts or dependencies change
+    return () => {
+      timerRef.current?.stop();
+    };
   }, [currentPlayer, gameStarted, winner]);
 
   // Stop internal timer when game ends
