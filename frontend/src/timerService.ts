@@ -9,10 +9,10 @@ class TurnTimer {
     this.timeLeft = duration;
   }
 
-  start() {
+  startNewRound() {
     this.stop();
     this.timeLeft = this.duration;
-    console.log(`Turn started: ${this.duration} seconds`);
+    console.log(`New round: ${this.duration} seconds`);
 
     this.timerId = setInterval(() => {
       this.timeLeft -= 1;
@@ -20,8 +20,8 @@ class TurnTimer {
 
       if (this.timeLeft <= 0) {
         this.stop();
-        console.log("Timer reached 0 — ending game!");
-        this.onTimeout(); // Always called here
+        console.log("⏰ Timer reached 0 — ending game!");
+        this.onTimeout();
       }
     }, 1000);
   }

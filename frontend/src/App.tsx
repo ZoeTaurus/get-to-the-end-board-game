@@ -150,13 +150,14 @@ const App: React.FC = () => {
     // Start the internal timer with timeout callback
     const currentPlayerAtStart = currentPlayer; // Capture current player
     timerRef.current = new TurnTimer(30, () => {
-      console.log('TIMEOUT CALLBACK CALLED! Setting winner...');
+      console.log('🏆 Time\'s up — player loses!');
       const otherPlayer = currentPlayerAtStart === 'red' ? 'blue' : 'red';
-      console.log('Setting winner to:', otherPlayer);
       setWinner(otherPlayer);
       setGameMessage(`${otherPlayer} wins by timeout!`);
+      setShowConfetti(true);
+      setScreen('home');
     });
-    timerRef.current.start();
+    timerRef.current.startNewRound();
   };
 
   // Function to create confetti elements
@@ -305,13 +306,14 @@ const App: React.FC = () => {
           console.log('Resetting timer for next player:', nextPlayer);
           const nextPlayerAtStart = nextPlayer; // Capture next player
           timerRef.current = new TurnTimer(30, () => {
-            console.log('TIMEOUT CALLBACK CALLED ON TURN SWITCH! Setting winner...');
+            console.log('🏆 Time\'s up — player loses!');
             const otherPlayer = nextPlayerAtStart === 'red' ? 'blue' : 'red';
-            console.log('Setting winner to:', otherPlayer);
             setWinner(otherPlayer);
             setGameMessage(`${otherPlayer} wins by timeout!`);
+            setShowConfetti(true);
+            setScreen('home');
           });
-          timerRef.current.start();
+          timerRef.current.startNewRound();
           
           setTimeLeft(30); // Update display immediately
         }
