@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import './App.css';
-import Login from './Login';
-
+import './Game.css';
 
 // Add socket type to window
 declare global {
@@ -67,7 +65,7 @@ class TurnTimer {
   }
 }
 
-const App: React.FC = () => {
+const Game: React.FC = () => {
   // Game state
   const [board, setBoard] = useState<(Piece | null)[][]>([]);
   const [currentPlayer, setCurrentPlayer] = useState<'red' | 'blue'>('red');
@@ -82,7 +80,6 @@ const App: React.FC = () => {
     red: { username: 'Red Player', color: 'red' },
     blue: { username: 'Blue Player', color: 'blue' }
   });
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [screen, setScreen] = useState<'home' | 'game' | 'help'>('home');
   
   // Timer state
@@ -131,11 +128,11 @@ const App: React.FC = () => {
     }
   }, [showConfetti]);
 
-  // Timer logic - handles 30-second turns per player - FORCE DEPLOY TEST
+  // Timer logic - handles 30-second turns per player
   useEffect(() => {
     if (!gameStarted || winner) return;
 
-    console.log('🚀 FORCE DEPLOY TEST - Timer useEffect running with new code!');
+    console.log('🚀 Timer useEffect running!');
 
     const currentPlayerAtStart = currentPlayer;
     console.log('🕒 Timer useEffect triggered for player:', currentPlayerAtStart);
@@ -211,23 +208,6 @@ const App: React.FC = () => {
       };
     }
   }, [currentPlayer]);
-
-  const handleLogin = (username: string) => {
-    if (!username.trim()) {
-      alert('Please enter a valid username');
-      return;
-    }
-    
-    const updatedPlayers = {
-      ...players,
-      red: { ...players.red, username }
-    };
-    setPlayers(updatedPlayers);
-    setIsLoggedIn(true);
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('players', JSON.stringify(updatedPlayers));
-    setScreen('home');
-  };
 
   // Start game function
   const startGame = () => {
@@ -327,7 +307,6 @@ const App: React.FC = () => {
     }
     return null;
   };
-
 
   const handleCellClick = (row: number, col: number) => {
     if (winner || !gameStarted) return;
@@ -451,11 +430,6 @@ const App: React.FC = () => {
     </div>
   );
 
-  // If not logged in, show login screen
-  if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
-  }
-
   // Show different screens based on state
   if (screen === 'home') {
     return <HomeScreen />;
@@ -567,4 +541,4 @@ const App: React.FC = () => {
   );
 }
 
-export default App; 
+export default Game;

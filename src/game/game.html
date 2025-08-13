@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get To The End - Board Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .game-header h1 {
+            font-size: 3rem;
+            color: #333;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-info {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .player-turn {
+            font-size: 1.5rem;
+            padding: 15px 30px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .player-turn.red {
+            background: #ff4444;
+        }
+
+        .player-turn.blue {
+            background: #4444ff;
+        }
+
+        .timer {
+            font-size: 1.5rem;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .board {
+            display: grid;
+            grid-template-rows: repeat(4, 1fr);
+            grid-template-columns: repeat(6, 1fr);
+            gap: 2px;
+            width: 600px;
+            height: 400px;
+            background: #8b4513;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .cell {
+            background: #f0d9b5;
+            border: 1px solid #b58863;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .cell:nth-child(even) {
+            background: #b58863;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .cell.selected {
+            background: #ffeb3b;
+            box-shadow: 0 0 20px rgba(255, 235, 59, 0.8);
+        }
+
+        .cell.valid-move {
+            background: #4caf50;
+        }
+
+        .cell.valid-capture {
+            background: #f44336;
+        }
+
+        .piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .piece.red {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff4444 100%);
+            border: 4px solid #cc0000;
+        }
+
+        .piece.blue {
+            background: linear-gradient(135deg, #6b6bff 0%, #4444ff 100%);
+            border: 4px solid #0000cc;
+        }
+
+        .piece.circle {
+            border-radius: 50%;
+        }
+
+        .piece.person {
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        .eaten-count {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            border: 3px solid #333;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .winner-announcement {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+
+        .winner-announcement h2 {
+            margin: 0 0 20px 0;
+            font-size: 2.5rem;
+        }
+
+        .winner-announcement button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .winner-announcement button:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .home-screen {
+            text-align: center;
+        }
+
+        .home-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .home-buttons button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .home-buttons button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .help-screen {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .help-screen h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .help-screen h3 {
+            color: #444;
+            margin-top: 25px;
+        }
+
+        .help-screen p, .help-screen li {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .back-button {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 24px;
+            background: #666;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="game-container">
+        <!-- Home Screen -->
+        <div id="homeScreen" class="home-screen">
+            <h1>Get To The End</h1>
+            <div class="home-buttons">
+                <button onclick="startGame()">Play Game</button>
+                <button onclick="showHelp()">Help</button>
+            </div>
+            <p>More stuff coming soon!</p>
+        </div>
+
+        <!-- Help Screen -->
+        <div id="helpScreen" class="help-screen hidden">
+            <h2>How to Play</h2>
+            <h3>Pieces</h3>
+            <p><strong>Person-shaped piece:</strong></p>
+            <ul>
+                <li>Can move back, forth, and sideways</li>
+                <li>Can only eat opponent's pieces diagonally</li>
+            </ul>
+            <p><strong>Circle-shaped piece:</strong></p>
+            <ul>
+                <li>Can move in any direction</li>
+                <li>Can eat in any direction</li>
+                <li>Can only eat 2 pieces before getting full</li>
+            </ul>
+            <h3>How to Win</h3>
+            <ul>
+                <li>Eat all opponent's pieces, OR</li>
+                <li>Get to the other side of the board</li>
+            </ul>
+            <button class="back-button" onclick="showHome()">Back to Home</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="hidden">
+            <div class="game-header">
+                <h1>Get To The End</h1>
+            </div>
+            
+            <div class="game-info">
+                <div id="playerTurn" class="player-turn red">Red's Turn</div>
+                <div id="timer" class="timer">Time: 30s</div>
+            </div>
+            
+            <div class="board" id="board"></div>
+        </div>
+
+        <!-- Winner Announcement -->
+        <div id="winnerAnnouncement" class="winner-announcement hidden">
+            <h2 id="winnerText">🎉 YOU WIN! 🎉</h2>
+            <p id="winnerMessage">Congratulations!</p>
+            <button onclick="resetGame()">🏠 Go to Home</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let board = [];
+        let currentPlayer = 'red';
+        let selectedPiece = null;
+        let validMoves = [];
+        let validCaptures = [];
+        let winner = null;
+        let gameStarted = false;
+        let timeLeft = 30;
+        let timerInterval = null;
+
+        // Initialize the game board
+        function initializeBoard() {
+            board = Array(4).fill(null).map(() => Array(6).fill(null));
+            
+            // Initialize red pieces (left side)
+            board[0][0] = { type: 'person', color: 'red', eatenCount: 0 };
+            board[1][0] = { type: 'person', color: 'red', eatenCount: 0 };
+            board[2][0] = { type: 'person', color: 'red', eatenCount: 0 };
+            board[3][0] = { type: 'circle', color: 'red', eatenCount: 0 };
+            
+            // Initialize blue pieces (right side)
+            board[0][5] = { type: 'person', color: 'blue', eatenCount: 0 };
+            board[1][5] = { type: 'person', color: 'blue', eatenCount: 0 };
+            board[2][5] = { type: 'person', color: 'blue', eatenCount: 0 };
+            board[3][5] = { type: 'person', color: 'blue', eatenCount: 0 };
+        }
+
+        // Render the board
+        function renderBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 6; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    if (selectedPiece && selectedPiece.row === row && selectedPiece.col === col) {
+                        cell.classList.add('selected');
+                    }
+                    
+                    if (validMoves.some(move => move.row === row && move.col === col)) {
+                        cell.classList.add('valid-move');
+                    }
+                    
+                    if (validCaptures.some(capture => capture.row === row && capture.col === col)) {
+                        cell.classList.add('valid-capture');
+                    }
+                    
+                    if (board[row][col]) {
+                        const piece = document.createElement('div');
+                        piece.className = `piece ${board[row][col].type} ${board[row][col].color}`;
+                        
+                        if (board[row][col].type === 'circle' && board[row][col].eatenCount > 0) {
+                            const eatenCount = document.createElement('div');
+                            eatenCount.className = 'eaten-count';
+                            eatenCount.textContent = board[row][col].eatenCount;
+                            piece.appendChild(eatenCount);
+                        }
+                        
+                        cell.appendChild(piece);
+                    }
+                    
+                    cell.addEventListener('click', () => handleCellClick(row, col));
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        // Handle cell clicks
+        function handleCellClick(row, col) {
+            if (winner || !gameStarted) return;
+
+            const clickedPiece = board[row][col];
+            
+            // If a piece is already selected
+            if (selectedPiece) {
+                // If clicking the same piece, deselect it
+                if (selectedPiece.row === row && selectedPiece.col === col) {
+                    selectedPiece = null;
+                    validMoves = [];
+                    validCaptures = [];
+                    renderBoard();
+                    return;
+                }
+
+                // Check if the clicked cell is a valid move
+                const isValidMove = validMoves.some(move => move.row === row && move.col === col);
+                const isValidCapture = validCaptures.some(capture => capture.row === row && capture.col === col);
+
+                if (isValidMove || isValidCapture) {
+                    // Move the piece
+                    const piece = board[selectedPiece.row][selectedPiece.col];
+                    board[row][col] = piece;
+                    board[selectedPiece.row][selectedPiece.col] = null;
+
+                    // Handle capture
+                    if (isValidCapture) {
+                        piece.eatenCount = (piece.eatenCount || 0) + 1;
+                    }
+
+                    selectedPiece = null;
+                    validMoves = [];
+                    validCaptures = [];
+                    
+                    // Check for win condition
+                    const winningColor = checkWinCondition();
+                    if (winningColor) {
+                        endGame(winningColor);
+                        return;
+                    }
+
+                    // Switch turns
+                    currentPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+                    updateGameInfo();
+                    resetTimer();
+                    renderBoard();
+                }
+                return;
+            }
+
+            // If no piece is selected yet
+            if (clickedPiece && clickedPiece.color === currentPlayer) {
+                selectedPiece = { row, col };
+                const { moves, captures } = calculateValidMoves(row, col, clickedPiece);
+                validMoves = moves;
+                validCaptures = captures;
+                renderBoard();
+            }
+        }
+
+        // Calculate valid moves for a selected piece
+        function calculateValidMoves(row, col, piece) {
+            const moves = [];
+            const captures = [];
+            
+            // Define all possible directions
+            const personMoveDirections = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // up, down, left, right
+            const personCaptureDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]]; // diagonals
+            const circleDirections = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
+            
+            // Check captures first (since they take priority)
+            if (piece.eatenCount < 2) {
+                const captureDirections = piece.type === 'person' ? personCaptureDirections : circleDirections;
+                for (const [dx, dy] of captureDirections) {
+                    const newRow = row + dx;
+                    const newCol = col + dy;
+                    
+                    if (isValidPosition(newRow, newCol)) {
+                        const targetPiece = board[newRow][newCol];
+                        if (targetPiece && targetPiece.color !== piece.color) {
+                            captures.push({ row: newRow, col: newCol });
+                        }
+                    }
+                }
+            }
+            
+            // Then check moves if no captures are available
+            if (captures.length === 0) {
+                const moveDirections = piece.type === 'person' ? personMoveDirections : circleDirections;
+                for (const [dx, dy] of moveDirections) {
+                    const newRow = row + dx;
+                    const newCol = col + dy;
+                    
+                    if (isValidPosition(newRow, newCol) && !board[newRow][newCol]) {
+                        moves.push({ row: newRow, col: newCol });
+                    }
+                }
+            }
+            
+            return { moves, captures };
+        }
+
+        function isValidPosition(row, col) {
+            return row >= 0 && row < 4 && col >= 0 && col < 6;
+        }
+
+        // Check win conditions
+        function checkWinCondition() {
+            // Check if any piece has eaten 2 pieces
+            for (let row = 0; row < board.length; row++) {
+                for (let col = 0; col < board[row].length; col++) {
+                    const piece = board[row][col];
+                    if (piece && piece.eatenCount >= 2) {
+                        return piece.color;
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Update game info display
+        function updateGameInfo() {
+            const playerTurnElement = document.getElementById('playerTurn');
+            playerTurnElement.textContent = `${currentPlayer === 'red' ? 'Red' : 'Blue'}'s Turn`;
+            playerTurnElement.className = `player-turn ${currentPlayer}`;
+        }
+
+        // Timer functions
+        function startTimer() {
+            timeLeft = 30;
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        function resetTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            startTimer();
+        }
+
+        function updateTimerDisplay() {
+            document.getElementById('timer').textContent = `Time: ${timeLeft}s`;
+        }
+
+        function handleTimeout() {
+            const losingPlayer = currentPlayer;
+            const winningPlayer = losingPlayer === 'red' ? 'blue' : 'red';
+            endGame(winningPlayer, 'timeout');
+        }
+
+        // End game
+        function endGame(winningColor, reason = '') {
+            winner = winningColor;
+            gameStarted = false;
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            const winnerText = document.getElementById('winnerText');
+            const winnerMessage = document.getElementById('winnerMessage');
+            
+            if (reason === 'timeout') {
+                winnerText.textContent = `🎉 ${winningColor.toUpperCase()} WINS! 🎉`;
+                winnerMessage.textContent = `${winningColor === 'red' ? 'Red' : 'Blue'} player wins by timeout!`;
+            } else {
+                winnerText.textContent = `🎉 ${winningColor.toUpperCase()} WINS! 🎉`;
+                winnerMessage.textContent = `Congratulations! ${winningColor === 'red' ? 'Red' : 'Blue'} player wins!`;
+            }
+            
+            document.getElementById('winnerAnnouncement').classList.remove('hidden');
+        }
+
+        // Reset game
+        function resetGame() {
+            winner = null;
+            selectedPiece = null;
+            validMoves = [];
+            validCaptures = [];
+            currentPlayer = 'red';
+            gameStarted = false;
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            document.getElementById('winnerAnnouncement').classList.add('hidden');
+            showHome();
+        }
+
+        // Screen navigation
+        function showHome() {
+            document.getElementById('homeScreen').classList.remove('hidden');
+            document.getElementById('helpScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.add('hidden');
+        }
+
+        function showHelp() {
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('helpScreen').classList.remove('hidden');
+            document.getElementById('gameScreen').classList.add('hidden');
+        }
+
+        function startGame() {
+            initializeBoard();
+            gameStarted = true;
+            currentPlayer = 'red';
+            selectedPiece = null;
+            validMoves = [];
+            validCaptures = [];
+            winner = null;
+            
+            document.getElementById('homeScreen').classList.add('hidden');
+            document.getElementById('helpScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            
+            updateGameInfo();
+            startTimer();
+            renderBoard();
+        }
+
+        // Initialize the app
+        showHome();
+    </script>
+</body>
+</html>
