@@ -116,11 +116,24 @@ const App: React.FC = () => {
     if (!gameStarted || winner) return;
 
     const currentPlayerAtStart = currentPlayer;
+    console.log('🕒 Timer useEffect triggered for player:', currentPlayerAtStart);
+
+    // Stop any existing timer
+    if (timerRef.current) {
+      timerRef.current.stop();
+      console.log('🛑 Stopped existing timer');
+    }
+
+    // Reset time display
+    setTimeLeft(30);
+    console.log('⏰ Reset time display to 30 seconds');
 
     timerRef.current = new TurnTimer(30, () => {
       // Timeout => opposite player wins
       const losingPlayer = currentPlayerAtStart;
       const winningPlayer = losingPlayer === 'red' ? 'blue' : 'red';
+
+      console.log('💥 TIMER TIMEOUT! Losing player:', losingPlayer, 'Winning player:', winningPlayer);
 
       setWinner(winningPlayer);
       setGameMessage(`${winningPlayer} wins by timeout!`);
@@ -131,6 +144,7 @@ const App: React.FC = () => {
     });
 
     timerRef.current.start();
+    console.log('🚀 Started new timer for player:', currentPlayerAtStart);
 
     const displayTimer = setInterval(() => {
       if (timerRef.current) {
