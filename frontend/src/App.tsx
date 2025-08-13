@@ -174,10 +174,19 @@ const App: React.FC = () => {
     // Start the internal timer with timeout callback
     const currentPlayerAtStart = currentPlayer; // Capture current player
     timerRef.current = new TurnTimer(30, () => {
-      console.log('💥 TIMER HIT 0 — Broadcasting timeout message');
-      // Broadcast timeout message instead of directly ending game
-      // The server will handle this and send back the appropriate game over message
-      console.log('Timer timeout - game should end');
+      console.log('💥 TIMER HIT 0 — Setting winner and triggering win sequence');
+      // When timer hits 0, the other player wins
+      const otherPlayer = currentPlayerAtStart === 'red' ? 'blue' : 'red';
+      console.log('Setting winner to:', otherPlayer, 'Current player was:', currentPlayerAtStart);
+      
+      // Set the winner to trigger the UI
+      setWinner(otherPlayer);
+      setGameMessage(`${otherPlayer} wins by timeout!`);
+      
+      // Show confetti for the winner (other player)
+      setShowConfetti(true);
+      
+      console.log('Win sequence triggered - winner:', otherPlayer, 'confetti:', true);
     });
     timerRef.current.startRound();
   };
@@ -328,10 +337,19 @@ const App: React.FC = () => {
           console.log('Resetting timer for next player:', nextPlayer);
           const nextPlayerAtStart = nextPlayer; // Capture next player
           timerRef.current = new TurnTimer(30, () => {
-            console.log('💥 TURN SWITCH TIMER HIT 0 — Broadcasting timeout message');
-            // Broadcast timeout message instead of directly ending game
-            // The server will handle this and send back the appropriate game over message
-            console.log('Turn switch timer timeout - game should end');
+            console.log('💥 TURN SWITCH TIMER HIT 0 — Setting winner and triggering win sequence');
+            // When timer hits 0, the other player wins
+            const otherPlayer = nextPlayerAtStart === 'red' ? 'blue' : 'red';
+            console.log('Setting winner to:', otherPlayer, 'Current player was:', nextPlayerAtStart);
+            
+            // Set the winner to trigger the UI
+            setWinner(otherPlayer);
+            setGameMessage(`${otherPlayer} wins by timeout!`);
+            
+            // Show confetti for the winner (other player)
+            setShowConfetti(true);
+            
+            console.log('Win sequence triggered - winner:', otherPlayer, 'confetti:', true);
           });
           timerRef.current.startRound();
           
