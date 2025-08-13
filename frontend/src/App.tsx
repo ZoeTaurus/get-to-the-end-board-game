@@ -12,13 +12,6 @@ declare global {
 
 type PlayerColor = 'red' | 'blue';
 type PieceType = 'person' | 'circle';
-type Screen = 'home' | 'game' | 'login' | 'help';
-
-interface Player {
-  username: string;
-  color: PlayerColor;
-}
-
 
 interface Position {
   row: number;
@@ -94,22 +87,6 @@ const App: React.FC = () => {
   // Timer state
   const [timeLeft, setTimeLeft] = useState<number>(30);
   const timerRef = useRef<TurnTimer | null>(null);
-
-  // End game function for timeout
-  const endGame = (winner: 'red' | 'blue') => {
-    console.log("🏆 Game Over! Player loses by timeout.");
-    console.log("Setting winner to:", winner);
-    console.log("Setting game message and showing confetti...");
-    
-    setWinner(winner);
-    setGameMessage(`${winner} wins by timeout!`);
-    setShowConfetti(true);
-    
-    // Don't immediately go to home - let them see the win sequence first
-    // setScreen('home'); // Commented out to show win sequence
-    
-    console.log("Win sequence triggered - winner:", winner, "confetti:", true);
-  };
 
   // Initialize game when it starts
   const initializeGame = useCallback(() => {
