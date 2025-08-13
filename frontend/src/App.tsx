@@ -205,7 +205,10 @@ const App: React.FC = () => {
     
     // Start the internal timer with timeout callback
     const currentPlayerAtStart = currentPlayer; // Capture current player
-    timerRef.current = new TurnTimer(30, () => {
+    timerRef.current = new TurnTimer(30);
+    
+    // Listen for timeout event
+    timerRef.current.on('timeout', () => {
       console.log('💥 TIMER HIT 0 — Broadcasting timeout message to server');
       // Broadcast timeout message to server
       if (window.socket) {
@@ -216,6 +219,7 @@ const App: React.FC = () => {
       }
       console.log('Timeout message sent to server');
     });
+    
     timerRef.current.startRound();
   };
 
@@ -364,7 +368,10 @@ const App: React.FC = () => {
           // Reset internal timer for next player
           console.log('Resetting timer for next player:', nextPlayer);
           const nextPlayerAtStart = nextPlayer; // Capture next player
-          timerRef.current = new TurnTimer(30, () => {
+          timerRef.current = new TurnTimer(30);
+          
+          // Listen for timeout event
+          timerRef.current.on('timeout', () => {
             console.log('💥 TURN SWITCH TIMER HIT 0 — Broadcasting timeout message to server');
             // Broadcast timeout message to server
             if (window.socket) {
