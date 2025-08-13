@@ -468,6 +468,24 @@ const App: React.FC = () => {
   // Game screen (existing game content)
   return (
     <div className="app">
+      {/* FORCE DEPLOY TEST - This should be visible immediately */}
+      <div style={{
+        position: 'fixed',
+        top: '50px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'lime',
+        color: 'black',
+        padding: '15px 30px',
+        borderRadius: '10px',
+        zIndex: 9999,
+        fontSize: '20px',
+        fontWeight: 'bold',
+        border: '3px solid red'
+      }}>
+        🚨 TIMER FIX DEPLOYED! 🚨
+      </div>
+      
       <div className="game-content">
         {winner && (
           <div className="winner-announcement">
