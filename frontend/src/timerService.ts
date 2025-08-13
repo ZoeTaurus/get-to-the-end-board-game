@@ -1,37 +1,32 @@
-class TimerService {
+class TurnTimer {
   private timerId: NodeJS.Timeout | null = null;
-  private onTimeout: (() => void) | null = null;
-  private timeLeft: number = 30;
+  private timeLeft: number;
+  
+  constructor(
+    private readonly duration: number,
+    private readonly onTimeout: () => void
+  ) {
+    this.timeLeft = duration;
+  }
 
-  private startCountdown(label: string) {
-    this.stopTimer();
-    console.log(`${label}: 30 seconds`);
+  start() {
+    this.stop();
+    this.timeLeft = this.duration;
+    console.log(`Turn started: ${this.duration} seconds`);
 
     this.timerId = setInterval(() => {
       this.timeLeft -= 1;
-      console.log('Timer tick:', this.timeLeft);
+      console.log('Time left:', this.timeLeft);
 
       if (this.timeLeft <= 0) {
-        console.log('Timer reached 0! Ending game...');
-        this.stopTimer();
-        this.onTimeout?.();
+        this.stop();
+        console.log("Timer reached 0 — ending game!");
+        this.onTimeout(); // Always called here
       }
     }, 1000);
   }
 
-  startTimer(onTimeout: () => void) {
-    this.onTimeout = onTimeout;
-    this.timeLeft = 30;
-    this.startCountdown('Timer started');
-  }
-
-  resetTimer(onTimeout: () => void) {
-    this.onTimeout = onTimeout;
-    this.timeLeft = 30;
-    this.startCountdown('Timer reset');
-  }
-
-  stopTimer() {
+  stop() {
     if (this.timerId) {
       clearInterval(this.timerId);
       this.timerId = null;
@@ -39,4 +34,4 @@ class TimerService {
   }
 }
 
-export default TimerService;
+export default TurnTimer;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import Login from './Login';
-import TimerService from './timerService';
+import TurnTimer from './timerService';
 
 type PlayerColor = 'red' | 'blue';
 type PieceType = 'person' | 'circle';
@@ -37,8 +37,8 @@ const App: React.FC = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(30);
   
-  // Timer service instance
-  const timerServiceRef = useRef(new TimerService());
+  // Timer service instance - we'll create a new one for each turn
+  const timerRef = useRef<TurnTimer | null>(null);
   
   // Player state
   const [players, setPlayers] = useState<Record<PlayerColor, Player>>({
@@ -112,7 +112,7 @@ const App: React.FC = () => {
   // Stop internal timer when game ends
   useEffect(() => {
     if (winner || !gameStarted) {
-      timerServiceRef.current.stopTimer();
+      timerRef.current?.stop();
     }
   }, [winner, gameStarted]);
 
@@ -148,13 +148,14 @@ const App: React.FC = () => {
     console.log('Starting game, starting timer...');
     
     // Start the internal timer with timeout callback
-    timerServiceRef.current.startTimer(() => {
+    timerRef.current = new TurnTimer(30, () => {
       console.log('TIMEOUT CALLBACK CALLED! Setting winner...');
       const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
       console.log('Setting winner to:', otherPlayer);
       setWinner(otherPlayer);
       setGameMessage(`${otherPlayer} wins by timeout!`);
     });
+    timerRef.current.start();
   };
 
   // Function to create confetti elements
@@ -301,13 +302,14 @@ const App: React.FC = () => {
           
           // Reset internal timer for next player
           console.log('Resetting timer for next player:', nextPlayer);
-          timerServiceRef.current.resetTimer(() => {
+          timerRef.current = new TurnTimer(30, () => {
             console.log('TIMEOUT CALLBACK CALLED ON TURN SWITCH! Setting winner...');
             const otherPlayer = nextPlayer === 'red' ? 'blue' : 'red';
             console.log('Setting winner to:', otherPlayer);
             setWinner(otherPlayer);
             setGameMessage(`${otherPlayer} wins by timeout!`);
           });
+          timerRef.current.start();
           
           setTimeLeft(30); // Update display immediately
         }
