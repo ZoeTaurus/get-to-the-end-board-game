@@ -152,17 +152,16 @@ const App: React.FC = () => {
   const handleTimeoutMessage = (data: any) => {
     console.log('⏰ Received timeout message:', data);
     
-    // Determine which player wins (the one who didn't timeout)
-    const currentPlayerAtTimeout = currentPlayer;
-    const winner = currentPlayerAtTimeout === 'red' ? 'blue' : 'red';
+    // The server tells us who won
+    const { winner, message } = data;
     
-    console.log('Setting winner to:', winner, 'Current player was:', currentPlayerAtTimeout);
+    console.log('Setting winner to:', winner, 'Message:', message);
     
     // Set the winner to trigger the UI
     setWinner(winner);
-    setGameMessage(`${winner} wins by timeout!`);
+    setGameMessage(message);
     
-    // Show confetti for the winner (other player)
+    // Show confetti for the winner
     setShowConfetti(true);
     
     console.log('Win sequence triggered - winner:', winner, 'confetti:', true);
