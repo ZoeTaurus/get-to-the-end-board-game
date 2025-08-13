@@ -98,6 +98,36 @@
   background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
 }
 
+.confetti-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 3rem;
+  animation: confetti-fall 3s ease-in-out infinite;
+  background: radial-gradient(circle, transparent 30%, rgba(255, 215, 0, 0.1) 70%);
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
 /* Win/Lose specific styles */
 .win-button {
   background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;

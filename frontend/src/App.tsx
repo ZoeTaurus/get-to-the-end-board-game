@@ -136,7 +136,7 @@ const App: React.FC = () => {
       console.log('💥 TIMER TIMEOUT! Losing player:', losingPlayer, 'Winning player:', winningPlayer);
 
       setWinner(winningPlayer);
-      setGameMessage(`${winningPlayer} wins by timeout!`);
+      setGameMessage(`${players[winningPlayer].username} wins by timeout!`);
       setShowConfetti(true);
       setGameStarted(false);
 
@@ -456,6 +456,11 @@ const App: React.FC = () => {
       <div className="game-content">
         {winner && (
           <div className="winner-announcement">
+            {showConfetti && (
+              <div className="confetti-overlay">
+                🎉🎊🎈🎉🎊🎈🎉🎊🎈
+              </div>
+            )}
             {currentPlayer === winner ? (
               // Winner side - show confetti and win message
               <>
