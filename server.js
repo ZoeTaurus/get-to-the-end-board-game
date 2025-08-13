@@ -197,75 +197,18 @@ io.on('connection', (socket) => {
     }
   });
   
-  // Handle game moves
-  socket.on('makeMove', (data) => {
-    const clientIP = socket.handshake.address;
-    const userAgent = socket.handshake.headers['user-agent'] || 'Unknown';
-    console.log(`📡 Event: makeMove from ${socket.id} (${clientIP}) - Data:`, data);
-    
-    try {
-      const { gameId, move } = data;
-      const game = activeGames.get(gameId);
+  socket.on('makeMove', ({ gameId, move }) => {
+    const game = activeGames.get(gameId);
+    if (game && game.currentTurn === socket.id) {
+      const currentPlayerIndex = game.players.findIndex(p => p.id === socket.id);
+      game.currentTurn = game.players[(currentPlayerIndex + 1) % 2].id;
       
-      if (game) {
-        // Update game state
-        game.board = move.board;
-        game.winner = move.winner;
-        
-        // Broadcast move to other player
-        const otherSocket = game.redSocket === socket ? game.blueSocket : game.redSocket;
-        if (otherSocket) {
-          otherSocket.emit('moveMade', move);
-          console.log(`♟️  Move made by ${socket.id} from ${clientIP}:`, move);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error handling move:', error);
-    }
-  });
-
-  // Handle timeout events
-  socket.on('timeout', (data) => {
-    const clientIP = socket.handshake.address;
-    const userAgent = socket.handshake.headers['user-agent'] || 'Unknown';
-    console.log(`⏰ Event: timeout from ${socket.id} (${clientIP}) - Data:`, data);
-    
-    try {
-      const { gameId, player } = data;
-      const game = activeGames.get(gameId);
+      console.log(`♟️  Move made by ${socket.id} from ${session.ip}:`, JSON.stringify(move));
       
-      if (game) {
-        // Determine winner (the player who didn't timeout)
-        const winner = player === 'red' ? 'blue' : 'red';
-        const winnerUsername = winner === 'red' ? game.redPlayer : game.bluePlayer;
-        
-        console.log(`🏆 Game ${gameId} ended by timeout - ${winner} (${winnerUsername}) wins!`);
-        
-        // Set game winner
-        game.winner = winner;
-        
-        // Broadcast timeout to both players
-        if (game.redSocket) {
-          game.redSocket.emit('timeout', {
-            gameId: gameId,
-            winner: winner,
-            message: `${winnerUsername} wins by timeout!`
-          });
-        }
-        if (game.blueSocket) {
-          game.blueSocket.emit('timeout', {
-            gameId: gameId,
-            winner: winner,
-            message: `${winnerUsername} wins by timeout!`
-          });
-        }
-        
-        // Clean up game
-        activeGames.delete(gameId);
-        console.log(`🧹 Game ${gameId} cleaned up after timeout`);
-      }
-    } catch (error) {
-      console.error('❌ Error handling timeout:', error);
+      io.to(gameId).emit('moveMade', {
+        move,
+        nextTurn: game.currentTurn
+      });
     }
   });
   

@@ -208,15 +208,15 @@ const App: React.FC = () => {
     
     // Listen for timeout event
     timerRef.current.on('timeout', () => {
-      console.log('💥 TIMER HIT 0 — Broadcasting timeout message to server');
-      // Broadcast timeout message to server
-      if (window.socket) {
-        window.socket.emit('timeout', {
-          gameId: 'local',
-          player: currentPlayerAtStart
-        });
-      }
-      console.log('Timeout message sent to server');
+      console.log('💥 TIMER HIT 0 — Player timed out, setting winner');
+      
+      // For local games, directly set the winner (opposite player wins)
+      const winner = currentPlayerAtStart === 'red' ? 'blue' : 'red';
+      setWinner(winner);
+      setGameMessage(`${winner} wins by timeout!`);
+      setShowConfetti(true);
+      
+      console.log('Timeout handled locally - winner:', winner);
     });
     
     timerRef.current.startRound();
@@ -371,15 +371,15 @@ const App: React.FC = () => {
           
           // Listen for timeout event
           timerRef.current.on('timeout', () => {
-            console.log('💥 TURN SWITCH TIMER HIT 0 — Broadcasting timeout message to server');
-            // Broadcast timeout message to server
-            if (window.socket) {
-              window.socket.emit('timeout', {
-                gameId: 'local',
-                player: nextPlayerAtStart
-              });
-            }
-            console.log('Timeout message sent to server');
+            console.log('💥 TURN SWITCH TIMER HIT 0 — Player timed out, setting winner');
+            
+            // For local games, directly set the winner (opposite player wins)
+            const winner = nextPlayerAtStart === 'red' ? 'blue' : 'red';
+            setWinner(winner);
+            setGameMessage(`${winner} wins by timeout!`);
+            setShowConfetti(true);
+            
+            console.log('Turn switch timeout handled locally - winner:', winner);
           });
           timerRef.current.startRound();
           
