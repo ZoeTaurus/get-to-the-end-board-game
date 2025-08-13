@@ -141,6 +141,12 @@ const App: React.FC = () => {
     }
   }, [currentPlayer, gameStarted, winner]);
 
+  // Handle timeout messages from server
+  useEffect(() => {
+    // TODO: Implement socket timeout handling when socket is available
+    console.log('⏰ Timeout handler ready - waiting for socket connection');
+  }, [currentPlayer]);
+
   const handleLogin = (username: string) => {
     if (!username.trim()) {
       alert('Please enter a valid username');
@@ -168,8 +174,10 @@ const App: React.FC = () => {
     // Start the internal timer with timeout callback
     const currentPlayerAtStart = currentPlayer; // Capture current player
     timerRef.current = new TurnTimer(30, () => {
-      const otherPlayer = currentPlayerAtStart === 'red' ? 'blue' : 'red';
-      endGame(otherPlayer);
+      console.log('💥 TIMER HIT 0 — Broadcasting timeout message');
+      // Broadcast timeout message instead of directly ending game
+      // The server will handle this and send back the appropriate game over message
+      console.log('Timer timeout - game should end');
     });
     timerRef.current.startRound();
   };
@@ -320,8 +328,10 @@ const App: React.FC = () => {
           console.log('Resetting timer for next player:', nextPlayer);
           const nextPlayerAtStart = nextPlayer; // Capture next player
           timerRef.current = new TurnTimer(30, () => {
-            const otherPlayer = nextPlayerAtStart === 'red' ? 'blue' : 'red';
-            endGame(otherPlayer);
+            console.log('💥 TURN SWITCH TIMER HIT 0 — Broadcasting timeout message');
+            // Broadcast timeout message instead of directly ending game
+            // The server will handle this and send back the appropriate game over message
+            console.log('Turn switch timer timeout - game should end');
           });
           timerRef.current.startRound();
           
@@ -413,13 +423,41 @@ const App: React.FC = () => {
       <div className="game-content">
         {winner && (
           <div className="winner-announcement">
-            <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>
-              {players[winner].username} WINS!
-            </h2>
-            <button onClick={() => {
-              initializeGame();
-              setScreen('home');
-            }}>Back to Home</button>
+            {currentPlayer === winner ? (
+              // Winner side - show confetti and win message
+              <>
+                <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>
+                  🎉 YOU WIN! 🎉
+                </h2>
+                <p className="win-message">Congratulations! You won by timeout!</p>
+                <button 
+                  onClick={() => {
+                    initializeGame();
+                    setScreen('home');
+                  }}
+                  className="win-button"
+                >
+                  🏠 Go to Home
+                </button>
+              </>
+            ) : (
+              // Loser side - show rain effect and lose message
+              <>
+                <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>
+                  🌧️ YOU LOSE! 🌧️
+                </h2>
+                <p className="lose-message">Better luck next time! You ran out of time.</p>
+                <button 
+                  onClick={() => {
+                    initializeGame();
+                    setScreen('home');
+                  }}
+                  className="lose-button"
+                >
+                  🏠 Go to Home
+                </button>
+              </>
+            )}
           </div>
         )}
         <div className="game-info-container">

@@ -98,6 +98,44 @@
   background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
 }
 
+/* Win/Lose specific styles */
+.win-button {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
+  color: #333 !important;
+  font-weight: bold;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+.win-button:hover {
+  background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%) !important;
+  transform: scale(1.05);
+}
+
+.lose-button {
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+}
+
+.lose-button:hover {
+  background: linear-gradient(135deg, #495057 0%, #343a40 100%) !important;
+  transform: scale(1.05);
+}
+
+.win-message {
+  color: #28a745;
+  font-size: 1.3rem;
+  margin: 10px 0;
+  font-weight: 500;
+}
+
+.lose-message {
+  color: #dc3545;
+  font-size: 1.3rem;
+  margin: 10px 0;
+  font-weight: 500;
+}
+
 .board {
   display: grid;
   grid-template-rows: repeat(4, minmax(0, 1fr));
