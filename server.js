@@ -13,10 +13,10 @@ app.set('trust proxy', true);
 // Security middleware
 const rateLimit = require('express-rate-limit');
 
-// Rate limiting to prevent brute force attacks (more lenient)
+// Rate limiting to prevent brute force attacks (very lenient for testing)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // limit each IP to 20 requests per windowMs (was 5)
+  max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -24,7 +24,7 @@ const loginLimiter = rateLimit({
 
 const generalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 200, // limit each IP to 200 requests per windowMs (was 100)
+  max: 1000, // limit each IP to 1000 requests per windowMs
   message: 'Too many requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -103,15 +103,7 @@ io.use((socket, next) => {
   
   console.log(`🔍 New connection attempt from IP: ${clientIP}, User-Agent: ${userAgent}`);
   
-  // Rate limit connections per IP (more lenient)
-  if (connectedIPs.has(clientIP)) {
-    const lastConnection = connectedIPs.get(clientIP);
-    if (now - lastConnection < 100) { // 100ms between connections (was 1000ms)
-      console.log(`🚫 Rate limit exceeded for IP: ${clientIP}`);
-      return next(new Error('Connection rate limit exceeded'));
-    }
-  }
-  
+  // No rate limiting for now - allow all connections for testing
   connectedIPs.set(clientIP, now);
   
   // Log successful connection
@@ -128,6 +120,10 @@ io.use((socket, next) => {
   
   next();
 });
+
+// Store waiting players and active games
+const waitingPlayers = new Map();
+const activeGames = new Map();
 
 io.on('connection', (socket) => {
   const session = userSessions.get(socket.id);
@@ -160,13 +156,60 @@ io.on('connection', (socket) => {
     }
   });
   
-  // Log specific game events
+  // Game logic
   socket.on('joinQueue', (username) => {
     console.log(`🎮 Player joined queue: ${username} (${socket.id}) from ${session.ip}`);
+    
+    waitingPlayers.set(socket.id, { username, socket });
+    
+    if (waitingPlayers.size >= 2) {
+      const players = Array.from(waitingPlayers.entries()).slice(0, 2);
+      const [player1, player2] = players;
+      
+      waitingPlayers.delete(player1[0]);
+      waitingPlayers.delete(player2[0]);
+      
+      const gameId = `game_${Date.now()}`;
+      activeGames.set(gameId, {
+        players: [
+          { id: player1[0], username: player1[1].username },
+          { id: player2[0], username: player2[1].username }
+        ],
+        currentTurn: player1[0]
+      });
+      
+      player1[1].socket.join(gameId);
+      player2[1].socket.join(gameId);
+      
+      console.log(`🎯 Game started: ${gameId} with ${player1[1].username} vs ${player2[1].username}`);
+      
+      io.to(gameId).emit('gameStart', {
+        gameId,
+        players: [
+          { id: player1[0], username: player1[1].username },
+          { id: player2[0], username: player2[1].username }
+        ],
+        currentTurn: player1[0]
+      });
+    } else {
+      socket.emit('waiting');
+      console.log(`⏳ Player ${username} waiting for opponent...`);
+    }
   });
   
-  socket.on('makeMove', (data) => {
-    console.log(`♟️  Move made by ${socket.id} from ${session.ip}:`, JSON.stringify(data));
+  socket.on('makeMove', ({ gameId, move }) => {
+    const game = activeGames.get(gameId);
+    if (game && game.currentTurn === socket.id) {
+      const currentPlayerIndex = game.players.findIndex(p => p.id === socket.id);
+      game.currentTurn = game.players[(currentPlayerIndex + 1) % 2].id;
+      
+      console.log(`♟️  Move made by ${socket.id} from ${session.ip}:`, JSON.stringify(move));
+      
+      io.to(gameId).emit('moveMade', {
+        move,
+        nextTurn: game.currentTurn
+      });
+    }
   });
   
   socket.on('disconnect', (reason) => {
@@ -177,6 +220,16 @@ io.on('connection', (socket) => {
       console.log(`   - Connected for: ${Date.now() - session.connectedAt}ms`);
       console.log(`   - Total actions: ${session.actions.length}`);
       console.log(`   - Actions:`, session.actions.map(a => `${a.event}(${a.timestamp})`).join(', '));
+      
+      // Clean up game state
+      waitingPlayers.delete(socket.id);
+      activeGames.forEach((game, gameId) => {
+        if (game.players.some(p => p.id === socket.id)) {
+          console.log(`🏁 Game ${gameId} ended due to player disconnect`);
+          io.to(gameId).emit('playerDisconnected');
+          activeGames.delete(gameId);
+        }
+      });
       
       // Clean up
       userSessions.delete(socket.id);
