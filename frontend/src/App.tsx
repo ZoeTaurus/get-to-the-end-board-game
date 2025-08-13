@@ -221,7 +221,7 @@ const App: React.FC = () => {
       console.log('Timeout handled locally - winner:', winner, 'UI updated');
     });
     
-    timerRef.current.startRound();
+    timerRef.current.start();
   };
 
   // Function to create confetti elements
@@ -385,7 +385,7 @@ const App: React.FC = () => {
             
             console.log('Turn switch timeout handled locally - winner:', winner, 'UI updated');
           });
-          timerRef.current.startRound();
+          timerRef.current.start();
           
           // Display timer will automatically sync with internal timer
         }
