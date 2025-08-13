@@ -43,10 +43,17 @@ const App: React.FC = () => {
   // End game function for timeout
   const endGame = (winner: 'red' | 'blue') => {
     console.log("🏆 Game Over! Player loses by timeout.");
+    console.log("Setting winner to:", winner);
+    console.log("Setting game message and showing confetti...");
+    
     setWinner(winner);
     setGameMessage(`${winner} wins by timeout!`);
     setShowConfetti(true);
-    setScreen('home');
+    
+    // Don't immediately go to home - let them see the win sequence first
+    // setScreen('home'); // Commented out to show win sequence
+    
+    console.log("Win sequence triggered - winner:", winner, "confetti:", true);
   };
   
   // Player state
