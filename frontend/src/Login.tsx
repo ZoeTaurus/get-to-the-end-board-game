@@ -32,28 +32,54 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     return re.test(email.toLowerCase());
   };
 
+  const validatePassword = (pass: string) => {
+    // Sanitize input to prevent XSS
+    const sanitizedPass = pass.replace(/[<>]/g, '');
+    
+    if (sanitizedPass.length < 4) {
+      return 'Password must be at least 4 characters long';
+    }
+    
+    // Check for common weak passwords
+    const weakPasswords = ['1234', 'password', '12345', '123456', 'qwerty'];
+    if (weakPasswords.includes(sanitizedPass.toLowerCase())) {
+      return 'Password is too common, please choose a stronger one';
+    }
+    
+    return '';
+  };
+
+  const sanitizeInput = (input: string) => {
+    return input.replace(/[<>]/g, '').trim();
+  };
+
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!email.trim()) {
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeInput(email);
+    const sanitizedPassword = sanitizeInput(password);
+
+    if (!sanitizedEmail.trim()) {
       setError('Please enter your email');
       return;
     }
 
-    if (!validateEmail(email)) {
+    if (!validateEmail(sanitizedEmail)) {
       setError('Please enter a valid email address');
       return;
     }
 
-    if (!password.trim() || password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    const passwordError = validatePassword(sanitizedPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
     // Save credentials
-    localStorage.setItem('email', email);
-    localStorage.setItem('password', password);
+    localStorage.setItem('email', sanitizedEmail);
+    localStorage.setItem('password', sanitizedPassword);
 
     // If username is already saved, login directly
     const savedUsername = localStorage.getItem('username');
@@ -68,23 +94,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setError('');
 
-    if (!username.trim()) {
+    // Sanitize username input
+    const sanitizedUsername = sanitizeInput(username);
+
+    if (!sanitizedUsername.trim()) {
       setError('Please enter a username');
       return;
     }
 
-    if (username.length < 3) {
+    if (sanitizedUsername.length < 3) {
       setError('Username must be at least 3 characters long');
       return;
     }
 
-    if (username.length > 15) {
+    if (sanitizedUsername.length > 15) {
       setError('Username must be less than 15 characters');
       return;
     }
 
-    localStorage.setItem('username', username);
-    onLogin(username);
+    localStorage.setItem('username', sanitizedUsername);
+    onLogin(sanitizedUsername);
   };
 
   if (step === 'username') {
