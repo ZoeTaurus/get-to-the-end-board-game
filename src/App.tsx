@@ -109,6 +109,7 @@ function App() {
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMode, setGameMode] = useState<'online' | 'bot'>('online');
   const [botDifficulty, setBotDifficulty] = useState<'easy' | 'normal' | 'hard'>('easy');
+  const [botTimeouts, setBotTimeouts] = useState<{ move: NodeJS.Timeout | null; fallback: NodeJS.Timeout | null }>({ move: null, fallback: null });
   const [winner, setWinner] = useState<PlayerColor | null>(null);
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
   const [validMoves, setValidMoves] = useState<[number, number][]>([]);
@@ -249,6 +250,11 @@ function App() {
     setValidCaptures([]);
     setGameMessage('');
     setShowConfetti(false);
+    
+    // Clear bot timeouts
+    if (botTimeouts.move) clearTimeout(botTimeouts.move);
+    if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
+    setBotTimeouts({ move: null, fallback: null });
     setPlayers({
       red: { color: 'red', username: '' },
       blue: { color: 'blue', username: 'Player 2' }
@@ -458,12 +464,21 @@ function App() {
         
         // If playing against bot, handle locally
         if (gameMode === 'bot') {
+          // Clear any existing bot timeouts
+          if (botTimeouts.move) clearTimeout(botTimeouts.move);
+          if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
+          
           setBoard(newBoard);
           setSelectedPiece(null);
           setValidMoves([]);
           setValidCaptures([]);
           
           if (winnerColor) {
+            // Clear bot timeouts when game ends
+            if (botTimeouts.move) clearTimeout(botTimeouts.move);
+            if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
+            setBotTimeouts({ move: null, fallback: null });
+            
             setWinner(winnerColor);
             setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
             if (winnerColor === 'red') {
@@ -473,10 +488,19 @@ function App() {
             // Switch to bot's turn
             setCurrentPlayer('blue');
             
-            // Bot makes move after 300ms
-            setTimeout(() => {
+            // Bot makes move after 300ms, with 10-second fallback
+            const botMoveTimeout = setTimeout(() => {
               makeBotMove(botDifficulty);
             }, 300);
+            
+            // Fallback: if bot doesn't move within 10 seconds, force a random move
+            const fallbackTimeout = setTimeout(() => {
+              console.log('🤖 Bot taking too long, forcing random move');
+              forceBotRandomMove();
+            }, 10000);
+            
+            // Store timeouts to clear them if game ends
+            setBotTimeouts({ move: botMoveTimeout, fallback: fallbackTimeout });
           }
         } else {
           // Online play - emit move to server
@@ -705,6 +729,66 @@ function App() {
       }
     } else {
       console.log('🤖 No valid move found for bot');
+    }
+  };
+
+  // Force bot to make a random move when it's taking too long
+  const forceBotRandomMove = () => {
+    console.log('🤖 Forcing random bot move');
+    const botColor = 'blue';
+    const botPieces: [number, number][] = [];
+    
+    // Find all bot pieces
+    for (let row = 0; row < board.length; row++) {
+      for (let col = 0; col < board[0].length; col++) {
+        if (board[row][col] && board[row][col]?.color === botColor) {
+          botPieces.push([row, col]);
+        }
+      }
+    }
+    
+    if (botPieces.length === 0) return;
+    
+    // Pick a random piece and make a random valid move
+    const randomPieceIndex = Math.floor(Math.random() * botPieces.length);
+    const [selectedRow, selectedCol] = botPieces[randomPieceIndex];
+    const piece = board[selectedRow][selectedCol];
+    
+    if (!piece) return;
+    
+    const { moves, captures } = calculateValidMoves(board, selectedRow, selectedCol);
+    const allOptions = [...moves, ...captures];
+    
+    if (allOptions.length > 0) {
+      const randomMove = allOptions[Math.floor(Math.random() * allOptions.length)];
+      const [targetRow, targetCol] = randomMove;
+      
+      const newBoard = board.map(row => [...row]);
+      const movingPiece = {...piece};
+      
+      const isCapture = captures.some(([r, c]) => r === targetRow && c === targetCol);
+      if (isCapture && movingPiece.type === 'circle') {
+        movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+      }
+      
+      newBoard[targetRow][targetCol] = movingPiece;
+      newBoard[selectedRow][selectedCol] = null;
+      
+      // Check for win condition
+      const winnerColor = checkWinCondition(newBoard, targetCol);
+      
+      setBoard(newBoard);
+      setCurrentPlayer('red');
+      
+      if (winnerColor) {
+        setWinner(winnerColor);
+        setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
+        if (winnerColor === 'red') {
+          setShowConfetti(true);
+        }
+      }
+      
+      console.log('🤖 Forced random move completed');
     }
   };
 
