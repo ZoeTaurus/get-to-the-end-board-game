@@ -17,7 +17,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [resetStep, setResetStep] = useState<'email' | 'code' | 'newPassword'>('email');
-  const [resetEmail, setResetEmail] = useState('');
+      const [resetUsername, setResetUsername] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -93,8 +93,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setError('');
 
-    if (!resetEmail.trim()) {
-      setError('Please enter your email address');
+    if (!resetUsername.trim()) {
+      setError('Please enter your username');
       return;
     }
 
@@ -106,7 +106,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: resetEmail }),
+        body: JSON.stringify({ email: resetUsername }),
       });
       
       const result = await response.json();
@@ -142,7 +142,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          email: resetEmail, 
+          email: resetUsername, 
           code: verificationCode 
         }),
       });
@@ -186,22 +186,29 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Always create a new user with the email as username
+    // Get users from localStorage
     const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    const newUser: User = { username: resetEmail, password: newPassword };
-    const updatedUsers = [...storedUsers, newUser];
     
-    // Save to localStorage
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    setUsers(updatedUsers);
+    // Find user by exact username match
+    let userIndex = storedUsers.findIndex((u: User) => u.username === resetUsername);
     
-    setError('Password set successfully! You can now login with your email and new password.');
+    if (userIndex !== -1) {
+      // Update existing user's password
+      storedUsers[userIndex].password = newPassword;
+      localStorage.setItem('users', JSON.stringify(storedUsers));
+      setUsers(storedUsers);
+      setError('Password updated successfully!');
+    } else {
+      // User not found - don't create new account
+      setError('Username not found. Please check your username and try again.');
+      return;
+    }
     
     // Go back to login
     setTimeout(() => {
       setShowPasswordReset(false);
       setResetStep('email');
-      setResetEmail('');
+      setResetUsername('');
       setVerificationCode('');
       setNewPassword('');
       setConfirmNewPassword('');
@@ -218,10 +225,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <h1>Change Password</h1>
             <form onSubmit={handleEmailSubmit}>
               <input
-                type="email"
-                placeholder="Enter your email address"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
+                type="text"
+                placeholder="Enter your username"
+                value={resetUsername}
+                onChange={(e) => setResetUsername(e.target.value)}
                 required
               />
               <button type="submit">Send Code</button>
@@ -246,7 +253,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="login-container">
           <div className="login-box">
             <h1>Change Password</h1>
-            <p className="reset-instructions">We sent a 6-digit code to {resetEmail}</p>
+            <p className="reset-instructions">We sent a 6-digit code to {resetUsername}</p>
             <form onSubmit={handleVerificationCode}>
               <input
                 type="text"
