@@ -150,7 +150,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       const result = await response.json();
       
       if (result.success) {
-        setError('Code verified! Enter your new password');
+        setError(''); // Clear any previous errors
         setResetStep('newPassword');
       } else {
         setError(
