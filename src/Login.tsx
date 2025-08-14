@@ -186,27 +186,33 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Simple: just set the password to whatever they typed
+    // Get users from localStorage
     const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
     
-    // Debug: show what we're working with
-    alert(`Debug: resetEmail = "${resetEmail}", newPassword = "${newPassword}", storedUsers = ${JSON.stringify(storedUsers)}`);
-    
+    // Try to find user by email first, then by username
     let userIndex = storedUsers.findIndex((u: User) => u.username === resetEmail);
     
+    // If not found by exact match, try to find by partial match
+    if (userIndex === -1) {
+      userIndex = storedUsers.findIndex((u: User) => 
+        resetEmail.includes(u.username) || 
+        u.username.includes(resetEmail.split('@')[0])
+      );
+    }
+    
     if (userIndex !== -1) {
-      // Update password
+      // Update existing user's password
       storedUsers[userIndex].password = newPassword;
       localStorage.setItem('users', JSON.stringify(storedUsers));
       setUsers(storedUsers);
-      setError('Password updated!');
+      setError('Password updated successfully!');
     } else {
-      // Create new user
+      // Create new user with email as username
       const newUser: User = { username: resetEmail, password: newPassword };
       const updatedUsers = [...storedUsers, newUser];
       localStorage.setItem('users', JSON.stringify(updatedUsers));
       setUsers(updatedUsers);
-      setError('New user created!');
+      setError('New user created with password!');
     }
     
     // Go back to login
