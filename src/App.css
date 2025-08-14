@@ -627,6 +627,13 @@ button {
   color: #45a049;
 }
 
+.reset-instructions {
+  color: #666;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
 .error-message {
   color: #ff4444;
   margin-top: 1rem;

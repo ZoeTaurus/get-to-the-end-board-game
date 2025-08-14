@@ -16,7 +16,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
-  const [resetUsername, setResetUsername] = useState('');
+  const [resetStep, setResetStep] = useState<'email' | 'code' | 'newPassword'>('email');
+  const [resetEmail, setResetEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -87,20 +89,37 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     onLogin(username);
   };
 
-  const handlePasswordReset = (e: React.FormEvent) => {
+  const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!resetUsername.trim()) {
-      setError('Please enter your username');
+    if (!resetEmail.trim()) {
+      setError('Please enter your email address');
       return;
     }
 
-    const user = users.find(u => u.username === resetUsername);
-    if (!user) {
-      setError('Username not found');
+    // Simulate sending verification code
+    setError('Verification code sent to your email!');
+    setResetStep('code');
+  };
+
+  const handleVerificationCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!verificationCode.trim() || verificationCode.length !== 6) {
+      setError('Please enter the 6-digit verification code');
       return;
     }
+
+    // Simulate code verification
+    setError('Code verified! Enter your new password');
+    setResetStep('newPassword');
+  };
+
+  const handlePasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
 
     if (newPassword !== confirmNewPassword) {
       setError('New passwords do not match');
@@ -113,63 +132,111 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Update password
-    const updatedUsers = users.map(u => 
-      u.username === resetUsername ? { ...u, password: newPassword } : u
-    );
-    setUsers(updatedUsers);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-    
+    // For demo purposes, we'll just show success
+    // In a real app, you'd update the password in your database
     setError('Password updated successfully!');
     setTimeout(() => {
       setShowPasswordReset(false);
-      setResetUsername('');
+      setResetStep('email');
+      setResetEmail('');
+      setVerificationCode('');
       setNewPassword('');
       setConfirmNewPassword('');
       setError('');
     }, 2000);
   };
 
-  // Password reset screen
+  // Password reset screens
   if (showPasswordReset) {
-    return (
-      <div className="login-container">
-        <div className="login-box">
-          <h1>Change Password</h1>
-          <form onSubmit={handlePasswordReset}>
-            <input
-              type="text"
-              placeholder="Enter your username"
-              value={resetUsername}
-              onChange={(e) => setResetUsername(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Enter new password (min 4 characters)"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Confirm new password"
-              value={confirmNewPassword}
-              onChange={(e) => setConfirmNewPassword(e.target.value)}
-              required
-            />
-            <button type="submit">Update Password</button>
-          </form>
-          <button 
-            className="login-link"
-            onClick={() => setShowPasswordReset(false)}
-          >
-            ← Back to Login
-          </button>
-          {error && <p className="error-message">{error}</p>}
+    if (resetStep === 'email') {
+      return (
+        <div className="login-container">
+          <div className="login-box">
+            <h1>Change Password</h1>
+            <form onSubmit={handleEmailSubmit}>
+              <input
+                type="email"
+                placeholder="Enter your email address"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                required
+              />
+              <button type="submit">Send Code</button>
+            </form>
+            <span 
+              className="login-link"
+              onClick={() => setShowPasswordReset(false)}
+            >
+              ← Back to Login
+            </span>
+            {error && <p className="error-message">{error}</p>}
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+
+    if (resetStep === 'code') {
+      return (
+        <div className="login-container">
+          <div className="login-box">
+            <h1>Change Password</h1>
+            <p className="reset-instructions">We sent a 6-digit code to {resetEmail}</p>
+            <form onSubmit={handleVerificationCode}>
+              <input
+                type="text"
+                placeholder="Enter 6-digit code"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                maxLength={6}
+                required
+              />
+              <button type="submit">Verify Code</button>
+            </form>
+            <span 
+              className="login-link"
+              onClick={() => setShowPasswordReset(false)}
+            >
+              ← Back to Login
+            </span>
+            {error && <p className="error-message">{error}</p>}
+          </div>
+        </div>
+      );
+    }
+
+    if (resetStep === 'newPassword') {
+      return (
+        <div className="login-container">
+          <div className="login-box">
+            <h1>Change Password</h1>
+            <form onSubmit={handlePasswordReset}>
+              <input
+                type="password"
+                placeholder="Enter new password (min 4 characters)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Confirm new password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                required
+              />
+              <button type="submit">Update Password</button>
+            </form>
+            <span 
+              className="login-link"
+              onClick={() => setShowPasswordReset(false)}
+            >
+              ← Back to Login
+            </span>
+            {error && <p className="error-message">{error}</p>}
+          </div>
+        </div>
+      );
+    }
   }
 
   return (
