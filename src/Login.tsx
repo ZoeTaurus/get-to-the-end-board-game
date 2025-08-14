@@ -188,6 +188,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     // Simple: just set the password to whatever they typed
     const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    
+    // Debug: show what we're working with
+    alert(`Debug: resetEmail = "${resetEmail}", newPassword = "${newPassword}", storedUsers = ${JSON.stringify(storedUsers)}`);
+    
     let userIndex = storedUsers.findIndex((u: User) => u.username === resetEmail);
     
     if (userIndex !== -1) {
