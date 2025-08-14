@@ -632,6 +632,7 @@ function App() {
     if (!piece) return;
     
     const { moves, captures } = calculateValidMoves(currentBoard, selectedRow, selectedCol);
+    console.log('🤖 Bot piece at', selectedRow, selectedCol, 'has moves:', moves, 'captures:', captures);
     
     // Bot decision making based on difficulty
     let targetMove: [number, number] | null = null;
@@ -703,6 +704,15 @@ function App() {
             targetMove = moves[Math.floor(Math.random() * moves.length)];
           }
         }
+      }
+    }
+    
+    // If no move was found, force a random move
+    if (!targetMove) {
+      console.log('🤖 No move found, forcing random move');
+      const allOptions = [...moves, ...captures];
+      if (allOptions.length > 0) {
+        targetMove = allOptions[Math.floor(Math.random() * allOptions.length)];
       }
     }
     
