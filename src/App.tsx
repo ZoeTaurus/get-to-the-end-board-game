@@ -863,9 +863,15 @@ function App() {
         
         <div className="bot-options">
           <div className="bot-option" onClick={() => {
+            // Set up players for bot game
+            setPlayers({
+              red: { color: 'red', username: username || 'Player 1' },
+              blue: { color: 'blue', username: 'Bot (Easy)' }
+            });
             initializeGame();
             setGameStarted(true);
             setCurrentPlayer('red');
+            setIsMyTurn(true); // Player starts first in bot games
             setScreen('game');
             setGameMode('bot');
             setBotDifficulty('easy');
@@ -876,9 +882,15 @@ function App() {
           </div>
           
           <div className="bot-option" onClick={() => {
+            // Set up players for bot game
+            setPlayers({
+              red: { color: 'red', username: username || 'Player 1' },
+              blue: { color: 'blue', username: 'Bot (Normal)' }
+            });
             initializeGame();
             setGameStarted(true);
             setCurrentPlayer('red');
+            setIsMyTurn(true); // Player starts first in bot games
             setScreen('game');
             setGameMode('bot');
             setBotDifficulty('normal');
@@ -889,9 +901,15 @@ function App() {
           </div>
           
           <div className="bot-option" onClick={() => {
+            // Set up players for bot game
+            setPlayers({
+              red: { color: 'red', username: username || 'Player 1' },
+              blue: { color: 'blue', username: 'Bot (Hard)' }
+            });
             initializeGame();
             setGameStarted(true);
             setCurrentPlayer('red');
+            setIsMyTurn(true); // Player starts first in bot games
             setScreen('game');
             setGameMode('bot');
             setBotDifficulty('hard');
