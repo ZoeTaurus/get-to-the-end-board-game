@@ -642,8 +642,11 @@
   text-decoration: underline;
   cursor: pointer;
   font-size: 0.9rem;
-  margin-top: 15px;
+  margin-top: 8px;
   transition: color 0.3s ease;
+  display: block;
+  text-align: left;
+  padding: 0;
 }
 
 .forgot-password-link:hover {

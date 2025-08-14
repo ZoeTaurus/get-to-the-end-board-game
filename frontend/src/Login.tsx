@@ -249,15 +249,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               placeholder="Password"
               required
             />
+            <button 
+              type="button"
+              onClick={() => setShowPasswordReset(true)} 
+              className="forgot-password-link"
+            >
+              Forgot Password?
+            </button>
           </div>
           <button type="submit" className="login-button">Login</button>
         </form>
-        <button 
-          onClick={() => setShowPasswordReset(true)} 
-          className="forgot-password-link"
-        >
-          Forgot Password?
-        </button>
         <div className="decoration">
           <div className="piece red"></div>
           <div className="piece blue circle"></div>
