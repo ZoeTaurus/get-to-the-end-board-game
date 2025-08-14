@@ -487,6 +487,7 @@ function App() {
           } else {
             // Switch to bot's turn
             setCurrentPlayer('blue');
+            setIsMyTurn(false); // Give turn to bot
             
             // Bot makes move after 300ms, with 10-second fallback
             const botMoveTimeout = setTimeout(() => {
