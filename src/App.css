@@ -372,6 +372,102 @@ button {
   position: relative;
 }
 
+/* Bots Screen */
+.bots-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 0 20px;
+  text-align: center;
+}
+
+.bots-content {
+  max-width: 800px;
+  width: 100%;
+}
+
+.bots-content h2 {
+  font-size: 3.5rem;
+  color: #222;
+  margin-bottom: 32px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.bots-content > p {
+  font-size: 1.5rem;
+  color: #666;
+  margin-bottom: 48px;
+  font-weight: 600;
+}
+
+.bot-options {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.bot-option {
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  border: 2px solid transparent;
+}
+
+.bot-option:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  border-color: #4CAF50;
+}
+
+.bot-option h3 {
+  font-size: 2.2rem;
+  color: #333;
+  margin-bottom: 16px;
+  font-weight: 800;
+}
+
+.bot-option p {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.bot-description {
+  font-size: 1rem !important;
+  color: #888 !important;
+  font-style: italic;
+  margin-top: 8px;
+}
+
+.back-button {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  border: none;
+  padding: 20px 40px;
+  border-radius: 15px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.back-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+
 .nav-option {
   padding: 12px 24px;
   border-radius: 20px;

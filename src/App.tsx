@@ -6,7 +6,7 @@ import Login from './Login';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
-type GameScreen = 'home' | 'game' | 'help';
+type GameScreen = 'home' | 'game' | 'help' | 'bots';
 
 interface Piece {
   type: PieceType;
@@ -107,6 +107,8 @@ function App() {
   );
   const [currentPlayer, setCurrentPlayer] = useState<PlayerColor>('red');
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameMode, setGameMode] = useState<'online' | 'bot'>('online');
+  const [botDifficulty, setBotDifficulty] = useState<'easy' | 'normal' | 'hard'>('easy');
   const [winner, setWinner] = useState<PlayerColor | null>(null);
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
   const [validMoves, setValidMoves] = useState<[number, number][]>([]);
@@ -454,30 +456,54 @@ function App() {
         // Check for win condition
         const winnerColor = checkWinCondition(newBoard, colIndex);
         
-        // Emit move to server with full board state
-        socket.emit('makeMove', {
-          gameId,
-          move: {
-            row: rowIndex,
-            col: colIndex,
-            selectedPiece: { row: selectedRow, col: selectedCol },
-            board: newBoard,
-            winner: winnerColor // Include winner in move data
+        // If playing against bot, handle locally
+        if (gameMode === 'bot') {
+          setBoard(newBoard);
+          setSelectedPiece(null);
+          setValidMoves([]);
+          setValidCaptures([]);
+          
+          if (winnerColor) {
+            setWinner(winnerColor);
+            setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
+            if (winnerColor === 'red') {
+              setShowConfetti(true);
+            }
+          } else {
+            // Switch to bot's turn
+            setCurrentPlayer('blue');
+            
+            // Bot makes move after 1 second
+            setTimeout(() => {
+              makeBotMove(botDifficulty);
+            }, 1000);
           }
-        });
-        
-        setBoard(newBoard);
-        setSelectedPiece(null);
-        setValidMoves([]);
-        setValidCaptures([]);
-        
-        // If there's a winner, emit gameOver
-        if (winnerColor) {
-          socket.emit('gameOver', { 
-            gameId, 
-            winner: winnerColor, 
-            message: `${players[winnerColor].username} wins!` 
+        } else {
+          // Online play - emit move to server
+          socket.emit('makeMove', {
+            gameId,
+            move: {
+              row: rowIndex,
+              col: colIndex,
+              selectedPiece: { row: selectedRow, col: selectedCol },
+              board: newBoard,
+              winner: winnerColor
+            }
           });
+          
+          setBoard(newBoard);
+          setSelectedPiece(null);
+          setValidMoves([]);
+          setValidCaptures([]);
+          
+          // If there's a winner, emit gameOver
+          if (winnerColor) {
+            socket.emit('gameOver', { 
+              gameId, 
+              winner: winnerColor, 
+              message: `${players[winnerColor].username} wins!` 
+            });
+          }
         }
       }
     } 
@@ -549,6 +575,134 @@ function App() {
     };
   }, [timerId]);
 
+  // Bot AI Logic
+  const makeBotMove = (difficulty: 'easy' | 'normal' | 'hard') => {
+    const botColor = 'blue'; // Bot always plays as blue
+    const botPieces: [number, number][] = [];
+    
+    // Find all bot pieces
+    for (let row = 0; row < board.length; row++) {
+      for (let col = 0; col < board[0].length; col++) {
+        if (board[row][col] && board[row][col]?.color === botColor) {
+          botPieces.push([row, col]);
+        }
+      }
+    }
+    
+    if (botPieces.length === 0) return;
+    
+    // Select a random bot piece
+    const randomPieceIndex = Math.floor(Math.random() * botPieces.length);
+    const [selectedRow, selectedCol] = botPieces[randomPieceIndex];
+    const piece = board[selectedRow][selectedCol];
+    
+    if (!piece) return;
+    
+    const { moves, captures } = calculateValidMoves(board, selectedRow, selectedCol);
+    
+    // Bot decision making based on difficulty
+    let targetMove: [number, number] | null = null;
+    
+    if (difficulty === 'easy') {
+      // Easy bot: Random moves, prefers captures if available
+      if (captures.length > 0 && Math.random() < 0.7) {
+        targetMove = captures[Math.floor(Math.random() * captures.length)];
+      } else if (moves.length > 0) {
+        targetMove = moves[Math.floor(Math.random() * moves.length)];
+      }
+    } else if (difficulty === 'normal') {
+      // Normal bot: Smarter moves, tries to advance towards goal
+      if (captures.length > 0) {
+        // Prefer captures that advance towards the right
+        const advancingCaptures = captures.filter(([r, c]) => c > selectedCol);
+        if (advancingCaptures.length > 0) {
+          targetMove = advancingCaptures[Math.floor(Math.random() * advancingCaptures.length)];
+        } else {
+          targetMove = captures[Math.floor(Math.random() * captures.length)];
+        }
+      } else if (moves.length > 0) {
+        // Prefer moves that advance towards the right
+        const advancingMoves = moves.filter(([r, c]) => c > selectedCol);
+        if (advancingMoves.length > 0) {
+          targetMove = advancingMoves[Math.floor(Math.random() * advancingMoves.length)];
+        } else {
+          targetMove = moves[Math.floor(Math.random() * moves.length)];
+        }
+      }
+    } else if (difficulty === 'hard') {
+      // Hard bot: Strategic moves, prioritizes winning moves
+      // Check for immediate win moves
+      for (const [r, c] of [...moves, ...captures]) {
+        const newBoard = board.map(row => [...row]);
+        const movingPiece = {...piece};
+        
+        if (captures.some(([cr, cc]) => cr === r && cc === c)) {
+          if (movingPiece.type === 'circle') {
+            movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+          }
+        }
+        
+        newBoard[r][c] = movingPiece;
+        newBoard[selectedRow][selectedCol] = null;
+        
+        // Check if this move wins
+        const winner = checkWinCondition(newBoard, c);
+        if (winner === botColor) {
+          targetMove = [r, c];
+          break;
+        }
+      }
+      
+      // If no winning move, use normal bot logic
+      if (!targetMove) {
+        if (captures.length > 0) {
+          const advancingCaptures = captures.filter(([r, c]) => c > selectedCol);
+          if (advancingCaptures.length > 0) {
+            targetMove = advancingCaptures[Math.floor(Math.random() * advancingCaptures.length)];
+          } else {
+            targetMove = captures[Math.floor(Math.random() * captures.length)];
+          }
+        } else if (moves.length > 0) {
+          const advancingMoves = moves.filter(([r, c]) => c > selectedCol);
+          if (advancingMoves.length > 0) {
+            targetMove = advancingMoves[Math.floor(Math.random() * advancingMoves.length)];
+          } else {
+            targetMove = moves[Math.floor(Math.random() * moves.length)];
+          }
+        }
+      }
+    }
+    
+    // Execute the move
+    if (targetMove) {
+      const [targetRow, targetCol] = targetMove;
+      const newBoard = board.map(row => [...row]);
+      const movingPiece = {...piece};
+      
+      const isCapture = captures.some(([r, c]) => r === targetRow && c === targetCol);
+      if (isCapture && movingPiece.type === 'circle') {
+        movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+      }
+      
+      newBoard[targetRow][targetCol] = movingPiece;
+      newBoard[selectedRow][selectedCol] = null;
+      
+      // Check for win condition
+      const winnerColor = checkWinCondition(newBoard, targetCol);
+      
+      setBoard(newBoard);
+      setCurrentPlayer('red');
+      
+      if (winnerColor) {
+        setWinner(winnerColor);
+        setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
+        if (winnerColor === 'red') {
+          setShowConfetti(true);
+        }
+      }
+    }
+  };
+
   const HomeScreen = () => (
     <div className="home-screen">
       <h1>Get To The End</h1>
@@ -558,7 +712,7 @@ function App() {
         <div className="nav-option active">
           <span>Home</span>
         </div>
-        <div className="nav-option">
+        <div className="nav-option" onClick={() => setScreen('bots')}>
           <span>Bots</span>
         </div>
       </div>
@@ -609,6 +763,60 @@ function App() {
           </div>
         </div>
       )}
+    </div>
+  );
+
+  const BotsScreen = () => (
+    <div className="bots-screen">
+      <div className="bots-content">
+        <h2>Play Against Bots</h2>
+        <p>Choose your opponent's difficulty level:</p>
+        
+        <div className="bot-options">
+          <div className="bot-option" onClick={() => {
+            initializeGame();
+            setGameStarted(true);
+            setCurrentPlayer('red');
+            setScreen('game');
+            setGameMode('bot');
+            setBotDifficulty('easy');
+          }}>
+            <h3>🤖 Easy Bot</h3>
+            <p>Random moves, occasionally captures</p>
+            <p className="bot-description">Good for beginners</p>
+          </div>
+          
+          <div className="bot-option" onClick={() => {
+            initializeGame();
+            setGameStarted(true);
+            setCurrentPlayer('red');
+            setScreen('game');
+            setGameMode('bot');
+            setBotDifficulty('normal');
+          }}>
+            <h3>🤖 Normal Bot</h3>
+            <p>Smart moves, tries to advance</p>
+            <p className="bot-description">Challenging but fair</p>
+          </div>
+          
+          <div className="bot-option" onClick={() => {
+            initializeGame();
+            setGameStarted(true);
+            setCurrentPlayer('red');
+            setScreen('game');
+            setGameMode('bot');
+            setBotDifficulty('hard');
+          }}>
+            <h3>🤖 Hard Bot</h3>
+            <p>Strategic moves, looks for wins</p>
+            <p className="bot-description">For experienced players</p>
+          </div>
+        </div>
+        
+        <button onClick={() => setScreen('home')} className="back-button">
+          ← Back to Home
+        </button>
+      </div>
     </div>
   );
 
@@ -671,6 +879,10 @@ function App() {
 
   if (screen === 'help') {
     return <HelpScreen />;
+  }
+
+  if (screen === 'bots') {
+    return <BotsScreen />;
   }
 
   // Game screen (existing game content)
