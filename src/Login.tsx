@@ -89,7 +89,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     onLogin(username);
   };
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -98,15 +98,35 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Generate a demo verification code
-    const demoCode = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log('Demo verification code for', resetEmail, ':', demoCode);
-    
-    setError('Verification code sent to your email! (Check console for demo code)');
-    setResetStep('code');
+    try {
+      setError('Sending verification code...');
+      
+      const response = await fetch('/api/send-verification-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        if (result.demo) {
+          setError(`Verification code sent! (Demo mode - check server console for code: ${result.code})`);
+        } else {
+          setError('Verification code sent to your email!');
+        }
+        setResetStep('code');
+      } else {
+        setError(result.error || 'Failed to send verification code');
+      }
+    } catch (error) {
+      setError('Failed to send verification code. Please try again.');
+    }
   };
 
-  const handleVerificationCode = (e: React.FormEvent) => {
+  const handleVerificationCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -115,9 +135,29 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // For demo purposes, accept any 6-digit code
-    setError('Code verified! Enter your new password');
-    setResetStep('newPassword');
+    try {
+      const response = await fetch('/api/verify-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email: resetEmail, 
+          code: verificationCode 
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setError('Code verified! Enter your new password');
+        setResetStep('newPassword');
+      } else {
+        setError('Invalid or expired verification code. Please try again.');
+      }
+    } catch (error) {
+      setError('Failed to verify code. Please try again.');
+    }
   };
 
   const handlePasswordReset = (e: React.FormEvent) => {

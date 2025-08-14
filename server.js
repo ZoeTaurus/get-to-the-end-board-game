@@ -2,6 +2,7 @@ const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const server = createServer(app);
@@ -81,6 +82,101 @@ const validateInput = (req, res, next) => {
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use(express.json());
 
+// Email service setup
+const verificationCodes = new Map();
+
+// Generate a random 6-digit code
+function generateVerificationCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Create transporter for Gmail
+const transporter = nodemailer.createTransporter({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'your-email@gmail.com',
+    pass: process.env.EMAIL_PASS || 'your-app-password'
+  }
+});
+
+// Send verification code email
+async function sendVerificationCode(email) {
+  try {
+    const code = generateVerificationCode();
+    const timestamp = Date.now();
+    
+    // Store the code with timestamp (expires in 10 minutes)
+    verificationCodes.set(email, { code, timestamp });
+    
+    // Check if email credentials are configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.log('Email not configured, using demo mode. Code:', code);
+      return { success: true, code, demo: true };
+    }
+    
+    // Email content
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Password Reset Verification Code',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4CAF50;">Get to the End - Password Reset</h2>
+          <p>You requested to change your password. Here's your verification code:</p>
+          <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
+            <h1 style="color: #4CAF50; font-size: 32px; margin: 0; letter-spacing: 5px;">${code}</h1>
+          </div>
+          <p>This code will expire in 10 minutes.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+          <hr style="margin: 20px 0;">
+          <p style="color: #666; font-size: 12px;">This is an automated message from Get to the End game.</p>
+        </div>
+      `
+    };
+    
+    // Send email
+    await transporter.sendMail(mailOptions);
+    
+    // Clean up expired codes
+    cleanupExpiredCodes();
+    
+    return { success: true, code };
+  } catch (error) {
+    console.error('Error sending email:', error);
+    throw new Error('Failed to send verification code');
+  }
+}
+
+// Verify the code
+function verifyCode(email, code) {
+  const stored = verificationCodes.get(email);
+  if (!stored) return false;
+  
+  // Check if code is expired (10 minutes)
+  if (Date.now() - stored.timestamp > 10 * 60 * 1000) {
+    verificationCodes.delete(email);
+    return false;
+  }
+  
+  // Check if code matches
+  if (stored.code === code) {
+    verificationCodes.delete(email); // Remove used code
+    return true;
+  }
+  
+  return false;
+}
+
+// Clean up expired codes
+function cleanupExpiredCodes() {
+  const now = Date.now();
+  for (const [email, data] of verificationCodes.entries()) {
+    if (now - data.timestamp > 10 * 60 * 1000) {
+      verificationCodes.delete(email);
+    }
+  }
+}
+
 // Apply input validation to login/register routes
 app.post('/login', validateInput, (req, res) => {
   // Your existing login logic here
@@ -90,6 +186,39 @@ app.post('/login', validateInput, (req, res) => {
 app.post('/register', validateInput, (req, res) => {
   // Your existing register logic here
   res.json({ success: true });
+});
+
+// Email API endpoints
+app.post('/api/send-verification-code', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    
+    const result = await sendVerificationCode(email);
+    res.json(result);
+  } catch (error) {
+    console.error('Error in send-verification-code:', error);
+    res.status(500).json({ error: 'Failed to send verification code' });
+  }
+});
+
+app.post('/api/verify-code', (req, res) => {
+  try {
+    const { email, code } = req.body;
+    
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and code are required' });
+    }
+    
+    const isValid = verifyCode(email, code);
+    res.json({ success: isValid });
+  } catch (error) {
+    console.error('Error in verify-code:', error);
+    res.status(500).json({ error: 'Failed to verify code' });
+  }
 });
 
 // Socket.io connection handling with rate limiting and detailed logging
