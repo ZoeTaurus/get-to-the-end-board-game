@@ -706,30 +706,46 @@ function App() {
     if (targetMove) {
       console.log('🤖 Bot executing move:', targetMove);
       const [targetRow, targetCol] = targetMove;
-      const newBoard = board.map(row => [...row]);
-      const movingPiece = {...piece};
       
-      const isCapture = captures.some(([r, c]) => r === targetRow && c === targetCol);
-      if (isCapture && movingPiece.type === 'circle') {
-        movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
-      }
-      
-      newBoard[targetRow][targetCol] = movingPiece;
-      newBoard[selectedRow][selectedCol] = null;
-      
-      // Check for win condition
-      const winnerColor = checkWinCondition(newBoard, targetCol);
-      
-      setBoard(newBoard);
-      setCurrentPlayer('red');
-      
-      if (winnerColor) {
-        setWinner(winnerColor);
-        setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
-        if (winnerColor === 'red') {
-          setShowConfetti(true);
+      // Update the board by adding the bot's move to the existing board
+      setBoard(prevBoard => {
+        const updatedBoard = prevBoard.map(row => [...row]);
+        const movingPiece = {...piece};
+        
+        const isCapture = captures.some(([r, c]) => r === targetRow && c === targetCol);
+        if (isCapture && movingPiece.type === 'circle') {
+          movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
         }
-      }
+        
+        updatedBoard[targetRow][targetCol] = movingPiece;
+        updatedBoard[selectedRow][selectedCol] = null;
+        
+        return updatedBoard;
+      });
+      
+      // Switch back to player's turn
+      setCurrentPlayer('red');
+      setIsMyTurn(true);
+      
+      // Clear bot timeouts since bot has moved
+      if (botTimeouts.move) clearTimeout(botTimeouts.move);
+      if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
+      setBotTimeouts({ move: null, fallback: null });
+      
+      // Check for win condition after board update
+      setTimeout(() => {
+        const currentBoard = board;
+        const winnerColor = checkWinCondition(currentBoard, targetCol);
+        
+        if (winnerColor) {
+          setWinner(winnerColor);
+          setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
+          if (winnerColor === 'red') {
+            setShowConfetti(true);
+          }
+        }
+      }, 0);
+      
     } else {
       console.log('🤖 No valid move found for bot');
     }
@@ -777,22 +793,44 @@ function App() {
         movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
       }
       
-      newBoard[targetRow][targetCol] = movingPiece;
-      newBoard[selectedRow][selectedCol] = null;
-      
-      // Check for win condition
-      const winnerColor = checkWinCondition(newBoard, targetCol);
-      
-      setBoard(newBoard);
-      setCurrentPlayer('red');
-      
-      if (winnerColor) {
-        setWinner(winnerColor);
-        setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
-        if (winnerColor === 'red') {
-          setShowConfetti(true);
+      // Update the board by adding the bot's move to the existing board
+      setBoard(prevBoard => {
+        const updatedBoard = prevBoard.map(row => [...row]);
+        const movingPiece = {...piece};
+        
+        const isCapture = captures.some(([r, c]) => r === targetRow && c === targetCol);
+        if (isCapture && movingPiece.type === 'circle') {
+          movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
         }
-      }
+        
+        updatedBoard[targetRow][targetCol] = movingPiece;
+        updatedBoard[selectedRow][selectedCol] = null;
+        
+        return updatedBoard;
+      });
+      
+      // Switch back to player's turn
+      setCurrentPlayer('red');
+      setIsMyTurn(true);
+      
+      // Clear bot timeouts since bot has moved
+      if (botTimeouts.move) clearTimeout(botTimeouts.move);
+      if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
+      setBotTimeouts({ move: null, fallback: null });
+      
+      // Check for win condition after board update
+      setTimeout(() => {
+        const currentBoard = board;
+        const winnerColor = checkWinCondition(currentBoard, targetCol);
+        
+        if (winnerColor) {
+          setWinner(winnerColor);
+          setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
+          if (winnerColor === 'red') {
+            setShowConfetti(true);
+          }
+        }
+      }, 0);
       
       console.log('🤖 Forced random move completed');
     }
