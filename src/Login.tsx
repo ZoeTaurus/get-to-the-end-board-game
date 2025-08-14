@@ -186,46 +186,36 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Actually update the password in localStorage
-    try {
-      // Get the actual users from localStorage (not from state)
-      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-      
-      // Find the user by email
-      let userIndex = storedUsers.findIndex((u: User) => u.username === resetEmail);
-      
-      if (userIndex !== -1) {
-        // Update the existing user's password
-        storedUsers[userIndex].password = newPassword;
-        localStorage.setItem('users', JSON.stringify(storedUsers));
-        
-        // Also update the state to keep it in sync
-        setUsers(storedUsers);
-        
-        setError('Password updated successfully!');
-      } else {
-        // If no user found, create a new user
-        const newUser: User = { username: resetEmail, password: newPassword };
-        const updatedUsers = [...storedUsers, newUser];
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
-        setUsers(updatedUsers);
-        
-        setError('New user created with updated password!');
-      }
-      
-      // Clear form and return to login after success message
-      setTimeout(() => {
-        setShowPasswordReset(false);
-        setResetStep('email');
-        setResetEmail('');
-        setVerificationCode('');
-        setNewPassword('');
-        setConfirmNewPassword('');
-        setError('');
-      }, 500);
-    } catch (error) {
-      setError('Failed to update password. Please try again.');
+    // Simple: just set the password
+    const input = newPassword;
+    const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
+    
+    // Find user and update password
+    let userIndex = storedUsers.findIndex((u: User) => u.username === resetEmail);
+    
+    if (userIndex !== -1) {
+      storedUsers[userIndex].password = input;
+      localStorage.setItem('users', JSON.stringify(storedUsers));
+      setUsers(storedUsers);
+      setError('Password updated successfully!');
+    } else {
+      const newUser: User = { username: resetEmail, password: input };
+      const updatedUsers = [...storedUsers, newUser];
+      localStorage.setItem('users', JSON.stringify(updatedUsers));
+      setUsers(updatedUsers);
+      setError('New user created with updated password!');
     }
+    
+    // Clear form and return to login
+    setTimeout(() => {
+      setShowPasswordReset(false);
+      setResetStep('email');
+      setResetEmail('');
+      setVerificationCode('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setError('');
+    }, 500);
   };
 
   // Password reset screens
