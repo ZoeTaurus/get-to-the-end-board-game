@@ -77,8 +77,8 @@ const validateInput = (req, res, next) => {
   next();
 };
 
-// Serve static files from the game directory
-app.use(express.static(path.join(__dirname, 'src', 'game')));
+// Serve static files from the dist directory
+app.use(express.static(path.join(__dirname, 'dist')));
 app.use(express.json());
 
 // Apply input validation to login/register routes
@@ -269,9 +269,9 @@ setInterval(() => {
   console.log(''); // Empty line for readability
 }, 30000); // Every 30 seconds
 
-// Serve the game
+// Serve the main app
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src', 'game', 'game.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3001;

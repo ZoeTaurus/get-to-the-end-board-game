@@ -15,6 +15,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetUsername, setResetUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [users, setUsers] = useState<User[]>(() => {
     const savedUsers = localStorage.getItem('users');
@@ -83,6 +87,49 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     onLogin(username);
   };
 
+  const handlePasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!resetUsername.trim()) {
+      setError('Please enter your username');
+      return;
+    }
+
+    const user = users.find(u => u.username === resetUsername);
+    if (!user) {
+      setError('Username not found');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setError('New passwords do not match');
+      return;
+    }
+
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
+    // Update password
+    const updatedUsers = users.map(u => 
+      u.username === resetUsername ? { ...u, password: newPassword } : u
+    );
+    setUsers(updatedUsers);
+    localStorage.setItem('users', JSON.stringify(updatedUsers));
+    
+    setError('Password updated successfully!');
+    setTimeout(() => {
+      setShowPasswordReset(false);
+      setResetUsername('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setError('');
+    }, 2000);
+  };
+
   return (
     <div className="login-container">
       <div className="login-box">
@@ -110,6 +157,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button 
+                type="button"
+                className="forgot-password-link"
+                onClick={() => setShowPasswordReset(true)}
+              >
+                Forgot Password?
+              </button>
               <button type="submit">Login</button>
             </form>
           </>
