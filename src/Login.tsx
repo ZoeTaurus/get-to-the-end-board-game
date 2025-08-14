@@ -8,16 +8,18 @@ interface LoginProps {
 interface User {
   username: string;
   password: string;
+  email: string;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState<string | JSX.Element>('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [resetStep, setResetStep] = useState<'email' | 'code' | 'newPassword'>('email');
-      const [resetUsername, setResetUsername] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -65,8 +67,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setError('');
 
+    if (!email.trim()) {
+      setError('Please enter your email address');
+      return;
+    }
+
     if (users.some(u => u.username === username)) {
       setError('Username already taken');
+      return;
+    }
+
+    if (users.some(u => u.email === email)) {
+      setError('Email already registered');
       return;
     }
 
@@ -81,7 +93,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    const newUser: User = { username, password };
+    const newUser: User = { username, password, email };
     const updatedUsers = [...users, newUser];
     setUsers(updatedUsers);
     localStorage.setItem('users', JSON.stringify(updatedUsers));
@@ -93,8 +105,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setError('');
 
-    if (!resetUsername.trim()) {
-      setError('Please enter your username');
+    if (!resetEmail.trim()) {
+      setError('Please enter your email address');
       return;
     }
 
@@ -106,7 +118,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: resetUsername }),
+        body: JSON.stringify({ email: resetEmail }),
       });
       
       const result = await response.json();
@@ -142,7 +154,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          email: resetUsername, 
+          email: resetEmail, 
           code: verificationCode 
         }),
       });
@@ -189,8 +201,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     // Get users from localStorage
     const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
     
-    // Find user by exact username match
-    let userIndex = storedUsers.findIndex((u: User) => u.username === resetUsername);
+    // Find user by email (not username)
+    let userIndex = storedUsers.findIndex((u: User) => u.email === resetEmail);
     
     if (userIndex !== -1) {
       // Update existing user's password
@@ -200,7 +212,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       setError('Password updated successfully!');
     } else {
       // User not found - don't create new account
-      setError('Username not found. Please check your username and try again.');
+      setError('Email not found. Please check your email address or register first.');
       return;
     }
     
@@ -208,7 +220,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setTimeout(() => {
       setShowPasswordReset(false);
       setResetStep('email');
-      setResetUsername('');
+      setResetEmail('');
       setVerificationCode('');
       setNewPassword('');
       setConfirmNewPassword('');
@@ -225,10 +237,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <h1>Change Password</h1>
             <form onSubmit={handleEmailSubmit}>
               <input
-                type="text"
-                placeholder="Enter your username"
-                value={resetUsername}
-                onChange={(e) => setResetUsername(e.target.value)}
+                type="email"
+                placeholder="Enter your email address"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
                 required
               />
               <button type="submit">Send Code</button>
@@ -253,7 +265,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="login-container">
           <div className="login-box">
             <h1>Change Password</h1>
-            <p className="reset-instructions">We sent a 6-digit code to {resetUsername}</p>
+            <p className="reset-instructions">We sent a 6-digit code to {resetEmail}</p>
             <form onSubmit={handleVerificationCode}>
               <input
                 type="text"
@@ -361,7 +373,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <>
             <button 
               className="login-link"
-              onClick={() => setIsRegistering(false)}
+              onClick={() => {
+                setIsRegistering(false);
+                setEmail('');
+                setError('');
+              }}
             >
               Already have an account? Login here!
             </button>
@@ -371,6 +387,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 placeholder="Choose Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+              <input
+                type="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
               <input
