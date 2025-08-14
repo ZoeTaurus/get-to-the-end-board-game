@@ -612,6 +612,24 @@ button {
   padding: 0;
 }
 
+.forgot-password-link {
+  background: none;
+  border: none;
+  color: #4CAF50;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 15px;
+  transition: color 0.3s ease;
+  display: block;
+  text-align: center;
+  padding: 0;
+}
+
+.forgot-password-link:hover {
+  color: #45a049;
+}
+
 .error-message {
   color: #ff4444;
   margin-top: 1rem;
