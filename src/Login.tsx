@@ -266,13 +266,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <button type="submit">Login</button>
               <span 
                 className="forgot-password-link"
                 onClick={() => setShowPasswordReset(true)}
               >
                 Want to change password?
               </span>
-              <button type="submit">Login</button>
             </form>
           </>
         ) : (
