@@ -188,16 +188,27 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     // Actually update the password in localStorage
     try {
-      // Find the user by email (we'll use the resetEmail as username for now)
-      // In a real app, you'd have a proper user database with email-to-username mapping
-      const userIndex = users.findIndex(u => u.username === resetEmail);
+      console.log('Current users:', users);
+      console.log('Reset email:', resetEmail);
+      console.log('New password:', newPassword);
+      
+      // First, try to find a user with the email as username
+      let userIndex = users.findIndex(u => u.username === resetEmail);
+      
+      // If not found, try to find by partial match (in case email contains username)
+      if (userIndex === -1) {
+        userIndex = users.findIndex(u => resetEmail.includes(u.username) || u.username.includes(resetEmail.split('@')[0]));
+      }
+      
+      console.log('Found user at index:', userIndex);
       
       if (userIndex !== -1) {
-        // Update the user's password
+        // Update the existing user's password
         const updatedUsers = [...users];
         updatedUsers[userIndex].password = newPassword;
         setUsers(updatedUsers);
         localStorage.setItem('users', JSON.stringify(updatedUsers));
+        console.log('Password updated for user:', updatedUsers[userIndex]);
         setError('Password updated successfully!');
       } else {
         // If no user found, create a new user with the email as username
@@ -205,6 +216,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         const updatedUsers = [...users, newUser];
         setUsers(updatedUsers);
         localStorage.setItem('users', JSON.stringify(updatedUsers));
+        console.log('New user created:', newUser);
         setError('New user created with updated password!');
       }
       
