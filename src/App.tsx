@@ -556,6 +556,9 @@ function App() {
       {/* Navigation Bar */}
       <div className="nav-bar">
         <div className="nav-option active">
+          <span>Home</span>
+        </div>
+        <div className="nav-option">
           <span>Bots</span>
         </div>
       </div>
