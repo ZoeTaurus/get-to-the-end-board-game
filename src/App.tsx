@@ -605,10 +605,13 @@ function App() {
     const botColor = 'blue'; // Bot always plays as blue
     const botPieces: [number, number][] = [];
     
+    // Use the current board state (which includes the player's move)
+    const currentBoard = board;
+    
     // Find all bot pieces
-    for (let row = 0; row < board.length; row++) {
-      for (let col = 0; col < board[0].length; col++) {
-        if (board[row][col] && board[row][col]?.color === botColor) {
+    for (let row = 0; row < currentBoard.length; row++) {
+      for (let col = 0; col < currentBoard[0].length; col++) {
+        if (currentBoard[row][col] && currentBoard[row][col]?.color === botColor) {
           botPieces.push([row, col]);
         }
       }
@@ -620,11 +623,11 @@ function App() {
     // Select a random bot piece
     const randomPieceIndex = Math.floor(Math.random() * botPieces.length);
     const [selectedRow, selectedCol] = botPieces[randomPieceIndex];
-    const piece = board[selectedRow][selectedCol];
+    const piece = currentBoard[selectedRow][selectedCol];
     
     if (!piece) return;
     
-    const { moves, captures } = calculateValidMoves(board, selectedRow, selectedCol);
+    const { moves, captures } = calculateValidMoves(currentBoard, selectedRow, selectedCol);
     
     // Bot decision making based on difficulty
     let targetMove: [number, number] | null = null;
@@ -738,10 +741,13 @@ function App() {
     const botColor = 'blue';
     const botPieces: [number, number][] = [];
     
+    // Use the current board state (which includes the player's move)
+    const currentBoard = board;
+    
     // Find all bot pieces
-    for (let row = 0; row < board.length; row++) {
-      for (let col = 0; col < board[0].length; col++) {
-        if (board[row][col] && board[row][col]?.color === botColor) {
+    for (let row = 0; row < currentBoard.length; row++) {
+      for (let col = 0; col < currentBoard[0].length; col++) {
+        if (currentBoard[row][col] && currentBoard[row][col]?.color === botColor) {
           botPieces.push([row, col]);
         }
       }
@@ -752,11 +758,11 @@ function App() {
     // Pick a random piece and make a random valid move
     const randomPieceIndex = Math.floor(Math.random() * botPieces.length);
     const [selectedRow, selectedCol] = botPieces[randomPieceIndex];
-    const piece = board[selectedRow][selectedCol];
+    const piece = currentBoard[selectedRow][selectedCol];
     
     if (!piece) return;
     
-    const { moves, captures } = calculateValidMoves(board, selectedRow, selectedCol);
+    const { moves, captures } = calculateValidMoves(currentBoard, selectedRow, selectedCol);
     const allOptions = [...moves, ...captures];
     
     if (allOptions.length > 0) {

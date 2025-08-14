@@ -1,0 +1,3 @@
+# Railway deployment configuration
+deployment_name = "Fix bot movement - add proper turn management and player setup for bot games"
+description = "Fixed bot games by adding proper turn management and player setup. Bots now properly take turns and move pieces."
