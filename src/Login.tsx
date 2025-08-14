@@ -208,7 +208,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </form>
             <span 
               className="login-link"
-              onClick={() => setShowPasswordReset(false)}
+              onClick={() => {
+                setShowPasswordReset(false);
+                setError(''); // Clear error when going back
+              }}
             >
               ← Back to Login
             </span>
@@ -237,7 +240,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </form>
             <span 
               className="login-link"
-              onClick={() => setShowPasswordReset(false)}
+              onClick={() => {
+                setShowPasswordReset(false);
+                setError(''); // Clear error when going back
+              }}
             >
               ← Back to Login
             </span>
@@ -271,7 +277,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </form>
             <span 
               className="login-link"
-              onClick={() => setShowPasswordReset(false)}
+              onClick={() => {
+                setShowPasswordReset(false);
+                setError(''); // Clear error when going back
+              }}
             >
               ← Back to Login
             </span>
@@ -312,7 +321,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <button type="submit">Login</button>
               <span 
                 className="forgot-password-link"
-                onClick={() => setShowPasswordReset(true)}
+                onClick={() => {
+                  setShowPasswordReset(true);
+                  setError(''); // Clear any existing errors when starting password reset
+                }}
               >
                 Want to change password?
               </span>
