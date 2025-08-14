@@ -559,12 +559,12 @@ function App() {
     setTimerId(newTimerId);
   }, [gameId, players, socket]);
 
-  // Reset timer on turn change and game start
+  // Reset timer on turn change and game start (only for online games)
   useEffect(() => {
-    if (gameStarted && !winner) {
+    if (gameStarted && !winner && gameMode === 'online') {
       resetTimer();
     }
-  }, [currentPlayer, gameStarted, winner, resetTimer]);
+  }, [currentPlayer, gameStarted, winner, resetTimer, gameMode]);
 
   // Clean up timer on unmount and logout
   useEffect(() => {
@@ -925,13 +925,15 @@ function App() {
         <div className="game-info-container">
           <div className="game-status">
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? translations[language].yourTurn : translations[language].opponentTurn(opponent)}
-              <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-                {translations[language].timeLeft(timeLeft)}
-              </div>
+              {isMyTurn ? translations[language].yourTurn : (gameMode === 'bot' ? 'Bot\'s Turn' : translations[language].opponentTurn(opponent))}
+              {gameMode === 'online' && (
+                <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
+                  {translations[language].timeLeft(timeLeft)}
+                </div>
+              )}
             </div>
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? translations[language].selectPiece : translations[language].waitingForMove(opponent)}
+              {isMyTurn ? translations[language].selectPiece : (gameMode === 'bot' ? 'Bot is thinking...' : translations[language].waitingForMove(opponent))}
             </div>
           </div>
         </div>
