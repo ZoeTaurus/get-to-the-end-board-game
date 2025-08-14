@@ -130,6 +130,48 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }, 2000);
   };
 
+  // Password reset screen
+  if (showPasswordReset) {
+    return (
+      <div className="login-container">
+        <div className="login-box">
+          <h1>Change Password</h1>
+          <form onSubmit={handlePasswordReset}>
+            <input
+              type="text"
+              placeholder="Enter your username"
+              value={resetUsername}
+              onChange={(e) => setResetUsername(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Enter new password (min 4 characters)"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Confirm new password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              required
+            />
+            <button type="submit">Update Password</button>
+          </form>
+          <button 
+            className="login-link"
+            onClick={() => setShowPasswordReset(false)}
+          >
+            ← Back to Login
+          </button>
+          {error && <p className="error-message">{error}</p>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="login-container">
       <div className="login-box">
