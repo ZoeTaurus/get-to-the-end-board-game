@@ -186,18 +186,41 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // For demo purposes, we'll just show success
-    // In a real app, you'd update the password in your database
-    setError('Password updated successfully!');
-    setTimeout(() => {
-      setShowPasswordReset(false);
-      setResetStep('email');
-      setResetEmail('');
-      setVerificationCode('');
-      setNewPassword('');
-      setConfirmNewPassword('');
-      setError('');
-    }, 500); // Changed to 500ms (half a second) for very quick success message
+    // Actually update the password in localStorage
+    try {
+      // Find the user by email (we'll use the resetEmail as username for now)
+      // In a real app, you'd have a proper user database with email-to-username mapping
+      const userIndex = users.findIndex(u => u.username === resetEmail);
+      
+      if (userIndex !== -1) {
+        // Update the user's password
+        const updatedUsers = [...users];
+        updatedUsers[userIndex].password = newPassword;
+        setUsers(updatedUsers);
+        localStorage.setItem('users', JSON.stringify(updatedUsers));
+        setError('Password updated successfully!');
+      } else {
+        // If no user found, create a new user with the email as username
+        const newUser: User = { username: resetEmail, password: newPassword };
+        const updatedUsers = [...users, newUser];
+        setUsers(updatedUsers);
+        localStorage.setItem('users', JSON.stringify(updatedUsers));
+        setError('New user created with updated password!');
+      }
+      
+      // Clear form and return to login after success message
+      setTimeout(() => {
+        setShowPasswordReset(false);
+        setResetStep('email');
+        setResetEmail('');
+        setVerificationCode('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setError('');
+      }, 500);
+    } catch (error) {
+      setError('Failed to update password. Please try again.');
+    }
   };
 
   // Password reset screens
