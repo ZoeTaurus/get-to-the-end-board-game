@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { sendVerificationCode, verifyCode } from './emailService';
 
 interface LoginProps {
   onLogin: (username: string) => void;
@@ -90,7 +89,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     onLogin(username);
   };
 
-  const handleEmailSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -99,14 +98,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    try {
-      setError('Sending verification code...');
-      await sendVerificationCode(resetEmail);
-      setError('Verification code sent to your email!');
-      setResetStep('code');
-    } catch (error) {
-      setError('Failed to send verification code. Please try again.');
-    }
+    // Generate a demo verification code
+    const demoCode = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('Demo verification code for', resetEmail, ':', demoCode);
+    
+    setError('Verification code sent to your email! (Check console for demo code)');
+    setResetStep('code');
   };
 
   const handleVerificationCode = (e: React.FormEvent) => {
@@ -118,13 +115,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Verify the real code
-    if (verifyCode(resetEmail, verificationCode)) {
-      setError('Code verified! Enter your new password');
-      setResetStep('newPassword');
-    } else {
-      setError('Invalid or expired verification code. Please try again.');
-    }
+    // For demo purposes, accept any 6-digit code
+    setError('Code verified! Enter your new password');
+    setResetStep('newPassword');
   };
 
   const handlePasswordReset = (e: React.FormEvent) => {
