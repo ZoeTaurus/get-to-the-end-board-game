@@ -172,60 +172,44 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   const handlePasswordReset = (e: React.FormEvent) => {
-    console.log('🔐 handlePasswordReset called!');
     e.preventDefault();
     setError('');
-
-    console.log('🔐 Password validation check:');
-    console.log('🔐 newPassword:', newPassword);
-    console.log('🔐 confirmNewPassword:', confirmNewPassword);
-    console.log('🔐 Passwords match?', newPassword === confirmNewPassword);
     
     if (newPassword !== confirmNewPassword) {
-      console.log('🔐 Passwords do not match - returning early');
       setError('New passwords do not match');
       return;
     }
 
     const passwordError = validatePassword(newPassword);
-    console.log('🔐 Password validation result:', passwordError);
     if (passwordError) {
-      console.log('🔐 Password validation failed - returning early');
       setError(passwordError);
       return;
     }
 
     // Actually update the password in localStorage
     try {
-      console.log('Current users:', users);
-      console.log('Reset email:', resetEmail);
-      console.log('New password:', newPassword);
+      // Get the actual users from localStorage (not from state)
+      const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
       
-      // First, try to find a user with the email as username
-      let userIndex = users.findIndex(u => u.username === resetEmail);
-      
-      // If not found, try to find by partial match (in case email contains username)
-      if (userIndex === -1) {
-        userIndex = users.findIndex(u => resetEmail.includes(u.username) || u.username.includes(resetEmail.split('@')[0]));
-      }
-      
-      console.log('Found user at index:', userIndex);
+      // Find the user by email
+      let userIndex = storedUsers.findIndex((u: User) => u.username === resetEmail);
       
       if (userIndex !== -1) {
         // Update the existing user's password
-        const updatedUsers = [...users];
-        updatedUsers[userIndex].password = newPassword;
-        setUsers(updatedUsers);
-        localStorage.setItem('users', JSON.stringify(updatedUsers));
-        console.log('Password updated for user:', updatedUsers[userIndex]);
+        storedUsers[userIndex].password = newPassword;
+        localStorage.setItem('users', JSON.stringify(storedUsers));
+        
+        // Also update the state to keep it in sync
+        setUsers(storedUsers);
+        
         setError('Password updated successfully!');
       } else {
-        // If no user found, create a new user with the email as username
+        // If no user found, create a new user
         const newUser: User = { username: resetEmail, password: newPassword };
-        const updatedUsers = [...users, newUser];
-        setUsers(updatedUsers);
+        const updatedUsers = [...storedUsers, newUser];
         localStorage.setItem('users', JSON.stringify(updatedUsers));
-        console.log('New user created:', newUser);
+        setUsers(updatedUsers);
+        
         setError('New user created with updated password!');
       }
       
