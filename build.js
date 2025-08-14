@@ -6,10 +6,10 @@ async function buildApp() {
     console.log('Starting build process...');
     
     await build({
-      root: process.cwd(),
+      root: resolve(__dirname, 'frontend'),
       base: '/',
       build: {
-        outDir: 'dist',
+        outDir: resolve(__dirname, 'dist'),
         assetsDir: 'assets',
         minify: false,
         sourcemap: false
