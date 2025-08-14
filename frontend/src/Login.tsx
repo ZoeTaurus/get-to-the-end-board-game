@@ -5,160 +5,265 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [step, setStep] = useState<'login' | 'username'>('login');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem('email') || '');
+  const [password, setPassword] = useState(() => localStorage.getItem('password') || '');
+  const [username, setUsername] = useState(() => localStorage.getItem('username') || '');
+  const [showUsernameInput, setShowUsernameInput] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [resetStep, setResetStep] = useState<'email' | 'code' | 'newPassword'>('email');
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    // Check for saved credentials
+    // Check if we have saved credentials
     const savedEmail = localStorage.getItem('email');
     const savedPassword = localStorage.getItem('password');
     const savedUsername = localStorage.getItem('username');
 
-    if (savedEmail && savedPassword) {
-      setEmail(savedEmail);
-      setPassword(savedPassword);
-      if (savedUsername) {
-        setUsername(savedUsername);
-        onLogin(savedUsername);
-      }
+    if (savedEmail && savedPassword && savedUsername) {
+      onLogin(savedUsername);
     }
   }, [onLogin]);
 
-  const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email.toLowerCase());
-  };
-
-  const validatePassword = (pass: string) => {
-    // Sanitize input to prevent XSS
-    const sanitizedPass = pass.replace(/[<>]/g, '');
-    
-    if (sanitizedPass.length < 4) {
-      return 'Password must be at least 4 characters long';
-    }
-    
-    // Check for common weak passwords
-    const weakPasswords = ['1234', 'password', '12345', '123456', 'qwerty'];
-    if (weakPasswords.includes(sanitizedPass.toLowerCase())) {
-      return 'Password is too common, please choose a stronger one';
-    }
-    
-    return '';
-  };
-
-  const sanitizeInput = (input: string) => {
-    return input.replace(/[<>]/g, '').trim();
-  };
-
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    // Sanitize inputs
-    const sanitizedEmail = sanitizeInput(email);
-    const sanitizedPassword = sanitizeInput(password);
-
-    if (!sanitizedEmail.trim()) {
-      setError('Please enter your email');
-      return;
-    }
-
-    if (!validateEmail(sanitizedEmail)) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    const passwordError = validatePassword(sanitizedPassword);
-    if (passwordError) {
-      setError(passwordError);
-      return;
-    }
-
+    
     // Save credentials
-    localStorage.setItem('email', sanitizedEmail);
-    localStorage.setItem('password', sanitizedPassword);
+    localStorage.setItem('email', email);
+    localStorage.setItem('password', password);
 
-    // If username is already saved, login directly
+    // Check for saved username
     const savedUsername = localStorage.getItem('username');
     if (savedUsername) {
       onLogin(savedUsername);
     } else {
-      setStep('username');
+      setShowUsernameInput(true);
     }
   };
 
   const handleUsernameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    // Sanitize username input
-    const sanitizedUsername = sanitizeInput(username);
-
-    if (!sanitizedUsername.trim()) {
-      setError('Please enter a username');
-      return;
-    }
-
-    if (sanitizedUsername.length < 3) {
-      setError('Username must be at least 3 characters long');
-      return;
-    }
-
-    if (sanitizedUsername.length > 15) {
-      setError('Username must be less than 15 characters');
-      return;
-    }
-
-    localStorage.setItem('username', sanitizedUsername);
-    onLogin(sanitizedUsername);
+    localStorage.setItem('username', username);
+    onLogin(username);
   };
 
-  if (step === 'username') {
+  const handlePasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) {
+      setMessage('Please enter your email address');
+      return;
+    }
+    
+    // Simulate sending verification code
+    setMessage('Verification code sent to your email!');
+    setResetStep('code');
+  };
+
+  const handleVerificationCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!verificationCode.trim() || verificationCode.length !== 6) {
+      setMessage('Please enter the 6-digit verification code');
+      return;
+    }
+    
+    // Simulate code verification
+    setMessage('Code verified! Enter your new password');
+    setResetStep('newPassword');
+  };
+
+  const handleNewPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword.trim() || newPassword.length < 6) {
+      setMessage('Password must be at least 6 characters long');
+      return;
+    }
+    
+    // Update password in localStorage
+    localStorage.setItem('password', newPassword);
+    setMessage('Password updated successfully!');
+    
+    // Reset to login screen after a short delay
+    setTimeout(() => {
+      setShowPasswordReset(false);
+      setResetStep('email');
+      setResetEmail('');
+      setVerificationCode('');
+      setNewPassword('');
+      setMessage('');
+    }, 2000);
+  };
+
+  const goBackToLogin = () => {
+    setShowPasswordReset(false);
+    setResetStep('email');
+    setResetEmail('');
+    setVerificationCode('');
+    setNewPassword('');
+    setMessage('');
+  };
+
+  // Password reset screens
+  if (showPasswordReset) {
+    if (resetStep === 'email') {
+      return (
+        <div className="login-container">
+          <div className="login-card">
+            <h1>Reset Password</h1>
+            <h2>Enter your email</h2>
+            <form onSubmit={handlePasswordReset}>
+              <div className="form-group">
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  required
+                />
+              </div>
+              {message && <div className="message">{message}</div>}
+              <button type="submit" className="login-button">Send Code</button>
+            </form>
+            <button onClick={goBackToLogin} className="back-link">← Back to Login</button>
+            <div className="decoration">
+              <div className="piece red"></div>
+              <div className="piece blue circle"></div>
+              <div className="piece red"></div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (resetStep === 'code') {
+      return (
+        <div className="login-container">
+          <div className="login-card">
+            <h1>Reset Password</h1>
+            <h2>Enter verification code</h2>
+            <p className="reset-instructions">We sent a 6-digit code to {resetEmail}</p>
+            <form onSubmit={handleVerificationCode}>
+              <div className="form-group">
+                <input
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  placeholder="Enter 6-digit code"
+                  maxLength={6}
+                  required
+                />
+              </div>
+              {message && <div className="message">{message}</div>}
+              <button type="submit" className="login-button">Verify Code</button>
+            </form>
+            <button onClick={goBackToLogin} className="back-link">← Back to Login</button>
+            <div className="decoration">
+              <div className="piece red"></div>
+              <div className="piece blue circle"></div>
+              <div className="piece red"></div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (resetStep === 'newPassword') {
+      return (
+        <div className="login-container">
+          <div className="login-card">
+            <h1>Reset Password</h1>
+            <h2>Choose new password</h2>
+            <form onSubmit={handleNewPassword}>
+              <div className="form-group">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min. 6 characters)"
+                  required
+                />
+              </div>
+              {message && <div className="message">{message}</div>}
+              <button type="submit" className="login-button">Update Password</button>
+            </form>
+            <button onClick={goBackToLogin} className="back-link">← Back to Login</button>
+            <div className="decoration">
+              <div className="piece red"></div>
+              <div className="piece blue circle"></div>
+              <div className="piece red"></div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  if (showUsernameInput) {
     return (
       <div className="login-container">
-        <form onSubmit={handleUsernameSubmit} className="login-form">
+        <div className="login-card">
           <h2>Choose Your Username</h2>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Enter username (3-15 characters)"
-            maxLength={15}
-            autoFocus
-            required
-          />
-          {error && <div className="error">{error}</div>}
-          <button type="submit">Start Playing</button>
-        </form>
+          <form onSubmit={handleUsernameSubmit}>
+            <div className="form-group">
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter username"
+                required
+              />
+            </div>
+            <button type="submit" className="login-button">Start Playing</button>
+          </form>
+          <div className="decoration">
+            <div className="piece red"></div>
+            <div className="piece blue circle"></div>
+            <div className="piece red"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="login-container">
-      <form onSubmit={handleLoginSubmit} className="login-form">
+      <div className="login-card">
+        <h1>Get to the End</h1>
         <h2>Welcome Back!</h2>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email address"
-          autoFocus
-          required
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password (min. 6 characters)"
-          required
-        />
-        {error && <div className="error">{error}</div>}
-        <button type="submit">Continue</button>
-      </form>
+        <form onSubmit={handleLoginSubmit}>
+          <div className="form-group">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              required
+            />
+          </div>
+          <button type="submit" className="login-button">Login</button>
+        </form>
+        <button 
+          onClick={() => setShowPasswordReset(true)} 
+          className="forgot-password-link"
+        >
+          Forgot Password?
+        </button>
+        <div className="decoration">
+          <div className="piece red"></div>
+          <div className="piece blue circle"></div>
+          <div className="piece red"></div>
+        </div>
+      </div>
     </div>
   );
 };
