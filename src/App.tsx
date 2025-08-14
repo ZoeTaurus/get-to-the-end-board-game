@@ -604,11 +604,9 @@ function App() {
   const makeBotMove = (difficulty: 'easy' | 'normal' | 'hard') => {
     // Safety check: only move if it's actually the bot's turn
     if (currentPlayer !== 'blue' || isMyTurn) {
-      console.log('🤖 Bot tried to move but it\'s not the bot\'s turn');
       return;
     }
     
-    console.log('🤖 Bot making move with difficulty:', difficulty);
     const botColor = 'blue'; // Bot always plays as blue
     const botPieces: [number, number][] = [];
     
@@ -624,7 +622,6 @@ function App() {
       }
     }
     
-    console.log('🤖 Found bot pieces:', botPieces);
     if (botPieces.length === 0) return;
     
     // Select a random bot piece
@@ -711,7 +708,6 @@ function App() {
     
     // Execute the move
     if (targetMove) {
-      console.log('🤖 Bot executing move:', targetMove);
       const [targetRow, targetCol] = targetMove;
       
       // Update the board by adding the bot's move to the existing board
@@ -754,7 +750,9 @@ function App() {
       }, 0);
       
     } else {
-      console.log('🤖 No valid move found for bot');
+      // If no move was found, try to force a random move
+      console.log('🤖 No valid move found for bot, trying fallback');
+      forceBotRandomMove();
     }
   };
 
