@@ -172,16 +172,25 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   const handlePasswordReset = (e: React.FormEvent) => {
+    console.log('🔐 handlePasswordReset called!');
     e.preventDefault();
     setError('');
 
+    console.log('🔐 Password validation check:');
+    console.log('🔐 newPassword:', newPassword);
+    console.log('🔐 confirmNewPassword:', confirmNewPassword);
+    console.log('🔐 Passwords match?', newPassword === confirmNewPassword);
+    
     if (newPassword !== confirmNewPassword) {
+      console.log('🔐 Passwords do not match - returning early');
       setError('New passwords do not match');
       return;
     }
 
     const passwordError = validatePassword(newPassword);
+    console.log('🔐 Password validation result:', passwordError);
     if (passwordError) {
+      console.log('🔐 Password validation failed - returning early');
       setError(passwordError);
       return;
     }
