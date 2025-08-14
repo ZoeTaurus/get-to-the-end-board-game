@@ -1,0 +1,14 @@
+# Email Configuration for Password Reset
+# Replace with your actual Gmail credentials in your .env file
+
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+
+# Note: For Gmail, you need to use an "App Password" not your regular password
+# To get an App Password:
+# 1. Enable 2-factor authentication on your Google account
+# 2. Go to Google Account settings > Security > App passwords
+# 3. Generate a new app password for "Mail"
+# 4. Use that password here
+
+# Create a .env file in your project root with these values

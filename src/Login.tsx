@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { sendVerificationCode, verifyCode } from './emailService';
 
 interface LoginProps {
   onLogin: (username: string) => void;
@@ -89,7 +90,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     onLogin(username);
   };
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -98,9 +99,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Simulate sending verification code
-    setError('Verification code sent to your email!');
-    setResetStep('code');
+    try {
+      setError('Sending verification code...');
+      await sendVerificationCode(resetEmail);
+      setError('Verification code sent to your email!');
+      setResetStep('code');
+    } catch (error) {
+      setError('Failed to send verification code. Please try again.');
+    }
   };
 
   const handleVerificationCode = (e: React.FormEvent) => {
@@ -112,9 +118,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Simulate code verification
-    setError('Code verified! Enter your new password');
-    setResetStep('newPassword');
+    // Verify the real code
+    if (verifyCode(resetEmail, verificationCode)) {
+      setError('Code verified! Enter your new password');
+      setResetStep('newPassword');
+    } else {
+      setError('Invalid or expired verification code. Please try again.');
+    }
   };
 
   const handlePasswordReset = (e: React.FormEvent) => {
