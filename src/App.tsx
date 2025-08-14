@@ -473,10 +473,10 @@ function App() {
             // Switch to bot's turn
             setCurrentPlayer('blue');
             
-            // Bot makes move after 1 second
+            // Bot makes move after 300ms
             setTimeout(() => {
               makeBotMove(botDifficulty);
-            }, 1000);
+            }, 300);
           }
         } else {
           // Online play - emit move to server
@@ -577,6 +577,7 @@ function App() {
 
   // Bot AI Logic
   const makeBotMove = (difficulty: 'easy' | 'normal' | 'hard') => {
+    console.log('🤖 Bot making move with difficulty:', difficulty);
     const botColor = 'blue'; // Bot always plays as blue
     const botPieces: [number, number][] = [];
     
@@ -589,6 +590,7 @@ function App() {
       }
     }
     
+    console.log('🤖 Found bot pieces:', botPieces);
     if (botPieces.length === 0) return;
     
     // Select a random bot piece
@@ -675,6 +677,7 @@ function App() {
     
     // Execute the move
     if (targetMove) {
+      console.log('🤖 Bot executing move:', targetMove);
       const [targetRow, targetCol] = targetMove;
       const newBoard = board.map(row => [...row]);
       const movingPiece = {...piece};
@@ -700,6 +703,8 @@ function App() {
           setShowConfetti(true);
         }
       }
+    } else {
+      console.log('🤖 No valid move found for bot');
     }
   };
 
