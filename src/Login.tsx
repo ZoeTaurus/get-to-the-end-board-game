@@ -197,7 +197,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       setNewPassword('');
       setConfirmNewPassword('');
       setError('');
-    }, 1000); // Changed from 2000ms (2 seconds) to 1000ms (1 second)
+    }, 500); // Changed to 500ms (half a second) for very quick success message
   };
 
   // Password reset screens
