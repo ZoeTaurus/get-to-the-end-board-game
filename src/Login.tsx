@@ -201,18 +201,29 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     // Get users from localStorage
     const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
     
-    // Find user by email (not username)
+    // Try to find user by email first, then by username (for backward compatibility)
     let userIndex = storedUsers.findIndex((u: User) => u.email === resetEmail);
+    
+    // If not found by email, try by username (for existing users without emails)
+    if (userIndex === -1) {
+      userIndex = storedUsers.findIndex((u: User) => u.username === resetEmail);
+    }
     
     if (userIndex !== -1) {
       // Update existing user's password
       storedUsers[userIndex].password = newPassword;
+      
+      // Also add email if they don't have one (for future password resets)
+      if (!storedUsers[userIndex].email) {
+        storedUsers[userIndex].email = resetEmail;
+      }
+      
       localStorage.setItem('users', JSON.stringify(storedUsers));
       setUsers(storedUsers);
       setError('Password updated successfully!');
     } else {
       // User not found - don't create new account
-      setError('Email not found. Please check your email address or register first.');
+      setError('Account not found. Please check your email/username or register first.');
       return;
     }
     
@@ -237,8 +248,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <h1>Change Password</h1>
             <form onSubmit={handleEmailSubmit}>
               <input
-                type="email"
-                placeholder="Enter your email address"
+                type="text"
+                placeholder="Enter your email or username"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 required
