@@ -627,6 +627,18 @@ button {
   color: #45a049;
 }
 
+.error-link {
+  color: #4CAF50 !important;
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.error-link:hover {
+  color: #45a049 !important;
+}
+
 .reset-instructions {
   color: #666;
   margin-bottom: 20px;

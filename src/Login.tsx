@@ -13,7 +13,7 @@ interface User {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | JSX.Element>('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const [resetStep, setResetStep] = useState<'email' | 'code' | 'newPassword'>('email');
@@ -153,7 +153,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setError('Code verified! Enter your new password');
         setResetStep('newPassword');
       } else {
-        setError('Invalid or expired verification code. Please try again.');
+        setError(
+          <>
+            Invalid or expired verification code. Please{' '}
+            <span 
+              className="error-link"
+              onClick={handleEmailSubmit}
+            >
+              try again
+            </span>
+            .
+          </>
+        );
       }
     } catch (error) {
       setError('Failed to verify code. Please try again.');
