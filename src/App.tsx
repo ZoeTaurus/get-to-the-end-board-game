@@ -601,6 +601,12 @@ function App() {
 
   // Bot AI Logic
   const makeBotMove = (difficulty: 'easy' | 'normal' | 'hard') => {
+    // Safety check: only move if it's actually the bot's turn
+    if (currentPlayer !== 'blue' || isMyTurn) {
+      console.log('🤖 Bot tried to move but it\'s not the bot\'s turn');
+      return;
+    }
+    
     console.log('🤖 Bot making move with difficulty:', difficulty);
     const botColor = 'blue'; // Bot always plays as blue
     const botPieces: [number, number][] = [];
@@ -753,6 +759,12 @@ function App() {
 
   // Force bot to make a random move when it's taking too long
   const forceBotRandomMove = () => {
+    // Safety check: only move if it's actually the bot's turn
+    if (currentPlayer !== 'blue' || isMyTurn) {
+      console.log('🤖 Bot tried to force move but it\'s not the bot\'s turn');
+      return;
+    }
+    
     console.log('🤖 Forcing random bot move');
     const botColor = 'blue';
     const botPieces: [number, number][] = [];
@@ -784,14 +796,6 @@ function App() {
     if (allOptions.length > 0) {
       const randomMove = allOptions[Math.floor(Math.random() * allOptions.length)];
       const [targetRow, targetCol] = randomMove;
-      
-      const newBoard = board.map(row => [...row]);
-      const movingPiece = {...piece};
-      
-      const isCapture = captures.some(([r, c]) => r === targetRow && c === targetCol);
-      if (isCapture && movingPiece.type === 'circle') {
-        movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
-      }
       
       // Update the board by adding the bot's move to the existing board
       setBoard(prevBoard => {
