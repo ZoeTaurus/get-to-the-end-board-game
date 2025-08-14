@@ -552,6 +552,14 @@ function App() {
   const HomeScreen = () => (
     <div className="home-screen">
       <h1>Get To The End</h1>
+      
+      {/* Navigation Bar */}
+      <div className="nav-bar">
+        <div className="nav-option active">
+          <span>Bots</span>
+        </div>
+      </div>
+      
       <div className="home-buttons">
         <button type="button" onClick={() => {
           socket.emit('joinQueue', username);

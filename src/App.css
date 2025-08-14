@@ -355,10 +355,37 @@ button {
 .home-screen h1 {
   font-size: 4.5rem;
   color: #222;
-  margin-bottom: 64px;
+  margin-bottom: 32px;
   font-weight: 900;
   letter-spacing: 2px;
   text-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Navigation Bar */
+.nav-bar {
+  display: flex;
+  background: #f0f0f0;
+  border-radius: 25px;
+  padding: 8px;
+  margin-bottom: 48px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.nav-option {
+  padding: 12px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.nav-option.active {
+  background: white;
+  color: #4CAF50;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .home-buttons {
