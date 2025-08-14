@@ -186,27 +186,26 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       return;
     }
 
-    // Simple: just set the password
-    const input = newPassword;
+    // Simple: just set the password to whatever they typed
     const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    // Find user and update password
     let userIndex = storedUsers.findIndex((u: User) => u.username === resetEmail);
     
     if (userIndex !== -1) {
-      storedUsers[userIndex].password = input;
+      // Update password
+      storedUsers[userIndex].password = newPassword;
       localStorage.setItem('users', JSON.stringify(storedUsers));
       setUsers(storedUsers);
-      setError('Password updated successfully!');
+      setError('Password updated!');
     } else {
-      const newUser: User = { username: resetEmail, password: input };
+      // Create new user
+      const newUser: User = { username: resetEmail, password: newPassword };
       const updatedUsers = [...storedUsers, newUser];
       localStorage.setItem('users', JSON.stringify(updatedUsers));
       setUsers(updatedUsers);
-      setError('New user created with updated password!');
+      setError('New user created!');
     }
     
-    // Clear form and return to login
+    // Go back to login
     setTimeout(() => {
       setShowPasswordReset(false);
       setResetStep('email');
@@ -215,7 +214,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       setNewPassword('');
       setConfirmNewPassword('');
       setError('');
-    }, 500);
+    }, 1000);
   };
 
   // Password reset screens
