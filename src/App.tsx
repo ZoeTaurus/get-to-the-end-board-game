@@ -491,13 +491,15 @@ function App() {
             
             // Bot makes move after 300ms, with 10-second fallback
             const botMoveTimeout = setTimeout(() => {
-              makeBotMove(botDifficulty);
+              console.log('🤖 Bot timeout triggered, calling makeBotMove with difficulty:', botDifficulty);
+              // Pass the current state directly to avoid race conditions
+              makeBotMove(botDifficulty, 'blue', false);
             }, 300);
             
             // Fallback: if bot doesn't move within 10 seconds, force a random move
             const fallbackTimeout = setTimeout(() => {
               console.log('🤖 Bot taking too long, forcing random move');
-              forceBotRandomMove();
+              forceBotRandomMove('blue', false);
             }, 10000);
             
             // Store timeouts to clear them if game ends
@@ -600,12 +602,315 @@ function App() {
     };
   }, [timerId]);
 
+  // Smart move evaluation with prediction
+  const findBestMove = (board: (Piece | null)[][], fromRow: number, fromCol: number, piece: Piece, moves: [number, number][], captures: [number, number][], predictionDepth: number, botColor: 'blue'): [number, number] | null => {
+    let bestMove: [number, number] | null = null;
+    let bestScore = -Infinity;
+    
+    // Evaluate all possible moves
+    for (const [toRow, toCol] of [...moves, ...captures]) {
+      const isCapture = captures.some(([r, c]) => r === toRow && c === toCol);
+      
+      // Simulate the move
+      const newBoard = board.map(row => [...row]);
+      const movingPiece = {...piece};
+      
+      if (isCapture && movingPiece.type === 'circle') {
+        movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+      }
+      
+      newBoard[toRow][toCol] = movingPiece;
+      newBoard[fromRow][fromCol] = null;
+      
+      // Check if this move wins immediately
+      const winner = checkWinCondition(newBoard, toCol);
+      if (winner === botColor) {
+        return [toRow, toCol]; // Winning move!
+      }
+      
+      // Calculate move score
+      let score = 0;
+      
+      // Base score for advancing towards goal
+      if (toCol > fromCol) score += 2;
+      if (toCol === 5) score += 10; // Near goal
+      
+      // Score for captures
+      if (isCapture) score += 3;
+      
+      // Score for blocking opponent
+      if (toCol === 4) score += 1; // Block near goal
+      
+      // Safety check - avoid moves that put piece in danger
+      if (predictionDepth > 0) {
+        const dangerScore = evaluateMoveSafety(newBoard, toRow, toCol, botColor, predictionDepth - 1);
+        score += dangerScore;
+      }
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = [toRow, toCol];
+      }
+    }
+    
+    return bestMove;
+  };
+  
+  // Evaluate if a move is safe from capture
+  const evaluateMoveSafety = (board: (Piece | null)[][], row: number, col: number, pieceColor: 'blue', depth: number): number => {
+    if (depth === 0) return 0;
+    
+    let safetyScore = 0;
+    
+    // Check if this piece can be captured by opponent
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const opponentPiece = board[r][c];
+        if (opponentPiece && opponentPiece.color !== pieceColor) {
+          const { captures } = calculateValidMoves(board, r, c);
+          if (captures.some(([cr, cc]) => cr === row && cc === col)) {
+            safetyScore -= 5; // Piece can be captured
+            
+            // Check if we can capture back
+            if (depth > 1) {
+              const canCaptureBack = canPieceCaptureOpponent(board, row, col, pieceColor);
+              if (canCaptureBack) {
+                safetyScore += 2; // Can capture back
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    return safetyScore;
+  };
+  
+  // Check if a piece can capture an opponent
+  const canPieceCaptureOpponent = (board: (Piece | null)[][], row: number, col: number, pieceColor: 'blue'): boolean => {
+    const piece = board[row][col];
+    if (!piece) return false;
+    
+    const { captures } = calculateValidMoves(board, row, col);
+    return captures.length > 0;
+  };
+  
+  // SOPHISTICATED BOT AI FUNCTIONS
+  
+  // Easy Bot: Basic strategy with some intelligence
+  const findEasyBotMove = (board: (Piece | null)[][], fromRow: number, fromCol: number, piece: Piece, moves: [number, number][], captures: [number, number][], botColor: 'blue'): [number, number] | null => {
+    // Prefer captures if available (70% chance)
+    if (captures.length > 0 && Math.random() < 0.7) {
+      // Prefer captures that advance towards the goal
+      const advancingCaptures = captures.filter(([r, c]) => c > fromCol);
+      if (advancingCaptures.length > 0) {
+        return advancingCaptures[Math.floor(Math.random() * advancingCaptures.length)];
+      }
+      return captures[Math.floor(Math.random() * captures.length)];
+    }
+    
+    // Otherwise, prefer moves that advance towards the goal
+    if (moves.length > 0) {
+      const advancingMoves = moves.filter(([r, c]) => c > fromCol);
+      if (advancingMoves.length > 0) {
+        return advancingMoves[Math.floor(Math.random() * advancingMoves.length)];
+      }
+      return moves[Math.floor(Math.random() * moves.length)];
+    }
+    
+    return null;
+  };
+  
+  // Normal Bot: 3-round prediction with safety analysis
+  const findNormalBotMove = (board: (Piece | null)[][], fromRow: number, fromCol: number, piece: Piece, moves: [number, number][], captures: [number, number][], botColor: 'blue', predictionDepth: number): [number, number] | null => {
+    let bestMove: [number, number] | null = null;
+    let bestScore = -Infinity;
+    
+    // Check for immediate winning moves first
+    for (const [toRow, toCol] of [...moves, ...captures]) {
+      const isCapture = captures.some(([r, c]) => r === toRow && c === toCol);
+      const newBoard = simulateMove(board, fromRow, fromCol, toRow, toCol, piece, isCapture);
+      
+      if (checkWinCondition(newBoard, toCol) === botColor) {
+        return [toRow, toCol]; // Winning move!
+      }
+    }
+    
+    // Evaluate all moves with prediction
+    for (const [toRow, toCol] of [...moves, ...captures]) {
+      const isCapture = captures.some(([r, c]) => r === toRow && c === toCol);
+      const newBoard = simulateMove(board, fromRow, fromCol, toRow, toCol, piece, isCapture);
+      
+      let score = evaluateMoveScore(newBoard, toRow, toCol, fromCol, isCapture, botColor);
+      
+      // Add safety analysis
+      if (predictionDepth > 0) {
+        const safetyScore = evaluateMoveSafety(newBoard, toRow, toCol, botColor, predictionDepth - 1);
+        score += safetyScore;
+      }
+      
+      // Add strategic blocking
+      if (toCol === 4) { // Near player's goal
+        score += 2; // Block opponent
+      }
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = [toRow, toCol];
+      }
+    }
+    
+    return bestMove;
+  };
+  
+  // Hard Bot: 5-round prediction with advanced tactics
+  const findHardBotMove = (board: (Piece | null)[][], fromRow: number, fromCol: number, piece: Piece, moves: [number, number][], captures: [number, number][], botColor: 'blue', predictionDepth: number): [number, number] | null => {
+    let bestMove: [number, number] | null = null;
+    let bestScore = -Infinity;
+    
+    // Check for immediate winning moves first
+    for (const [toRow, toCol] of [...moves, ...captures]) {
+      const isCapture = captures.some(([r, c]) => r === toRow && c === toCol);
+      const newBoard = simulateMove(board, fromRow, fromCol, toRow, toCol, piece, isCapture);
+      
+      if (checkWinCondition(newBoard, toCol) === botColor) {
+        return [toRow, toCol]; // Winning move!
+      }
+    }
+    
+    // Advanced evaluation with deep prediction
+    for (const [toRow, toCol] of [...moves, ...captures]) {
+      const isCapture = captures.some(([r, c]) => r === toRow && c === toCol);
+      const newBoard = simulateMove(board, fromRow, fromCol, toRow, toCol, piece, isCapture);
+      
+      let score = evaluateMoveScore(newBoard, toRow, toCol, fromCol, isCapture, botColor);
+      
+      // Deep safety analysis
+      if (predictionDepth > 0) {
+        const safetyScore = evaluateMoveSafety(newBoard, toRow, toCol, botColor, predictionDepth - 1);
+        score += safetyScore;
+        
+        // Add tactical analysis
+        const tacticalScore = evaluateTacticalPosition(newBoard, toRow, toCol, botColor, predictionDepth - 1);
+        score += tacticalScore;
+      }
+      
+      // Strategic positioning
+      if (toCol === 4) score += 3; // Block near goal
+      if (toCol === 5) score += 15; // Near bot's goal
+      
+      // Piece coordination
+      score += evaluatePieceCoordination(newBoard, toRow, toCol, botColor);
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = [toRow, toCol];
+      }
+    }
+    
+    return bestMove;
+  };
+  
+  // Helper function to simulate a move
+  const simulateMove = (board: (Piece | null)[][], fromRow: number, fromCol: number, toRow: number, toCol: number, piece: Piece, isCapture: boolean): (Piece | null)[][] => {
+    const newBoard = board.map(row => [...row]);
+    const movingPiece = {...piece};
+    
+    if (isCapture && movingPiece.type === 'circle') {
+      movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+    }
+    
+    newBoard[toRow][toCol] = movingPiece;
+    newBoard[fromRow][fromCol] = null;
+    
+    return newBoard;
+  };
+  
+  // Evaluate move score
+  const evaluateMoveScore = (board: (Piece | null)[][], toRow: number, toCol: number, fromCol: number, isCapture: boolean, botColor: 'blue'): number => {
+    let score = 0;
+    
+    // Base score for advancing towards goal
+    if (toCol > fromCol) score += 3;
+    if (toCol === 5) score += 20; // Near goal
+    
+    // Score for captures
+    if (isCapture) score += 8;
+    
+    // Score for blocking opponent
+    if (toCol === 4) score += 5; // Block near goal
+    
+    return score;
+  };
+  
+  // Evaluate tactical position
+  const evaluateTacticalPosition = (board: (Piece | null)[][], row: number, col: number, botColor: 'blue', depth: number): number => {
+    if (depth === 0) return 0;
+    
+    let tacticalScore = 0;
+    
+    // Check if this position threatens opponent pieces
+    const { captures } = calculateValidMoves(board, row, col);
+    tacticalScore += captures.length * 2;
+    
+    // Check if this position protects other bot pieces
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (piece && piece.color === botColor) {
+          // Check if this position can protect the piece
+          if (Math.abs(r - row) <= 1 && Math.abs(c - col) <= 1) {
+            tacticalScore += 1;
+          }
+        }
+      }
+    }
+    
+    return tacticalScore;
+  };
+  
+
+
+  // Evaluate piece coordination
+  const evaluatePieceCoordination = (board: (Piece | null)[][], row: number, col: number, botColor: 'blue'): number => {
+    let coordinationScore = 0;
+    
+    // Check if this move creates a defensive formation
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (piece && piece.color === botColor) {
+          const distance = Math.abs(r - row) + Math.abs(c - col);
+          if (distance === 1) {
+            coordinationScore += 2; // Adjacent pieces
+          } else if (distance === 2) {
+            coordinationScore += 1; // Nearby pieces
+          }
+        }
+      }
+    }
+    
+    return coordinationScore;
+  };
+
   // Bot AI Logic
-  const makeBotMove = (difficulty: 'easy' | 'normal' | 'hard') => {
+  const makeBotMove = (difficulty: 'easy' | 'normal' | 'hard', playerColor: 'blue', isPlayerTurn: boolean) => {
+    console.log('🤖 makeBotMove called! Current state:', { playerColor, isPlayerTurn, difficulty });
+    
     // Safety check: only move if it's actually the bot's turn
-    if (currentPlayer !== 'blue' || isMyTurn) {
+    if (playerColor !== 'blue' || isPlayerTurn) {
+      console.log('🤖 Safety check failed, returning early');
       return;
     }
+    
+    // Additional safety check: prevent multiple bot moves
+    if (currentPlayer !== 'blue' || isMyTurn) {
+      console.log('🤖 Additional safety check failed - bot already moved or not bot\'s turn');
+      return;
+    }
+    
+    // Set a flag to prevent multiple moves
+    setIsMyTurn(true); // This prevents the bot from moving again
     
     const botColor = 'blue'; // Bot always plays as blue
     const botPieces: [number, number][] = [];
@@ -638,33 +943,14 @@ function App() {
     let targetMove: [number, number] | null = null;
     
     if (difficulty === 'easy') {
-      // Easy bot: Random moves, prefers captures if available
-      if (captures.length > 0 && Math.random() < 0.7) {
-        targetMove = captures[Math.floor(Math.random() * captures.length)];
-      } else if (moves.length > 0) {
-        targetMove = moves[Math.floor(Math.random() * moves.length)];
-      }
+      // Easy Bot: Basic strategy with some intelligence
+      targetMove = findEasyBotMove(currentBoard, selectedRow, selectedCol, piece, moves, captures, botColor);
     } else if (difficulty === 'normal') {
-      // Normal bot: Smarter moves, tries to advance towards goal
-      if (captures.length > 0) {
-        // Prefer captures that advance towards the right
-        const advancingCaptures = captures.filter(([r, c]) => c > selectedCol);
-        if (advancingCaptures.length > 0) {
-          targetMove = advancingCaptures[Math.floor(Math.random() * advancingCaptures.length)];
-        } else {
-          targetMove = captures[Math.floor(Math.random() * captures.length)];
-        }
-      } else if (moves.length > 0) {
-        // Prefer moves that advance towards the right
-        const advancingMoves = moves.filter(([r, c]) => c > selectedCol);
-        if (advancingMoves.length > 0) {
-          targetMove = advancingMoves[Math.floor(Math.random() * advancingMoves.length)];
-        } else {
-          targetMove = moves[Math.floor(Math.random() * moves.length)];
-        }
-      }
+      // Normal Bot: 3-round prediction with safety analysis
+      targetMove = findNormalBotMove(currentBoard, selectedRow, selectedCol, piece, moves, captures, botColor, 3);
     } else if (difficulty === 'hard') {
-      // Hard bot: Strategic moves, prioritizes winning moves
+      // Hard Bot: 5-round prediction with advanced tactics (fallback to normal for now)
+      targetMove = findNormalBotMove(currentBoard, selectedRow, selectedCol, piece, moves, captures, botColor, 5);
       // Check for immediate win moves
       for (const [r, c] of [...moves, ...captures]) {
         const newBoard = board.map(row => [...row]);
@@ -720,12 +1006,14 @@ function App() {
     if (targetMove) {
       const [targetRow, targetCol] = targetMove;
       
-      // Update the board by adding the bot's move to the existing board
+      // Update the board by adding the bot's move to the existing board - MAIN BOT FUNCTION
       setBoard(prevBoard => {
         const updatedBoard = prevBoard.map(row => [...row]);
         const movingPiece = {...piece};
         
-        const isCapture = captures.some(([r, c]) => r === targetRow && c === targetCol);
+        // Check if this is actually a capture by looking at the target cell
+        const targetCell = updatedBoard[targetRow][targetCol];
+        const isCapture = targetCell && targetCell.color !== movingPiece.color;
         if (isCapture && movingPiece.type === 'circle') {
           movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
         }
@@ -745,12 +1033,17 @@ function App() {
       if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
       setBotTimeouts({ move: null, fallback: null });
       
-      // Check for win condition after board update
+      // Check for win condition after board update - MAIN BOT FUNCTION
       setTimeout(() => {
         const currentBoard = board;
         const winnerColor = checkWinCondition(currentBoard, targetCol);
         
         if (winnerColor) {
+          // Clear bot timeouts when game ends
+          if (botTimeouts.move) clearTimeout(botTimeouts.move);
+          if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
+          setBotTimeouts({ move: null, fallback: null });
+          
           setWinner(winnerColor);
           setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
           if (winnerColor === 'red') {
@@ -760,19 +1053,29 @@ function App() {
       }, 0);
       
     } else {
-      // If no move was found, try to force a random move
-      console.log('🤖 No valid move found for bot, trying fallback');
-      forceBotRandomMove();
+      // If no move was found, just end the turn
+      console.log('🤖 No valid move found for bot, ending turn');
+      setCurrentPlayer('red');
+      setIsMyTurn(true);
     }
   };
 
   // Force bot to make a random move when it's taking too long
-  const forceBotRandomMove = () => {
+  const forceBotRandomMove = (playerColor: 'blue', isPlayerTurn: boolean) => {
     // Safety check: only move if it's actually the bot's turn
-    if (currentPlayer !== 'blue' || isMyTurn) {
+    if (playerColor !== 'blue' || isPlayerTurn) {
       console.log('🤖 Bot tried to force move but it\'s not the bot\'s turn');
       return;
     }
+    
+    // Additional safety check: prevent multiple bot moves
+    if (currentPlayer !== 'blue' || isMyTurn) {
+      console.log('🤖 Force move safety check failed - bot already moved or not bot\'s turn');
+      return;
+    }
+    
+    // Set a flag to prevent multiple moves
+    setIsMyTurn(true); // This prevents the bot from moving again
     
     console.log('🤖 Forcing random bot move');
     const botColor = 'blue';
@@ -811,7 +1114,9 @@ function App() {
         const updatedBoard = prevBoard.map(row => [...row]);
         const movingPiece = {...piece};
         
-        const isCapture = captures.some(([r, c]) => r === targetRow && c === targetCol);
+        // Check if this is actually a capture by looking at the target cell
+        const targetCell = updatedBoard[targetRow][targetCol];
+        const isCapture = targetCell && targetCell.color !== movingPiece.color;
         if (isCapture && movingPiece.type === 'circle') {
           movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
         }
@@ -925,7 +1230,22 @@ function App() {
               red: { color: 'red', username: username || 'Player 1' },
               blue: { color: 'blue', username: 'Bot (Easy)' }
             });
-            initializeGame();
+            // Don't call initializeGame() as it resets currentPlayer
+            const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
+            
+            // Set up blue pieces on the left side
+            newBoard[0][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            newBoard[1][0] = { type: 'circle', color: 'blue', eatenCount: 0 };
+            newBoard[2][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            newBoard[3][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            
+            // Set up red pieces on the right side
+            newBoard[0][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            newBoard[1][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
+            newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            
+            setBoard(newBoard);
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -944,7 +1264,22 @@ function App() {
               red: { color: 'red', username: username || 'Player 1' },
               blue: { color: 'blue', username: 'Bot (Normal)' }
             });
-            initializeGame();
+            // Don't call initializeGame() as it resets currentPlayer
+            const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
+            
+            // Set up blue pieces on the left side
+            newBoard[0][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            newBoard[1][0] = { type: 'circle', color: 'blue', eatenCount: 0 };
+            newBoard[2][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            newBoard[3][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            
+            // Set up red pieces on the right side
+            newBoard[0][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            newBoard[1][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
+            newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            
+            setBoard(newBoard);
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -963,7 +1298,22 @@ function App() {
               red: { color: 'red', username: username || 'Player 1' },
               blue: { color: 'blue', username: 'Bot (Hard)' }
             });
-            initializeGame();
+            // Don't call initializeGame() as it resets currentPlayer
+            const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
+            
+            // Set up blue pieces on the left side
+            newBoard[0][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            newBoard[1][0] = { type: 'circle', color: 'blue', eatenCount: 0 };
+            newBoard[2][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            newBoard[3][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            
+            // Set up red pieces on the right side
+            newBoard[0][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            newBoard[1][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
+            newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            
+            setBoard(newBoard);
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
