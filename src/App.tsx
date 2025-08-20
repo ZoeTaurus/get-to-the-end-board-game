@@ -1069,8 +1069,6 @@ function App() {
     // Use GameBot AI to choose the best move
     const gameBot = new GameBot(botLevel);
     const botBoard = convertBoardForBot(board);
-    console.log('🚨 DEBUG: Original board:', board);
-    console.log('🚨 DEBUG: Converted board:', botBoard);
     const gameState = { 
       board: botBoard, 
       currentPlayer: GameBotPlayer.BOT // The bot is playing as Player.BOT (blue pieces)

@@ -64,7 +64,8 @@ export class GameBot {
    */
   public makeMove(gameState: GameState): Move | null {
     // A helper function to find all possible moves for the bot.
-    const allPossibleMoves = this.getAllValidMoves(gameState, gameState.currentPlayer);
+    // CRITICAL FIX: Always look for moves for Player.BOT, not gameState.currentPlayer
+    const allPossibleMoves = this.getAllValidMoves(gameState, Player.BOT);
 
     if (allPossibleMoves.length === 0) {
       return null;
@@ -72,9 +73,7 @@ export class GameBot {
 
     // CRITICAL: ALWAYS prioritize captures if available - this is the main fix
     const captureMoves = allPossibleMoves.filter(move => move.eatenPiece);
-    console.log('🚨 BOT DEBUG: Found', allPossibleMoves.length, 'total moves,', captureMoves.length, 'captures');
     if (captureMoves.length > 0) {
-      console.log('🚨 BOT DEBUG: TAKING CAPTURE:', captureMoves[0]);
       // Always capture when possible - no exceptions!
       return captureMoves[0];
     }
@@ -123,7 +122,7 @@ export class GameBot {
       }
     }
     
-    console.log('🚨 BOT DEBUG: Generated', moves.length, 'moves for', player === Player.BOT ? 'BOT' : 'PLAYER');
+
     return moves;
   }
 
@@ -137,7 +136,7 @@ export class GameBot {
     const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // Back, forth, sideways
     const eatDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]]; // Diagonal
 
-    console.log('🚨 DEBUG: Person piece at [', row, ',', col, '] owner:', owner, 'opponent:', opponent);
+
 
     // Movement
     for (const [dRow, dCol] of directions) {
@@ -154,9 +153,7 @@ export class GameBot {
       const newCol = col + dCol;
       if (this.isValidPosition(newRow, newCol, board.length, board[0].length)) {
         const targetPiece = board[newRow][newCol];
-        console.log('🚨 DEBUG: Checking diagonal [', newRow, ',', newCol, '] for capture. Target piece:', targetPiece, 'is opponent?', targetPiece?.owner === opponent);
         if (targetPiece?.owner === opponent) {
-          console.log('🚨 DEBUG: FOUND CAPTURE MOVE for person piece!');
           moves.push({ from: { row, col }, to: { row: newRow, col: newCol }, eatenPiece: { row: newRow, col: newCol } });
         }
       }
