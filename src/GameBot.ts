@@ -73,7 +73,9 @@ export class GameBot {
 
     // CRITICAL: ALWAYS prioritize captures if available - this is the main fix
     const captureMoves = allPossibleMoves.filter(move => move.eatenPiece);
+    console.log('🚨 TEST: Bot found', allPossibleMoves.length, 'total moves,', captureMoves.length, 'captures');
     if (captureMoves.length > 0) {
+      console.log('🚨 TEST: Bot taking capture move!');
       // Always capture when possible - no exceptions!
       return captureMoves[0];
     }
@@ -108,10 +110,14 @@ export class GameBot {
     const boardRows = board.length;
     const boardCols = board[0].length;
 
+    console.log('🚨 TEST: Looking for moves for player:', player === Player.BOT ? 'BOT' : 'PLAYER');
+    console.log('🚨 TEST: Board has', boardRows, 'rows and', boardCols, 'columns');
+
     for (let row = 0; row < boardRows; row++) {
       for (let col = 0; col < boardCols; col++) {
         const piece = board[row][col];
         if (piece && piece.owner === player) {
+          console.log('🚨 TEST: Found', player === Player.BOT ? 'BOT' : 'PLAYER', 'piece at [', row, ',', col, ']:', piece.type);
           // Check moves for the specific piece type.
           if (piece.type === PieceType.PERSON) {
             this.getPersonMoves(gameState, row, col, moves);
@@ -122,7 +128,7 @@ export class GameBot {
       }
     }
     
-
+    console.log('🚨 TEST: Generated', moves.length, 'total moves');
     return moves;
   }
 
