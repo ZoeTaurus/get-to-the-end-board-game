@@ -137,6 +137,8 @@ export class GameBot {
     const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]; // Back, forth, sideways
     const eatDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]]; // Diagonal
 
+    console.log('🚨 DEBUG: Person piece at [', row, ',', col, '] owner:', owner, 'opponent:', opponent);
+
     // Movement
     for (const [dRow, dCol] of directions) {
       const newRow = row + dRow;
@@ -150,8 +152,13 @@ export class GameBot {
     for (const [dRow, dCol] of eatDirections) {
       const newRow = row + dRow;
       const newCol = col + dCol;
-      if (this.isValidPosition(newRow, newCol, board.length, board[0].length) && board[newRow][newCol]?.owner === opponent) {
-        moves.push({ from: { row, col }, to: { row: newRow, col: newCol }, eatenPiece: { row: newRow, col: newCol } });
+      if (this.isValidPosition(newRow, newCol, board.length, board[0].length)) {
+        const targetPiece = board[newRow][newCol];
+        console.log('🚨 DEBUG: Checking diagonal [', newRow, ',', newCol, '] for capture. Target piece:', targetPiece, 'is opponent?', targetPiece?.owner === opponent);
+        if (targetPiece?.owner === opponent) {
+          console.log('🚨 DEBUG: FOUND CAPTURE MOVE for person piece!');
+          moves.push({ from: { row, col }, to: { row: newRow, col: newCol }, eatenPiece: { row: newRow, col: newCol } });
+        }
       }
     }
   }
