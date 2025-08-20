@@ -3,10 +3,11 @@ import { io, Socket } from 'socket.io-client';
 import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import Login from './Login';
+import { GameBot, convertBoardForBot, convertMoveFromBot, Player as GameBotPlayer } from './GameBot';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
-type GameScreen = 'home' | 'game' | 'help' | 'bots';
+type GameScreen = 'home' | 'game' | 'help' | 'bots' | 'private';
 
 interface Piece {
   type: PieceType;
@@ -107,10 +108,20 @@ function App() {
   );
   const [currentPlayer, setCurrentPlayer] = useState<PlayerColor>('red');
   const [gameStarted, setGameStarted] = useState(false);
-  const [gameMode, setGameMode] = useState<'online' | 'bot'>('online');
-  const [botDifficulty, setBotDifficulty] = useState<'easy' | 'normal' | 'hard'>('easy');
+  const [gameMode, setGameMode] = useState<'online' | 'bot' | 'local'>('online');
+  const [botDifficulty, setBotDifficulty] = useState<'easy' | 'normal' | 'hard' | 'pro' | 'wizard'>('easy');
   const [botTimeouts, setBotTimeouts] = useState<{ move: NodeJS.Timeout | null; fallback: NodeJS.Timeout | null }>({ move: null, fallback: null });
   const [winner, setWinner] = useState<PlayerColor | null>(null);
+  
+  // Private game state
+  const [waitingForOpponent, setWaitingForOpponent] = useState(false);
+  const [privateGameId, setPrivateGameId] = useState('');
+  const [isHost, setIsHost] = useState(false);
+  const [isJoiningGame, setIsJoiningGame] = useState(false);
+  const [isCreatingGame, setIsCreatingGame] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [codeExpiryTime, setCodeExpiryTime] = useState<number | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number>(300); // 5 minutes in seconds
   const [selectedPiece, setSelectedPiece] = useState<[number, number] | null>(null);
   const [validMoves, setValidMoves] = useState<[number, number][]>([]);
   const [validCaptures, setValidCaptures] = useState<[number, number][]>([]);
@@ -217,6 +228,66 @@ function App() {
       }
     });
 
+    // Private game socket listeners
+    socket.on('privateGameJoined', (data) => {
+      console.log('Joined private game:', data);
+      setWaitingForOpponent(false);
+      setIsJoiningGame(false);
+      
+      // Set up the game
+      setPlayers({
+        red: { color: 'red', username: data.hostUsername },
+        blue: { color: 'blue', username: username || 'Player 2' }
+      });
+      
+      // Don't override gameMode for local games
+      if (gameMode !== 'local') {
+        setGameMode('online');
+      }
+      setGameId(data.gameId); // Set the private game ID
+      setScreen('game');
+      setGameStarted(true);
+      setCurrentPlayer('red');
+      setIsMyTurn(false); // Host goes first
+    });
+
+    socket.on('privateGameCreated', (data) => {
+      console.log('Private game created successfully:', data);
+      setWaitingForOpponent(true);
+    });
+
+    socket.on('privateGameError', (data) => {
+      console.error('Private game error:', data);
+      setWaitingForOpponent(false);
+      setIsJoiningGame(false);
+      setIsCreatingGame(false);
+      setGeneratedCode('');
+      setPrivateGameId('');
+      setIsHost(false);
+      // You could show an error message to the user here
+    });
+
+    socket.on('opponentJoinedPrivateGame', (data) => {
+      console.log('Opponent joined private game:', data);
+      setWaitingForOpponent(false);
+      
+      // Start the game
+      setPlayers({
+        red: { color: 'red', username: username || 'Player 1' },
+        blue: { color: 'blue', username: data.opponentUsername }
+      });
+      
+      // Don't override gameMode for local games
+      if (gameMode !== 'local') {
+        setGameMode('online');
+      }
+      setGameId(data.gameId); // Set the private game ID
+      setScreen('game');
+      setGameStarted(true);
+      setCurrentPlayer('red');
+      setIsMyTurn(true); // Host goes first
+    });
+
     return () => {
       socket.off('waiting');
       socket.off('gameStart');
@@ -286,6 +357,35 @@ function App() {
     setShowLogoutConfirm(false);
   };
 
+  // Generate private game code
+  const generateGameCode = useCallback(() => {
+    // Generate a random 4-character alphanumeric code
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    const charactersLength = characters.length;
+    
+    for (let i = 0; i < 4; i++) {
+      const randomIndex = Math.floor(Math.random() * charactersLength);
+      code += characters.charAt(randomIndex);
+    }
+    
+    const gameId = `private_${Date.now()}`;
+    
+    setGeneratedCode(code);
+    setPrivateGameId(gameId);
+    setIsCreatingGame(true);
+    setIsHost(true);
+    setWaitingForOpponent(true);
+    setCodeExpiryTime(Date.now() + 300000);
+    setTimeRemaining(300);
+    
+    socket.emit('createPrivateGame', {
+      gameCode: code,
+      gameId: gameId,
+      hostUsername: username || 'Player 1'
+    });
+  }, [username, socket]);
+
   // Initialize the game
   const initializeGame = () => {
     const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
@@ -301,20 +401,23 @@ function App() {
     newBoard[1][5] = { type: 'person', color: 'red', eatenCount: 0 };
     newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
     newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
-    
+
     setBoard(newBoard);
     setCurrentPlayer('red');
     setWinner(null);
     setSelectedPiece(null);
     setValidMoves([]);
     setValidCaptures([]);
-    setGameMessage(`It's ${players.red.username}'s turn. Select a piece to move.`);
+    
+    // Set appropriate game message based on game mode
+    if (gameMode === 'local') {
+      setGameMessage(`It's ${players.red.username}'s turn. Select a piece to move.`);
+    } else {
+      setGameMessage(`It's ${players.red.username}'s turn. Select a piece to move.`);
+    }
   };
 
-  // Start new game on component mount
-  useEffect(() => {
-    initializeGame();
-  }, []);
+
 
   // Calculate valid moves for a selected piece
   const calculateValidMoves = (board: (Piece | null)[][], row: number, col: number) => {
@@ -451,19 +554,30 @@ function App() {
         const movingPiece = {...board[selectedRow][selectedCol]!};
         
         if (isValidCapture) {
+          console.log('🎯 CAPTURE: Removing piece at', [rowIndex, colIndex], 'Piece was:', newBoard[rowIndex][colIndex]);
+          // Remove the captured piece from the board
+          newBoard[rowIndex][colIndex] = null;
+          console.log('🎯 CAPTURE: Board after removal:', JSON.stringify(newBoard));
+          
           if (movingPiece.type === 'circle') {
             movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+            console.log('🎯 CAPTURE: Updated circle eaten count to:', movingPiece.eatenCount);
           }
         }
         
+        // Place the moving piece in the new position
         newBoard[rowIndex][colIndex] = movingPiece;
         newBoard[selectedRow][selectedCol] = null;
         
         // Check for win condition
         const winnerColor = checkWinCondition(newBoard, colIndex);
         
+        console.log('Game mode when checking win condition:', gameMode);
+        console.log('Winner color detected:', winnerColor);
+        
         // If playing against bot, handle locally
         if (gameMode === 'bot') {
+          console.log('Executing bot game logic');
           // Clear any existing bot timeouts
           if (botTimeouts.move) clearTimeout(botTimeouts.move);
           if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
@@ -489,21 +603,51 @@ function App() {
             setCurrentPlayer('blue');
             setIsMyTurn(false); // Give turn to bot
             
-            // Bot makes move after 300ms, with 10-second fallback
-            const botMoveTimeout = setTimeout(() => {
-              console.log('🤖 Bot timeout triggered, calling makeBotMove with difficulty:', botDifficulty);
-              // Pass the current state directly to avoid race conditions
-              makeBotMove(botDifficulty, 'blue', false);
-            }, 300);
+                // Bot makes move after a natural delay to feel more human
+    console.log('🤖 Bot turn triggered, thinking...');
+    const botMoveTimeout = setTimeout(() => {
+      try {
+        makeBotMove(botDifficulty, 'blue', false);
+      } catch (error) {
+        console.log('🤖 Bot crashed, forcing random move');
+        forceBotRandomMove('blue', false);
+      }
+    }, 800 + Math.random() * 400); // 800-1200ms delay, feels natural
+    
+    // Fallback: if bot doesn't move within 3 seconds, force a move
+    const fallbackTimeout = setTimeout(() => {
+      console.log('🤖 Bot taking too long, forcing move');
+      forceBotRandomMove('blue', false);
+    }, 3000);
+    
+    // Store timeouts to clear if game ends
+    setBotTimeouts({ move: botMoveTimeout, fallback: fallbackTimeout });
+          }
+        } else if (gameMode === 'local') {
+          console.log('Executing local game logic');
+          // Local same-device play - handle locally
+          setBoard(newBoard);
+          setSelectedPiece(null);
+          setValidMoves([]);
+          setValidCaptures([]);
+          
+          if (winnerColor) {
+            console.log('Local game winner detected:', winnerColor);
+            console.log('Players state:', players);
+            console.log('Setting game message to:', `${players[winnerColor].username} wins!`);
+            setWinner(winnerColor);
+            setGameMessage(`${players[winnerColor].username} wins!`);
+            if (winnerColor === 'red') {
+              setShowConfetti(true);
+            }
+          } else {
+            // Switch turns
+            const nextPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+            setCurrentPlayer(nextPlayer);
+            setIsMyTurn(true);
             
-            // Fallback: if bot doesn't move within 10 seconds, force a random move
-            const fallbackTimeout = setTimeout(() => {
-              console.log('🤖 Bot taking too long, forcing random move');
-              forceBotRandomMove('blue', false);
-            }, 10000);
-            
-            // Store timeouts to clear them if game ends
-            setBotTimeouts({ move: botMoveTimeout, fallback: fallbackTimeout });
+            // Update game message for local game
+            setGameMessage(`It's ${players[nextPlayer].username}'s turn. Select a piece to move.`);
           }
         } else {
           // Online play - emit move to server
@@ -556,7 +700,13 @@ function App() {
   };
 
   // Helper to get local player's color
-  const getMyColor = () => username === players.red.username ? 'red' : 'blue';
+  const getMyColor = () => {
+    if (gameMode === 'local') {
+      // In local mode, red always goes first, so the current player is the one whose turn it is
+      return currentPlayer;
+    }
+    return username === players.red.username ? 'red' : 'blue';
+  };
 
   // Add timer reset function
   const resetTimer = useCallback(() => {
@@ -602,6 +752,7 @@ function App() {
     };
   }, [timerId]);
 
+  // OLD BOT AI FUNCTIONS - DEPRECATED (Now using GameBot class)
   // Smart move evaluation with prediction
   const findBestMove = (board: (Piece | null)[][], fromRow: number, fromCol: number, piece: Piece, moves: [number, number][], captures: [number, number][], predictionDepth: number, botColor: 'blue'): [number, number] | null => {
     let bestMove: [number, number] | null = null;
@@ -695,7 +846,7 @@ function App() {
     return captures.length > 0;
   };
   
-  // SOPHISTICATED BOT AI FUNCTIONS
+  // SOPHISTICATED BOT AI FUNCTIONS - DEPRECATED (Now using GameBot class)
   
   // Easy Bot: Basic strategy with some intelligence
   const findEasyBotMove = (board: (Piece | null)[][], fromRow: number, fromCol: number, piece: Piece, moves: [number, number][], captures: [number, number][], botColor: 'blue'): [number, number] | null => {
@@ -893,171 +1044,107 @@ function App() {
     return coordinationScore;
   };
 
-  // Bot AI Logic
-  const makeBotMove = (difficulty: 'easy' | 'normal' | 'hard', playerColor: 'blue', isPlayerTurn: boolean) => {
-    console.log('🤖 makeBotMove called! Current state:', { playerColor, isPlayerTurn, difficulty });
+  // COMPLETELY NEW BOT SYSTEM - 5 DIFFICULTY LEVELS
+    // SUPER SMART BOT USING GAMEBOT AI
+  const makeBotMove = (difficulty: 'easy' | 'normal' | 'hard' | 'pro' | 'wizard', playerColor: 'blue', isPlayerTurn: boolean) => {
+    console.log('🤖 SUPER SMART BOT: Using GameBot AI with difficulty:', difficulty);
     
-    // Safety check: only move if it's actually the bot's turn
+    // Simple safety check
     if (playerColor !== 'blue' || isPlayerTurn) {
-      console.log('🤖 Safety check failed, returning early');
       return;
     }
     
-    // Additional safety check: prevent multiple bot moves
-    if (currentPlayer !== 'blue' || isMyTurn) {
-      console.log('🤖 Additional safety check failed - bot already moved or not bot\'s turn');
-      return;
-    }
+    // Map difficulty to GameBot levels (much smarter!)
+    const difficultyMap: { [key: string]: number } = {
+      'easy': 3,      // Was basic strategy → Now Hard AI (minimax)
+      'normal': 4,    // Was basic strategy → Now Expert AI (deep minimax)
+      'hard': 4,      // Was basic strategy → Now Expert AI (deep minimax)
+      'pro': 5,       // Was basic strategy → Now Unbeatable AI
+      'wizard': 5     // Was basic strategy → Now Unbeatable AI
+    };
     
-    // Set a flag to prevent multiple moves
-    setIsMyTurn(true); // This prevents the bot from moving again
+    const botLevel = difficultyMap[difficulty] || 4;
+    console.log('🤖 GameBot AI Level:', botLevel);
     
-    const botColor = 'blue'; // Bot always plays as blue
-    const botPieces: [number, number][] = [];
+    // Use GameBot AI to choose the best move
+    const gameBot = new GameBot(botLevel);
+    const botBoard = convertBoardForBot(board);
+    const gameState = { 
+      board: botBoard, 
+      currentPlayer: GameBotPlayer.BOT // The bot is playing as Player.BOT (blue pieces)
+    };
     
-    // Use the current board state (which includes the player's move)
-    const currentBoard = board;
+    const botMove = gameBot.makeMove(gameState);
     
-    // Find all bot pieces
-    for (let row = 0; row < currentBoard.length; row++) {
-      for (let col = 0; col < currentBoard[0].length; col++) {
-        if (currentBoard[row][col] && currentBoard[row][col]?.color === botColor) {
-          botPieces.push([row, col]);
-        }
-      }
-    }
-    
-    if (botPieces.length === 0) return;
-    
-    // Select a random bot piece
-    const randomPieceIndex = Math.floor(Math.random() * botPieces.length);
-    const [selectedRow, selectedCol] = botPieces[randomPieceIndex];
-    const piece = currentBoard[selectedRow][selectedCol];
-    
-    if (!piece) return;
-    
-    const { moves, captures } = calculateValidMoves(currentBoard, selectedRow, selectedCol);
-    console.log('🤖 Bot piece at', selectedRow, selectedCol, 'has moves:', moves, 'captures:', captures);
-    
-    // Bot decision making based on difficulty
-    let targetMove: [number, number] | null = null;
-    
-    if (difficulty === 'easy') {
-      // Easy Bot: Basic strategy with some intelligence
-      targetMove = findEasyBotMove(currentBoard, selectedRow, selectedCol, piece, moves, captures, botColor);
-    } else if (difficulty === 'normal') {
-      // Normal Bot: 3-round prediction with safety analysis
-      targetMove = findNormalBotMove(currentBoard, selectedRow, selectedCol, piece, moves, captures, botColor, 3);
-    } else if (difficulty === 'hard') {
-      // Hard Bot: 5-round prediction with advanced tactics (fallback to normal for now)
-      targetMove = findNormalBotMove(currentBoard, selectedRow, selectedCol, piece, moves, captures, botColor, 5);
-      // Check for immediate win moves
-      for (const [r, c] of [...moves, ...captures]) {
-        const newBoard = board.map(row => [...row]);
-        const movingPiece = {...piece};
-        
-        if (captures.some(([cr, cc]) => cr === r && cc === c)) {
-          if (movingPiece.type === 'circle') {
-            movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
-          }
-        }
-        
-        newBoard[r][c] = movingPiece;
-        newBoard[selectedRow][selectedCol] = null;
-        
-        // Check if this move wins
-        const winner = checkWinCondition(newBoard, c);
-        if (winner === botColor) {
-          targetMove = [r, c];
-          break;
-        }
-      }
-      
-      // If no winning move, use normal bot logic
-      if (!targetMove) {
-        if (captures.length > 0) {
-          const advancingCaptures = captures.filter(([r, c]) => c > selectedCol);
-          if (advancingCaptures.length > 0) {
-            targetMove = advancingCaptures[Math.floor(Math.random() * advancingCaptures.length)];
-          } else {
-            targetMove = captures[Math.floor(Math.random() * captures.length)];
-          }
-        } else if (moves.length > 0) {
-          const advancingMoves = moves.filter(([r, c]) => c > selectedCol);
-          if (advancingMoves.length > 0) {
-            targetMove = advancingMoves[Math.floor(Math.random() * advancingMoves.length)];
-          } else {
-            targetMove = moves[Math.floor(Math.random() * moves.length)];
-          }
-        }
-      }
-    }
-    
-    // If no move was found, force a random move
-    if (!targetMove) {
-      console.log('🤖 No move found, forcing random move');
-      const allOptions = [...moves, ...captures];
-      if (allOptions.length > 0) {
-        targetMove = allOptions[Math.floor(Math.random() * allOptions.length)];
-      }
-    }
-    
-    // Execute the move
-    if (targetMove) {
-      const [targetRow, targetCol] = targetMove;
-      
-      // Update the board by adding the bot's move to the existing board - MAIN BOT FUNCTION
-      setBoard(prevBoard => {
-        const updatedBoard = prevBoard.map(row => [...row]);
-        const movingPiece = {...piece};
-        
-        // Check if this is actually a capture by looking at the target cell
-        const targetCell = updatedBoard[targetRow][targetCol];
-        const isCapture = targetCell && targetCell.color !== movingPiece.color;
-        if (isCapture && movingPiece.type === 'circle') {
-          movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
-        }
-        
-        updatedBoard[targetRow][targetCol] = movingPiece;
-        updatedBoard[selectedRow][selectedCol] = null;
-        
-        return updatedBoard;
-      });
-      
-      // Switch back to player's turn
+    if (!botMove) {
+      console.log('🤖 GameBot found no valid moves');
       setCurrentPlayer('red');
       setIsMyTurn(true);
-      
-      // Clear bot timeouts since bot has moved
-      if (botTimeouts.move) clearTimeout(botTimeouts.move);
-      if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
-      setBotTimeouts({ move: null, fallback: null });
-      
-      // Check for win condition after board update - MAIN BOT FUNCTION
-      setTimeout(() => {
-        const currentBoard = board;
-        const winnerColor = checkWinCondition(currentBoard, targetCol);
-        
-        if (winnerColor) {
-          // Clear bot timeouts when game ends
-          if (botTimeouts.move) clearTimeout(botTimeouts.move);
-          if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
-          setBotTimeouts({ move: null, fallback: null });
-          
-          setWinner(winnerColor);
-          setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
-          if (winnerColor === 'red') {
-            setShowConfetti(true);
-          }
-        }
-      }, 0);
-      
+      return;
+    }
+    
+    console.log('🤖 GameBot AI chose move:', botMove);
+    
+    // DEBUG: Check if this is a capture move
+    if (botMove.eatenPiece) {
+      console.log('🤖 CAPTURE MOVE DETECTED! Bot will eat piece at:', botMove.eatenPiece.row, botMove.eatenPiece.col);
     } else {
-      // If no move was found, just end the turn
-      console.log('🤖 No valid move found for bot, ending turn');
-      setCurrentPlayer('red');
-      setIsMyTurn(true);
+      console.log('🤖 NO CAPTURE: This is a regular move');
     }
+    
+    // Convert GameBot move back to our format
+    const gameMove = convertMoveFromBot(botMove);
+    const [fromRow, fromCol] = gameMove.from;
+    const [toRow, toCol] = gameMove.to;
+    
+    // Get the piece being moved
+    const piece = board[fromRow][fromCol];
+    if (!piece) {
+      console.log('🤖 Error: No piece found at source position');
+      return;
+    }
+    
+    // Execute the move with proper capture handling
+    setBoard(prevBoard => {
+      const updatedBoard = prevBoard.map(row => [...row]);
+      const movingPiece = {...piece};
+      
+      // Handle captures properly - use the updated board state
+      const targetCell = updatedBoard[toRow][toCol];
+      const isCapture = targetCell && targetCell.color !== movingPiece.color;
+      
+      if (isCapture) {
+        console.log('🤖 BOT CAPTURE: Removing piece at', [toRow, toCol], 'Piece was:', targetCell);
+        // Remove the captured piece from the board FIRST
+        updatedBoard[toRow][toCol] = null;
+        console.log('🤖 BOT CAPTURE: Board after removal:', JSON.stringify(updatedBoard));
+        
+        if (movingPiece.type === 'circle') {
+          movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+          console.log('🤖 BOT CAPTURE: Updated circle eaten count to:', movingPiece.eatenCount);
+        }
+      }
+      
+      // Place the moving piece in the new position AFTER removing captured piece
+      updatedBoard[toRow][toCol] = movingPiece;
+      updatedBoard[fromRow][fromCol] = null;
+      
+      // Check for win condition IMMEDIATELY using the updated board (no setTimeout)
+      const winnerColor = checkWinCondition(updatedBoard, 0);
+      if (winnerColor) {
+        setWinner(winnerColor);
+        setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
+        if (winnerColor === 'red') {
+          setShowConfetti(true);
+        }
+      }
+      
+      return updatedBoard;
+    });
+    
+    // Switch turns like a normal game
+    setCurrentPlayer('red');
+    setIsMyTurn(true);
   };
 
   // Force bot to make a random move when it's taking too long
@@ -1069,94 +1156,94 @@ function App() {
     }
     
     // Additional safety check: prevent multiple bot moves
-    if (currentPlayer !== 'blue' || isMyTurn) {
+    if (isMyTurn) {
       console.log('🤖 Force move safety check failed - bot already moved or not bot\'s turn');
       return;
     }
     
-    // Set a flag to prevent multiple moves
-    setIsMyTurn(true); // This prevents the bot from moving again
+    console.log('🤖 Forcing random bot move using GameBot Easy mode');
     
-    console.log('🤖 Forcing random bot move');
-    const botColor = 'blue';
-    const botPieces: [number, number][] = [];
+    // Use the GameBot in easy mode for forced moves
+    const gameBot = new GameBot(1); // Easy mode = random moves
     
-    // Use the current board state (which includes the player's move)
-    const currentBoard = board;
+    // Convert your board format to the GameBot's format
+    const botBoard = convertBoardForBot(board);
+    const gameState = {
+      board: botBoard,
+      currentPlayer: 'blue' as any // GameBot expects 'blue' for bot
+    };
     
-    // Find all bot pieces
-    for (let row = 0; row < currentBoard.length; row++) {
-      for (let col = 0; col < currentBoard[0].length; col++) {
-        if (currentBoard[row][col] && currentBoard[row][col]?.color === botColor) {
-          botPieces.push([row, col]);
-        }
-      }
-    }
+    // Get the bot's move
+    const botMove = gameBot.makeMove(gameState);
     
-    if (botPieces.length === 0) return;
-    
-    // Pick a random piece and make a random valid move
-    const randomPieceIndex = Math.floor(Math.random() * botPieces.length);
-    const [selectedRow, selectedCol] = botPieces[randomPieceIndex];
-    const piece = currentBoard[selectedRow][selectedCol];
-    
-    if (!piece) return;
-    
-    const { moves, captures } = calculateValidMoves(currentBoard, selectedRow, selectedCol);
-    const allOptions = [...moves, ...captures];
-    
-    if (allOptions.length > 0) {
-      const randomMove = allOptions[Math.floor(Math.random() * allOptions.length)];
-      const [targetRow, targetCol] = randomMove;
-      
-      // Update the board by adding the bot's move to the existing board
-      setBoard(prevBoard => {
-        const updatedBoard = prevBoard.map(row => [...row]);
-        const movingPiece = {...piece};
-        
-        // Check if this is actually a capture by looking at the target cell
-        const targetCell = updatedBoard[targetRow][targetCol];
-        const isCapture = targetCell && targetCell.color !== movingPiece.color;
-        if (isCapture && movingPiece.type === 'circle') {
-          movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
-        }
-        
-        updatedBoard[targetRow][targetCol] = movingPiece;
-        updatedBoard[selectedRow][selectedCol] = null;
-        
-        return updatedBoard;
-      });
-      
-      // Switch back to player's turn
+    if (!botMove) {
+      console.log('🤖 GameBot found no valid moves for forced move');
       setCurrentPlayer('red');
       setIsMyTurn(true);
-      
-      // Clear bot timeouts since bot has moved
-      if (botTimeouts.move) clearTimeout(botTimeouts.move);
-      if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
-      setBotTimeouts({ move: null, fallback: null });
-      
-      // Check for win condition after board update
-      setTimeout(() => {
-        const currentBoard = board;
-        const winnerColor = checkWinCondition(currentBoard, targetCol);
-        
-        if (winnerColor) {
-          setWinner(winnerColor);
-          setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
-          if (winnerColor === 'red') {
-            setShowConfetti(true);
-          }
-        }
-      }, 0);
-      
-      console.log('🤖 Forced random move completed');
+      return;
     }
+    
+    // Convert the bot's move back to your game's format
+    const gameMove = convertMoveFromBot(botMove);
+    const [fromRow, fromCol] = gameMove.from;
+    const [toRow, toCol] = gameMove.to;
+    
+    // Get the piece being moved
+    const piece = board[fromRow][fromCol];
+    if (!piece) {
+      console.log('🤖 Error: No piece found at source position for forced move');
+      return;
+    }
+    
+    // Execute the move
+    setBoard(prevBoard => {
+      const updatedBoard = prevBoard.map(row => [...row]);
+      const movingPiece = {...piece};
+      
+      // Check if this is a capture
+      const targetCell = updatedBoard[toRow][toCol];
+      const isCapture = targetCell && targetCell.color !== movingPiece.color;
+      if (isCapture) {
+        // Remove the captured piece from the board
+        updatedBoard[toRow][toCol] = null;
+        
+        if (movingPiece.type === 'circle') {
+          movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+        }
+      }
+      
+      // Place the moving piece in the new position
+      updatedBoard[toRow][toCol] = movingPiece;
+      updatedBoard[fromRow][fromCol] = null;
+      
+      // Check for win condition INSIDE the callback using the updated board
+      const winnerColor = checkWinCondition(updatedBoard, 0);
+      
+      if (winnerColor) {
+        setWinner(winnerColor);
+        setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
+        if (winnerColor === 'red') {
+          setShowConfetti(true);
+        }
+      }
+      
+      return updatedBoard;
+    });
+    
+    // Switch back to player's turn
+    setCurrentPlayer('red');
+    setIsMyTurn(true);
+    
+    // Clear bot timeouts since bot has moved
+    if (botTimeouts.move) clearTimeout(botTimeouts.move);
+    if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
+    setBotTimeouts({ move: null, fallback: null });
+    
+    console.log('🤖 Forced random move completed using GameBot');
   };
 
   const HomeScreen = () => (
     <div className="home-screen">
-      <h1>Get To The End</h1>
       
       {/* Navigation Bar */}
       <div className="nav-bar">
@@ -1165,6 +1252,9 @@ function App() {
         </div>
         <div className="nav-option" onClick={() => setScreen('bots')}>
           <span>Bots</span>
+        </div>
+        <div className="nav-option" onClick={() => setScreen('private')}>
+          <span>Private</span>
         </div>
       </div>
       
@@ -1201,7 +1291,7 @@ function App() {
           </select>
         </div>
       </div>
-      <p className="coming-soon">{translations[language].moreComingSoon}</p>
+      
       {/* Logout Confirmation Dialog */}
       {showLogoutConfirm && (
         <div className="logout-confirm-overlay">
@@ -1219,6 +1309,19 @@ function App() {
 
   const BotsScreen = () => (
     <div className="bots-screen">
+      {/* Navigation Bar */}
+      <div className="nav-bar">
+        <div className="nav-option" onClick={() => setScreen('home')}>
+          <span>Home</span>
+        </div>
+        <div className="nav-option active">
+          <span>Bots</span>
+        </div>
+        <div className="nav-option" onClick={() => setScreen('private')}>
+          <span>Private</span>
+        </div>
+      </div>
+      
       <div className="bots-content">
         <h2>Play Against Bots</h2>
         <p>Choose your opponent's difficulty level:</p>
@@ -1252,6 +1355,9 @@ function App() {
             setScreen('game');
             setGameMode('bot');
             setBotDifficulty('easy');
+            
+            // Set initial game message for bot game
+            setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
           }}>
             <h3>🤖 Easy Bot</h3>
             <p>Random moves, occasionally captures</p>
@@ -1286,6 +1392,9 @@ function App() {
             setScreen('game');
             setGameMode('bot');
             setBotDifficulty('normal');
+            
+            // Set initial game message for bot game
+            setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
           }}>
             <h3>🤖 Normal Bot</h3>
             <p>Smart moves, tries to advance</p>
@@ -1320,19 +1429,346 @@ function App() {
             setScreen('game');
             setGameMode('bot');
             setBotDifficulty('hard');
+            
+            // Set initial game message for bot game
+            setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
           }}>
             <h3>🤖 Hard Bot</h3>
             <p>Strategic moves, looks for wins</p>
             <p className="bot-description">For experienced players</p>
           </div>
+          
+          <div className="bot-option" onClick={() => {
+            // Set up players for bot game
+            setPlayers({
+              red: { color: 'red', username: username || 'Player 1' },
+              blue: { color: 'blue', username: 'Bot (Pro)' }
+            });
+            // Don't call initializeGame() as it resets currentPlayer
+            const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
+            
+            // Set up blue pieces on the left side
+            newBoard[0][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            newBoard[1][0] = { type: 'circle', color: 'blue', eatenCount: 0 };
+            newBoard[2][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            newBoard[3][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            
+            // Set up red pieces on the right side
+            newBoard[0][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            newBoard[1][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
+            newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            
+            setBoard(newBoard);
+            setGameStarted(true);
+            setCurrentPlayer('red');
+            setIsMyTurn(true); // Player starts first in bot games
+            setScreen('game');
+            setGameMode('bot');
+            setBotDifficulty('pro');
+            
+            // Set initial game message for bot game
+            setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
+          }}>
+            <h3>🤖 Pro Bot</h3>
+            <p>AI-powered moves with prediction</p>
+            <p className="bot-description">For advanced players</p>
+          </div>
+          
+          <div className="bot-option" onClick={() => {
+            // Set up players for bot game
+            setPlayers({
+              red: { color: 'red', username: username || 'Player 1' },
+              blue: { color: 'blue', username: 'Bot (Wizard)' }
+            });
+            // Don't call initializeGame() as it resets currentPlayer
+            const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
+            
+            // Set up blue pieces on the left side
+            newBoard[0][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            newBoard[1][0] = { type: 'circle', color: 'blue', eatenCount: 0 };
+            newBoard[2][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            newBoard[3][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+            
+            // Set up red pieces on the right side
+            newBoard[0][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            newBoard[1][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
+            newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
+            
+            setBoard(newBoard);
+            setGameStarted(true);
+            setCurrentPlayer('red');
+            setIsMyTurn(true); // Player starts first in bot games
+            setScreen('game');
+            setGameMode('bot');
+            setBotDifficulty('wizard');
+            
+            // Set initial game message for bot game
+            setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
+          }}>
+            <h3>🤖 Wizard Bot</h3>
+            <p>Complex AI with deep thinking</p>
+            <p className="bot-description">For master players</p>
+          </div>
         </div>
-        
-        <button onClick={() => setScreen('home')} className="back-button">
-          ← Back to Home
-        </button>
       </div>
     </div>
   );
+
+  const PrivateScreen = ({ 
+    socket, 
+    username, 
+    generateGameCode,
+    generatedCode,
+    isCreatingGame,
+    waitingForOpponent,
+    privateGameId,
+    isHost,
+    codeExpiryTime,
+    timeRemaining
+  }: { 
+    socket: any; 
+    username: string; 
+    generateGameCode: () => void;
+    generatedCode: string;
+    isCreatingGame: boolean;
+    waitingForOpponent: boolean;
+    privateGameId: string;
+    isHost: boolean;
+    codeExpiryTime: number | null;
+    timeRemaining: number;
+  }) => {
+      const [gameCode, setGameCode] = useState('');
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [showNicknameInput, setShowNicknameInput] = useState(false);
+  const [opponentNickname, setOpponentNickname] = useState('');
+  const [isJoiningGame, setIsJoiningGame] = useState(false);
+
+    const joinGameWithCode = useCallback(() => {
+      if (gameCode.length === 4) {
+        setIsJoiningGame(true);
+        
+        // Emit socket event to join private game
+        socket.emit('joinPrivateGame', {
+          gameCode: gameCode.toUpperCase(),
+          username: username || 'Player 2'
+        });
+        
+        console.log('Joining private game with code:', gameCode.toUpperCase());
+      }
+    }, [gameCode, username]);
+
+    const startSameDeviceGame = useCallback(() => {
+      setShowNicknameInput(true);
+  }, []);
+
+    const confirmSameDeviceGame = useCallback(() => {
+      if (opponentNickname.trim()) {
+        // Set up players for same device game
+        const playerSetup = {
+          red: { color: 'red' as const, username: username || 'Player 1' },
+          blue: { color: 'blue' as const, username: opponentNickname }
+        };
+        console.log('Setting up players for local game:', playerSetup);
+        setPlayers(playerSetup);
+        
+        // Initialize the game board
+        const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
+        
+        // Set up blue pieces on the left side
+        newBoard[0][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+        newBoard[1][0] = { type: 'circle', color: 'blue', eatenCount: 0 };
+        newBoard[2][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+        newBoard[3][0] = { type: 'person', color: 'blue', eatenCount: 0 };
+        
+        // Set up red pieces on the right side
+        newBoard[0][5] = { type: 'person', color: 'red', eatenCount: 0 };
+        newBoard[1][5] = { type: 'person', color: 'red', eatenCount: 0 };
+        newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
+        newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
+        
+        setBoard(newBoard);
+        setGameStarted(true);
+        setCurrentPlayer('red');
+        setIsMyTurn(true);
+        setGameMode('local');
+        setScreen('game');
+        
+        // Set initial game message for local game
+        setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
+        
+        setShowNicknameInput(false);
+        setOpponentNickname('');
+        
+        console.log('Starting same device game with opponent:', opponentNickname);
+      }
+    }, [opponentNickname, username]);
+
+      // Countdown timer for code expiration
+      useEffect(() => {
+        if (codeExpiryTime && timeRemaining > 0) {
+          const timer = setInterval(() => {
+            setTimeRemaining(prev => {
+              if (prev <= 1) {
+                // Code expired
+                setGeneratedCode('');
+                setIsCreatingGame(false);
+                setWaitingForOpponent(false);
+                setPrivateGameId('');
+                setIsHost(false);
+                setCodeExpiryTime(null);
+                setTimeRemaining(300);
+                
+                // Emit cancel event to server
+                if (privateGameId) {
+                  socket.emit('cancelPrivateGame', { gameId: privateGameId });
+                }
+                
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+          
+          return () => clearInterval(timer);
+        }
+      }, [codeExpiryTime, timeRemaining, privateGameId]);
+
+      return (
+        <div className="private-screen">
+        {/* Navigation Bar */}
+        <div className="nav-bar">
+          <div className="nav-option" onClick={() => setScreen('home')}>
+            <span>Home</span>
+          </div>
+          <div className="nav-option" onClick={() => setScreen('bots')}>
+            <span>Bots</span>
+          </div>
+          <div className="nav-option active">
+            <span>Private</span>
+          </div>
+        </div>
+        
+        <div className="private-content">
+          <h2>Private Games</h2>
+          <p>Create or join private games with friends</p>
+          
+          {/* Game Code Input Section */}
+          <div className="game-code-section">
+            <h3>Enter Game Code</h3>
+            <div className="code-input-container">
+              <input
+                type="text"
+                placeholder=""
+                value={gameCode}
+                onChange={(e) => setGameCode(e.target.value.toUpperCase().slice(0, 4))}
+                maxLength={4}
+                className="code-input"
+              />
+              <button 
+                onClick={joinGameWithCode}
+                disabled={gameCode.length !== 4}
+                className="join-code-button"
+              >
+                Join Game
+              </button>
+            </div>
+          </div>
+
+          {/* Game Options */}
+          <div className="private-options">
+            <div className={`private-option ${generatedCode ? 'disabled' : ''}`} onClick={!generatedCode ? generateGameCode : undefined}>
+              {!generatedCode ? (
+                <div>
+                  <h3>🎮 Generate Game Code</h3>
+                  <p>Create a new private game</p>
+                  <p className="private-description">Generate a 4-character code for friends</p>
+                </div>
+              ) : (
+                <div>
+                  <h3>🎮 Game Created!</h3>
+                  <p>Share this code with your friend</p>
+                  <div className="generated-code">
+                    <strong>Game Code: {generatedCode}</strong>
+                    {waitingForOpponent && (
+                      <p className="waiting-message">⏳ Waiting for opponent to join...</p>
+                    )}
+                    {timeRemaining > 0 && (
+                      <p className="timer-message">⏰ Code expires in {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}</p>
+                    )}
+                    <button 
+                      onClick={() => {
+                        // Store the game ID before clearing state
+                        const gameIdToCancel = privateGameId;
+                        
+                        // Clear local state
+                        setGeneratedCode('');
+                        setIsCreatingGame(false);
+                        setWaitingForOpponent(false);
+                        setPrivateGameId('');
+                        setIsHost(false);
+                        setCodeExpiryTime(null);
+                        setTimeRemaining(300);
+                        
+                        // Emit cancel event to server with the stored game ID
+                        if (gameIdToCancel) {
+                          socket.emit('cancelPrivateGame', { gameId: gameIdToCancel });
+                        }
+                        
+                        // Clear any existing timers
+                        if (timerId) {
+                          clearInterval(timerId);
+                          setTimerId(null);
+                        }
+                      }}
+                      className="cancel-code-button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="private-option" onClick={startSameDeviceGame}>
+              <h3>📱 Play on Same Device</h3>
+              <p>Play with someone on this device</p>
+              <p className="private-description">No account needed, just enter nicknames</p>
+            </div>
+          </div>
+
+          {/* Nickname Input Modal */}
+          {showNicknameInput && (
+            <div className="nickname-modal-overlay">
+              <div className="nickname-modal">
+                <h3>Enter Opponent's Nickname</h3>
+                <p>This won't be saved - just for this game</p>
+                <input
+                  type="text"
+                  placeholder="Opponent's nickname"
+                  value={opponentNickname}
+                  onChange={(e) => setOpponentNickname(e.target.value)}
+                  className="nickname-input"
+                />
+                <div className="nickname-modal-buttons">
+                  <button onClick={confirmSameDeviceGame} className="confirm-button">
+                    Start Game
+                  </button>
+                  <button onClick={() => {
+                    setShowNicknameInput(false);
+                    setOpponentNickname('');
+                  }} className="cancel-button">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const HelpScreen = () => (
     <div className="help-screen">
@@ -1399,36 +1835,60 @@ function App() {
     return <BotsScreen />;
   }
 
+  if (screen === 'private') {
+            return <PrivateScreen 
+          socket={socket} 
+          username={username} 
+          generateGameCode={generateGameCode}
+          generatedCode={generatedCode}
+          isCreatingGame={isCreatingGame}
+          waitingForOpponent={waitingForOpponent}
+          privateGameId={privateGameId}
+          isHost={isHost}
+          codeExpiryTime={codeExpiryTime}
+          timeRemaining={timeRemaining}
+        />;
+  }
+
   // Game screen (existing game content)
   return (
     <div className="app">
       <div className="game-content">
         {winner && (
           <div className="winner-announcement">
-            {winner === getMyColor() ? (
+            {gameMode === 'local' ? (
               <>
                 <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>
-                  {translations[language].youWon}
+                  {`${players[winner].username} wins!`}
                 </h2>
                 {showConfetti && <ConfettiOverlay />}
               </>
             ) : (
-              <>
-                <h2 style={{ color: '#888' }}>{translations[language].youLost}</h2>
-                <div className="rain">
-                  {Array.from({ length: 60 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="raindrop"
-                      style={{
-                        left: `${Math.random() * 100}vw`,
-                        animationDelay: `${Math.random()}s`,
-                        animationDuration: `${0.8 + Math.random() * 0.7}s`,
-                      }}
-                    />
-                  ))}
-                </div>
-              </>
+              winner === getMyColor() ? (
+                <>
+                  <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>
+                    {translations[language].youWon}
+                  </h2>
+                  {showConfetti && <ConfettiOverlay />}
+                </>
+              ) : (
+                <>
+                  <h2 style={{ color: '#888' }}>{translations[language].youLost}</h2>
+                  <div className="rain">
+                    {Array.from({ length: 60 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="raindrop"
+                        style={{
+                          left: `${Math.random() * 100}vw`,
+                          animationDelay: `${Math.random()}s`,
+                          animationDuration: `${0.8 + Math.random() * 0.7}s`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </>
+              )
             )}
             <button onClick={() => {
               initializeGame();
@@ -1439,7 +1899,16 @@ function App() {
         <div className="game-info-container">
           <div className="game-status">
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? translations[language].yourTurn : (gameMode === 'bot' ? 'Bot\'s Turn' : translations[language].opponentTurn(opponent))}
+              {gameMode === 'local'
+                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username}'s Turn`
+                : (isMyTurn
+                  ? translations[language].yourTurn
+                  : (gameMode === 'bot'
+                      ? 'Bot\'s Turn'
+                      : translations[language].opponentTurn(opponent)
+                    )
+                  )
+              }
               {gameMode === 'online' && (
                 <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
                   {translations[language].timeLeft(timeLeft)}
@@ -1447,15 +1916,19 @@ function App() {
               )}
             </div>
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? translations[language].selectPiece : (gameMode === 'bot' ? 'Bot is thinking...' : translations[language].waitingForMove(opponent))}
+              {isMyTurn ? translations[language].selectPiece : (
+                gameMode === 'bot' ? 'Bot is thinking...' : 
+                gameMode === 'local' ? `Waiting for ${currentPlayer === 'red' ? players.red.username : players.blue.username} to move` :
+                translations[language].waitingForMove(opponent)
+              )}
             </div>
           </div>
         </div>
         
         <div className="board-container">
-          <div className="board">
-            {board.map((row, rowIndex) => (
-              <div key={rowIndex} className="row">
+      <div className="board">
+        {board.map((row, rowIndex) => (
+          <div key={rowIndex} className="row">
                 {row.map((piece, colIndex) => {
                   const isSelected = selectedPiece && 
                     selectedPiece[0] === rowIndex && 
@@ -1470,28 +1943,28 @@ function App() {
                   );
                   
                   return (
-                    <div 
-                      key={`${rowIndex}-${colIndex}`} 
+              <div 
+                key={`${rowIndex}-${colIndex}`} 
                       className={`cell ${(rowIndex + colIndex) % 2 === 0 ? 'light' : 'dark'} 
                         ${isSelected ? 'selected' : ''} 
                         ${isValidMove ? 'valid-move' : ''} 
                         ${isValidCapture ? 'valid-capture' : ''}`}
                       onClick={() => handleCellClick(rowIndex, colIndex)}
-                    >
-                      {piece && (
-                        <div className={`piece ${piece.type} ${piece.color}`}>
-                          {piece.type === 'circle' && piece.eatenCount !== undefined && 
-                            <span className="eaten-count">{piece.eatenCount}</span>
-                          }
-                        </div>
-                      )}
-                    </div>
+              >
+                {piece && (
+                  <div className={`piece ${piece.type} ${piece.color}`}>
+                    {piece.type === 'circle' && piece.eatenCount !== undefined && 
+                      <span className="eaten-count">{piece.eatenCount}</span>
+                    }
+                  </div>
+                )}
+              </div>
                   );
                 })}
-              </div>
-            ))}
           </div>
-        </div>
+        ))}
+      </div>
+      </div>
       </div>
     </div>
   );

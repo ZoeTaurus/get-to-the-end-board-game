@@ -253,6 +253,17 @@ io.use((socket, next) => {
 // Store waiting players and active games
 const waitingPlayers = new Map();
 const activeGames = new Map();
+const privateGames = new Map(); // Store private game data
+
+// Helper function to generate unique game codes
+function generateGameCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 4; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
 
 io.on('connection', (socket) => {
   const session = userSessions.get(socket.id);
@@ -340,6 +351,80 @@ io.on('connection', (socket) => {
       });
     }
   });
+
+  // Private game handlers
+  socket.on('createPrivateGame', ({ gameCode, gameId, hostUsername }) => {
+    console.log(`🎮 Private game created: ${gameCode} by ${hostUsername} (${socket.id})`);
+    
+    // Store the private game
+    privateGames.set(gameCode, {
+      gameId,
+      hostSocketId: socket.id,
+      hostUsername,
+      gameCode,
+      createdAt: Date.now(),
+      players: [socket.id],
+      gameState: 'waiting'
+    });
+    
+    // Join the player to the game room
+    socket.join(gameCode);
+    socket.emit('privateGameCreated', { gameCode, gameId });
+  });
+
+  socket.on('joinPrivateGame', ({ gameCode, username }) => {
+    console.log(`🎮 Player ${username} (${socket.id}) trying to join private game: ${gameCode}`);
+    
+    const privateGame = privateGames.get(gameCode);
+    if (!privateGame) {
+      socket.emit('privateGameError', { message: 'Game code not found or expired' });
+      return;
+    }
+    
+    // Check if game is full (2 players max)
+    if (privateGame.players.length >= 2) {
+      socket.emit('privateGameError', { message: 'Game is full' });
+      return;
+    }
+    
+    // Add player to the game
+    privateGame.players.push(socket.id);
+    privateGame.gameState = 'playing';
+    
+    // Join the player to the game room
+    socket.join(gameCode);
+    
+    // Notify host that opponent joined
+    io.to(privateGame.hostSocketId).emit('opponentJoinedPrivateGame', {
+      opponentUsername: username,
+      gameCode,
+      gameId: privateGame.gameId
+    });
+    
+    // Notify guest that they joined successfully
+    socket.emit('privateGameJoined', {
+      hostUsername: privateGame.hostUsername,
+      gameCode,
+      gameId: privateGame.gameId
+    });
+    
+    // Notify all players that the game has started
+    io.to(gameCode).emit('gameStarted', privateGame.players);
+    
+    console.log(`🎯 Private game ${gameCode} started: ${privateGame.hostUsername} vs ${username}`);
+  });
+
+  socket.on('cancelPrivateGame', ({ gameId }) => {
+    console.log(`❌ Private game cancelled: ${gameId} by ${socket.id}`);
+    
+    // Find and remove the private game
+    for (const [gameCode, game] of privateGames.entries()) {
+      if (game.gameId === gameId) {
+        privateGames.delete(gameCode);
+        break;
+      }
+    }
+  });
   
   socket.on('disconnect', (reason) => {
     const session = userSessions.get(socket.id);
@@ -359,6 +444,23 @@ io.on('connection', (socket) => {
           activeGames.delete(gameId);
         }
       });
+      
+      // Clean up private games
+      for (const [gameCode, game] of privateGames.entries()) {
+        const playerIndex = game.players.indexOf(socket.id);
+        if (playerIndex > -1) {
+          game.players.splice(playerIndex, 1);
+          
+          // If the game is empty after a player disconnects, remove it
+          if (game.players.length === 0) {
+            privateGames.delete(gameCode);
+            console.log(`🏁 Private game ${gameCode} ended due to player disconnect`);
+          } else {
+            // Notify the remaining player that the other has left
+            socket.to(gameCode).emit('opponentLeft', 'Your opponent has left the game.');
+          }
+        }
+      }
       
       // Clean up
       userSessions.delete(socket.id);
