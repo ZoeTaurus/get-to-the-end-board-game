@@ -72,7 +72,9 @@ export class GameBot {
 
     // CRITICAL: ALWAYS prioritize captures if available - this is the main fix
     const captureMoves = allPossibleMoves.filter(move => move.eatenPiece);
+    console.log('🚨 BOT DEBUG: Found', allPossibleMoves.length, 'total moves,', captureMoves.length, 'captures');
     if (captureMoves.length > 0) {
+      console.log('🚨 BOT DEBUG: TAKING CAPTURE:', captureMoves[0]);
       // Always capture when possible - no exceptions!
       return captureMoves[0];
     }
@@ -121,6 +123,7 @@ export class GameBot {
       }
     }
     
+    console.log('🚨 BOT DEBUG: Generated', moves.length, 'moves for', player === Player.BOT ? 'BOT' : 'PLAYER');
     return moves;
   }
 

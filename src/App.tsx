@@ -1109,14 +1109,11 @@ function App() {
       const updatedBoard = prevBoard.map(row => [...row]);
       const movingPiece = {...piece};
       
-      // Handle captures properly - use the updated board state
-      const targetCell = updatedBoard[toRow][toCol];
-      const isCapture = targetCell && targetCell.color !== movingPiece.color;
-      
-      if (isCapture) {
-        console.log('🤖 BOT CAPTURE: Removing piece at', [toRow, toCol], 'Piece was:', targetCell);
+      // Handle captures properly - use the GameBot's capture information
+      if (botMove.eatenPiece) {
+        console.log('🤖 BOT CAPTURE: Removing piece at', [botMove.eatenPiece.row, botMove.eatenPiece.col], 'Piece was:', updatedBoard[botMove.eatenPiece.row][botMove.eatenPiece.col]);
         // Remove the captured piece from the board FIRST
-        updatedBoard[toRow][toCol] = null;
+        updatedBoard[botMove.eatenPiece.row][botMove.eatenPiece.col] = null;
         console.log('🤖 BOT CAPTURE: Board after removal:', JSON.stringify(updatedBoard));
         
         if (movingPiece.type === 'circle') {
