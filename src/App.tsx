@@ -78,6 +78,18 @@ function App() {
   });
   const [boardTheme, setBoardTheme] = useState(() => {
     const savedTheme = localStorage.getItem('boardTheme');
+    
+    // One-time fix: if someone has 'original' from testing, reset to 'default'
+    // This ensures first-time users get chess colors, not orange
+    if (!localStorage.getItem('themeFixApplied')) {
+      localStorage.setItem('themeFixApplied', 'true');
+      if (savedTheme === 'original') {
+        localStorage.removeItem('boardTheme');
+        return 'default';
+      }
+    }
+    
+    // If no theme is saved, default to 'default' (chess colors)
     return savedTheme || 'default';
   });
 
