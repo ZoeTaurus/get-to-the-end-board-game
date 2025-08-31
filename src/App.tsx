@@ -1192,11 +1192,11 @@ function App() {
   // Board theme definitions
   const boardThemes = {
     default: { light: '#f0d9b5', dark: '#b58863', name: 'Default' },
-    original: { light: '#ffcc80', dark: '#ff6f00', name: 'Original' },
-    summer: { light: '#fff176', dark: '#388e3c', name: 'Summer' },
+    original: { light: '#ffa500', dark: '#000000', name: 'Original' },
+    summer: { light: '#87ceeb', dark: '#ffd700', name: 'Summer' },
     fall: { light: '#ffab91', dark: '#5d4037', name: 'Fall' },
     winter: { light: '#e1f5fe', dark: '#0277bd', name: 'Winter' },
-    spring: { light: '#c8e6c9', dark: '#2e7d32', name: 'Spring' }
+    spring: { light: '#ffb3d9', dark: '#ff69b4', name: 'Spring' }
   };
 
   const ShopScreen = () => (
