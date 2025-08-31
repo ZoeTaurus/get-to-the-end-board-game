@@ -353,20 +353,28 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Check if it's a private game
+    // Check if it's a private game - use same logic as regular games
     for (const [gameCode, privateGame] of privateGames.entries()) {
       if (privateGame.gameId === gameId && privateGame.players.includes(socket.id)) {
-        console.log(`♟️  Private game move made by ${socket.id} from ${session.ip}:`, JSON.stringify(move));
+        // Add currentTurn to private game if it doesn't exist
+        if (!privateGame.currentTurn) {
+          privateGame.currentTurn = privateGame.players[0]; // First player starts
+        }
         
-        // Find the other player for turn management
-        const otherPlayer = privateGame.players.find(id => id !== socket.id);
-        
-        // Emit move to all players in the private game
-        io.to(gameCode).emit('moveMade', {
-          move,
-          nextTurn: otherPlayer
-        });
-        return;
+        // Check if it's this player's turn (same as regular games)
+        if (privateGame.currentTurn === socket.id) {
+          const currentPlayerIndex = privateGame.players.findIndex(p => p === socket.id);
+          privateGame.currentTurn = privateGame.players[(currentPlayerIndex + 1) % 2];
+          
+          console.log(`♟️  Private game move made by ${socket.id} from ${session.ip}:`, JSON.stringify(move));
+          
+          // Emit move to all players in the private game (same as regular games)
+          io.to(gameCode).emit('moveMade', {
+            move,
+            nextTurn: privateGame.currentTurn
+          });
+          return;
+        }
       }
     }
   });
