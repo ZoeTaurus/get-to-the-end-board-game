@@ -464,28 +464,48 @@ io.on('connection', (socket) => {
       
       // Clean up game state
       waitingPlayers.delete(socket.id);
+      
+      // Handle regular game disconnections - end game for both players
       activeGames.forEach((game, gameId) => {
         if (game.players.some(p => p.id === socket.id)) {
-          console.log(`🏁 Game ${gameId} ended due to player disconnect`);
+          const disconnectedPlayer = game.players.find(p => p.id === socket.id);
+          const remainingPlayer = game.players.find(p => p.id !== socket.id);
+          
+          console.log(`🏁 Regular game ${gameId} ended due to ${disconnectedPlayer?.username} disconnect`);
+          
+          // Notify the remaining player they won by disconnect
+          if (remainingPlayer) {
+            io.to(gameId).emit('gameOver', {
+              winner: 'disconnect',
+              message: `${disconnectedPlayer?.username} disconnected. You win!`,
+              reason: 'disconnect'
+            });
+          }
+          
+          // Also emit the old playerDisconnected for compatibility
           io.to(gameId).emit('playerDisconnected');
           activeGames.delete(gameId);
         }
       });
       
-      // Clean up private games
+      // Handle private game disconnections - end game for both players
       for (const [gameCode, game] of privateGames.entries()) {
         const playerIndex = game.players.indexOf(socket.id);
         if (playerIndex > -1) {
-          game.players.splice(playerIndex, 1);
+          console.log(`🏁 Private game ${gameCode} ended due to player disconnect`);
           
-          // If the game is empty after a player disconnects, remove it
-          if (game.players.length === 0) {
-            privateGames.delete(gameCode);
-            console.log(`🏁 Private game ${gameCode} ended due to player disconnect`);
-          } else {
-            // Notify the remaining player that the other has left
-            socket.to(gameCode).emit('opponentLeft', 'Your opponent has left the game.');
-          }
+          // Notify all remaining players in the private game that someone disconnected
+          io.to(gameCode).emit('gameOver', {
+            winner: 'disconnect',
+            message: 'Your opponent disconnected. You win!',
+            reason: 'disconnect'
+          });
+          
+          // Also emit the old playerDisconnected for compatibility
+          io.to(gameCode).emit('playerDisconnected');
+          
+          // Remove the entire private game when someone disconnects
+          privateGames.delete(gameCode);
         }
       }
       
