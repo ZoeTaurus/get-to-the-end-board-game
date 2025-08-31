@@ -530,9 +530,10 @@ function App() {
             setCurrentPlayer('blue');
             setIsMyTurn(false); // Give turn to bot
             
-                // Bot makes move after a natural delay to feel more human
-    console.log('🤖 Bot turn triggered, thinking...');
-            const botMoveTimeout = setTimeout(() => {
+                // TEMPORARILY DISABLED: Bot functionality hidden until next update
+            // Bot makes move after a natural delay to feel more human
+    console.log('🤖 Bot functionality temporarily disabled');
+            /* const botMoveTimeout = setTimeout(() => {
       try {
               makeBotMove(botDifficulty, 'blue', false);
       } catch (error) {
@@ -545,10 +546,16 @@ function App() {
             const fallbackTimeout = setTimeout(() => {
       console.log('🤖 Bot taking too long, forcing move');
               forceBotRandomMove('blue', false);
-    }, 3000);
+    }, 3000); */
+    
+    // For now, just switch back to player's turn immediately
+            setTimeout(() => {
+              setCurrentPlayer('red');
+              setIsMyTurn(true);
+            }, 100);
             
-    // Store timeouts to clear if game ends
-            setBotTimeouts({ move: botMoveTimeout, fallback: fallbackTimeout });
+    // Store timeouts to clear if game ends (disabled while bot is hidden)
+            // setBotTimeouts({ move: botMoveTimeout, fallback: fallbackTimeout });
           }
         } else if (gameMode === 'local') {
           console.log('Executing local game logic');
