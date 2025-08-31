@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import Login from './Login';
-import { GameBot, convertBoardForBot, convertMoveFromBot } from './GameBot';
+import { GameBot, convertBoardForBot, convertMoveFromBot } from './GameBot.js';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
@@ -328,7 +328,7 @@ function App() {
     newBoard[1][5] = { type: 'person', color: 'red', eatenCount: 0 };
     newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
     newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
-
+    
     setBoard(newBoard);
     setCurrentPlayer('red');
     setWinner(null);
@@ -532,9 +532,9 @@ function App() {
             
                 // Bot makes move after a natural delay to feel more human
     console.log('🤖 Bot turn triggered, thinking...');
-    const botMoveTimeout = setTimeout(() => {
+            const botMoveTimeout = setTimeout(() => {
       try {
-        makeBotMove(botDifficulty, 'blue', false);
+              makeBotMove(botDifficulty, 'blue', false);
       } catch (error) {
         console.log('🤖 Bot crashed, forcing random move');
         forceBotRandomMove('blue', false);
@@ -542,13 +542,13 @@ function App() {
     }, 800 + Math.random() * 400); // 800-1200ms delay, feels natural
     
     // Fallback: if bot doesn't move within 3 seconds, force a move
-    const fallbackTimeout = setTimeout(() => {
+            const fallbackTimeout = setTimeout(() => {
       console.log('🤖 Bot taking too long, forcing move');
-      forceBotRandomMove('blue', false);
+              forceBotRandomMove('blue', false);
     }, 3000);
-    
+            
     // Store timeouts to clear if game ends
-    setBotTimeouts({ move: botMoveTimeout, fallback: fallbackTimeout });
+            setBotTimeouts({ move: botMoveTimeout, fallback: fallbackTimeout });
           }
         } else if (gameMode === 'local') {
           console.log('Executing local game logic');
@@ -948,7 +948,7 @@ function App() {
   };
   
 
-
+  
   // Evaluate piece coordination
   const evaluatePieceCoordination = (board: (Piece | null)[][], row: number, col: number, botColor: 'blue'): number => {
     let coordinationScore = 0;
@@ -1037,8 +1037,8 @@ function App() {
         // Remove the captured piece from the board
         updatedBoard[eatenRow][eatenCol] = null;
         
-        if (movingPiece.type === 'circle') {
-          movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+          if (movingPiece.type === 'circle') {
+            movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
           console.log('🤖 BOT CAPTURE: Updated circle eaten count to:', movingPiece.eatenCount);
         }
       }
@@ -1049,13 +1049,13 @@ function App() {
       
       // Check for win condition IMMEDIATELY using the updated board (no setTimeout)
       const winnerColor = checkWinCondition(updatedBoard, 0);
-      if (winnerColor) {
-        setWinner(winnerColor);
-        setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
-        if (winnerColor === 'red') {
-          setShowConfetti(true);
+        if (winnerColor) {
+          setWinner(winnerColor);
+          setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
+          if (winnerColor === 'red') {
+            setShowConfetti(true);
+          }
         }
-      }
       
       return updatedBoard;
     });
@@ -1114,10 +1114,10 @@ function App() {
     }
     
     // Execute the move
-    setBoard(prevBoard => {
-      const updatedBoard = prevBoard.map(row => [...row]);
-      const movingPiece = {...piece};
-      
+      setBoard(prevBoard => {
+        const updatedBoard = prevBoard.map(row => [...row]);
+        const movingPiece = {...piece};
+        
       // Check if this is a capture using the GameBot's eatenPiece information
       if (botMove.eatenPiece) {
         const [eatenRow, eatenCol] = [botMove.eatenPiece.row, botMove.eatenPiece.col];
@@ -1145,19 +1145,19 @@ function App() {
           setShowConfetti(true);
         }
       }
+        
+        return updatedBoard;
+      });
       
-      return updatedBoard;
-    });
-    
-    // Switch back to player's turn
-    setCurrentPlayer('red');
-    setIsMyTurn(true);
-    
-    // Clear bot timeouts since bot has moved
-    if (botTimeouts.move) clearTimeout(botTimeouts.move);
-    if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
-    setBotTimeouts({ move: null, fallback: null });
-    
+      // Switch back to player's turn
+      setCurrentPlayer('red');
+      setIsMyTurn(true);
+      
+      // Clear bot timeouts since bot has moved
+      if (botTimeouts.move) clearTimeout(botTimeouts.move);
+      if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
+      setBotTimeouts({ move: null, fallback: null });
+      
     console.log('🤖 Forced random move completed using GameBot');
   };
 
@@ -1392,8 +1392,8 @@ function App() {
             <h3>🤖 {getTranslation(language).bots.proBot}</h3>
                           <p>{getTranslation(language).bots.proDescription}</p>
               <p className="bot-description">{getTranslation(language).bots.forAdvancedPlayers}</p>
-          </div>
-          
+        </div>
+        
           <div className="bot-option" onClick={() => {
             // Set up players for bot game
             setPlayers({
@@ -1591,7 +1591,7 @@ function App() {
                 className="join-code-button"
               >
                 {getTranslation(language).private.joinGame}
-              </button>
+        </button>
             </div>
           </div>
 
@@ -1684,9 +1684,9 @@ function App() {
               </div>
             </div>
           )}
-        </div>
       </div>
-    );
+    </div>
+  );
   };
 
   const HelpScreen = () => (
@@ -1793,20 +1793,20 @@ function App() {
               ) : (
                 <>
                   <h2 style={{ color: '#888' }}>{getTranslation(language).game.youLose}</h2>
-                  <div className="rain">
-                    {Array.from({ length: 60 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="raindrop"
-                        style={{
-                          left: `${Math.random() * 100}vw`,
-                          animationDelay: `${Math.random()}s`,
-                          animationDuration: `${0.8 + Math.random() * 0.7}s`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                </>
+                <div className="rain">
+                  {Array.from({ length: 60 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="raindrop"
+                      style={{
+                        left: `${Math.random() * 100}vw`,
+                        animationDelay: `${Math.random()}s`,
+                        animationDuration: `${0.8 + Math.random() * 0.7}s`,
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
               )
             )}
             <button onClick={() => {
@@ -1845,9 +1845,9 @@ function App() {
         </div>
         
         <div className="board-container">
-      <div className="board">
-        {board.map((row, rowIndex) => (
-          <div key={rowIndex} className="row">
+          <div className="board">
+            {board.map((row, rowIndex) => (
+              <div key={rowIndex} className="row">
                 {row.map((piece, colIndex) => {
                   const isSelected = selectedPiece && 
                     selectedPiece[0] === rowIndex && 
@@ -1862,28 +1862,28 @@ function App() {
                   );
                   
                   return (
-              <div 
-                key={`${rowIndex}-${colIndex}`} 
+                    <div 
+                      key={`${rowIndex}-${colIndex}`} 
                       className={`cell ${(rowIndex + colIndex) % 2 === 0 ? 'light' : 'dark'} 
                         ${isSelected ? 'selected' : ''} 
                         ${isValidMove ? 'valid-move' : ''} 
                         ${isValidCapture ? 'valid-capture' : ''}`}
                       onClick={() => handleCellClick(rowIndex, colIndex)}
-              >
-                {piece && (
-                  <div className={`piece ${piece.type} ${piece.color}`}>
-                    {piece.type === 'circle' && piece.eatenCount !== undefined && 
-                      <span className="eaten-count">{piece.eatenCount}</span>
-                    }
-                  </div>
-                )}
-              </div>
+                    >
+                      {piece && (
+                        <div className={`piece ${piece.type} ${piece.color}`}>
+                          {piece.type === 'circle' && piece.eatenCount !== undefined && 
+                            <span className="eaten-count">{piece.eatenCount}</span>
+                          }
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      </div>
+        </div>
       </div>
     </div>
   );

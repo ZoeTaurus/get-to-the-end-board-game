@@ -1,16 +1,31 @@
-import { PieceType, Player, GameState, Move, Piece } from './models';
+// JavaScript version of GameBot for compatibility
+/**
+ * @typedef {'person' | 'circle'} PieceType
+ * @typedef {'player' | 'bot'} Player
+ * @typedef {{ type: PieceType, owner: Player, eatenCount?: number }} Piece
+ * @typedef {{ from: {row: number, col: number}, to: {row: number, col: number}, eatenPiece?: {row: number, col: number} }} Move
+ * @typedef {{ board: (Piece|null)[][], currentPlayer: Player }} GameState
+ */
+
+const PieceType = {
+  PERSON: 'person',
+  CIRCLE: 'circle'
+};
+
+const Player = {
+  PLAYER: 'player',
+  BOT: 'bot'
+};
 
 export class GameBot {
-  private difficulty: number;
-
-  constructor(difficulty: number) {
+  constructor(difficulty) {
     this.difficulty = difficulty;
   }
 
   // --- FIX #1: THE "QUARANTINE ZONE" ---
   // We now create a deep copy of the game state AT THE VERY BEGINNING.
   // The 'real' gameState is never touched by the thinking process again.
-  public makeMove(gameState: GameState): Move | null {
+  makeMove(gameState) {
     // Create a perfectly safe, deep-copied clone for the bot to think with.
     const safeGameState = JSON.parse(JSON.stringify(gameState));
     
@@ -53,7 +68,7 @@ export class GameBot {
   }
   
   // Helper to set AI "thinking" depth based on difficulty
-  private getDepth(): number {
+  getDepth() {
     switch(this.difficulty) {
       case 3: return 2;
       case 4: return 4;
@@ -63,12 +78,12 @@ export class GameBot {
   }
 
   // Easy and Medium moves are fine as they don't use minimax.
-  private easyMove(moves: Move[]): Move {
+  easyMove(moves) {
     return moves[Math.floor(Math.random() * moves.length)];
   }
 
-  private mediumMove(gameState: GameState, moves: Move[]): Move {
-    let bestMove: Move | null = null;
+  mediumMove(gameState, moves) {
+    let bestMove = null;
     let bestScore = -Infinity;
 
     for (const move of moves) {
@@ -83,8 +98,8 @@ export class GameBot {
   }
 
   // The findBestMove function which starts the deep thinking process.
-  private findBestMove(gameState: GameState, moves: Move[], depth: number): Move {
-    let bestMove: Move | null = null;
+  findBestMove(gameState, moves, depth) {
+    let bestMove = null;
     let bestValue = -Infinity;
     
     for (const move of moves) {
@@ -104,7 +119,7 @@ export class GameBot {
    * The core Minimax algorithm with Alpha-Beta Pruning.
    * This allows the bot to "look ahead" several moves.
    */
-  private minimax(state: GameState, depth: number, isMaximizingPlayer: boolean, alpha: number, beta: number): number {
+  minimax(state, depth, isMaximizingPlayer, alpha, beta) {
     if (depth === 0 || this.isGameOver(state)) {
       return this.evaluateBoard(state);
     }
@@ -140,7 +155,7 @@ export class GameBot {
 
   // --- WIZARD BOT SUPER SMART EVALUATION FUNCTION ---
   // This wizard bot can anticipate, defend, attack, and detect traps!
-  private evaluateBoard(state: GameState): number {
+  evaluateBoard(state) {
     // Check for a terminal state (win/loss). This is the highest priority.
     if (this.isGameOver(state)) {
       const winner = this.getWinner(state);
@@ -248,25 +263,26 @@ export class GameBot {
       
       if (canPlayerCaptureBack) {
         // Look deeper - check if there are defensive pieces behind the target
-        const afterPlayerCapture = this.simulateMove(afterCapture, 
-          playerMovesAfterCapture.find(m => 
-            m.eatenPiece && 
-            m.to.row === captureMove.to.row && 
-            m.to.col === captureMove.to.col
-          )!
-        );
-        
-        const botMovesAfterPlayerCapture = this.getAllValidMoves(afterPlayerCapture, Player.BOT);
-        const canBotCaptureAgain = botMovesAfterPlayerCapture.some(m => 
+        const counterCapture = playerMovesAfterCapture.find(m => 
           m.eatenPiece && 
           m.to.row === captureMove.to.row && 
           m.to.col === captureMove.to.col
         );
         
-        if (canBotCaptureAgain) {
-          totalScore += 2000; // Good! We can capture back after they capture us
-        } else {
-          totalScore -= 5000; // Bad! This is a trap - we'll lose the piece
+        if (counterCapture) {
+          const afterPlayerCapture = this.simulateMove(afterCapture, counterCapture);
+          const botMovesAfterPlayerCapture = this.getAllValidMoves(afterPlayerCapture, Player.BOT);
+          const canBotCaptureAgain = botMovesAfterPlayerCapture.some(m => 
+            m.eatenPiece && 
+            m.to.row === captureMove.to.row && 
+            m.to.col === captureMove.to.col
+          );
+          
+          if (canBotCaptureAgain) {
+            totalScore += 2000; // Good! We can capture back after they capture us
+          } else {
+            totalScore -= 5000; // Bad! This is a trap - we'll lose the piece
+          }
         }
       } else {
         totalScore += 8000; // Safe capture - go for it!
@@ -349,8 +365,8 @@ export class GameBot {
   
   // --- Helper Functions ---
 
-  private getAllValidMoves(gameState: GameState, player: Player): Move[] {
-    const moves: Move[] = [];
+  getAllValidMoves(gameState, player) {
+    const moves = [];
     const board = gameState.board;
     for (let row = 0; row < board.length; row++) {
       for (let col = 0; col < board[0].length; col++) {
@@ -367,9 +383,9 @@ export class GameBot {
     return moves;
   }
 
-  private getPersonMoves(gameState: GameState, row: number, col: number, moves: Move[]) {
+  getPersonMoves(gameState, row, col, moves) {
     const board = gameState.board;
-    const opponent = board[row][col]!.owner === Player.PLAYER ? Player.BOT : Player.PLAYER;
+    const opponent = board[row][col].owner === Player.PLAYER ? Player.BOT : Player.PLAYER;
     const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
     const eatDirections = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
 
@@ -384,16 +400,15 @@ export class GameBot {
       const newRow = row + dRow;
       const newCol = col + dCol;
       if (this.isValidPosition(newRow, newCol, board.length, board[0].length) && board[newRow][newCol]?.owner === opponent) {
-        // FIXED: eatenPiece should point to the position of the piece being eaten
         moves.push({ from: { row, col }, to: { row: newRow, col: newCol }, eatenPiece: { row: newRow, col: newCol } });
       }
     }
   }
 
-  private getCircleMoves(gameState: GameState, row: number, col: number, moves: Move[]) {
+  getCircleMoves(gameState, row, col, moves) {
     const board = gameState.board;
-    const opponent = board[row][col]!.owner === Player.PLAYER ? Player.BOT : Player.PLAYER;
-    const piece = board[row][col]!;
+    const opponent = board[row][col].owner === Player.PLAYER ? Player.BOT : Player.PLAYER;
+    const piece = board[row][col];
     const allDirections = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
 
     for (const [dRow, dCol] of allDirections) {
@@ -402,7 +417,7 @@ export class GameBot {
       if (this.isValidPosition(newRow, newCol, board.length, board[0].length)) {
         if (!board[newRow][newCol]) {
         moves.push({ from: { row, col }, to: { row: newRow, col: newCol } });
-        } else if (board[newRow][newCol]?.owner === opponent && (piece.eatenCount ?? 0) < 2) {
+        } else if (board[newRow][newCol]?.owner === opponent && (piece.eatenCount || 0) < 2) {
           moves.push({ from: { row, col }, to: { row: newRow, col: newCol }, eatenPiece: { row: newRow, col: newCol } });
         }
       }
@@ -413,7 +428,7 @@ export class GameBot {
    * Simulates a move on a new board instance to prevent changing the original game state.
    * This is crucial for the recursive AI functions.
    */
-  private simulateMove(state: GameState, move: Move): GameState {
+  simulateMove(state, move) {
     // This next line is the most important part!
     // It creates a "deep copy" of the board and all the piece objects in it.
     const newBoard = state.board.map(row => 
@@ -436,7 +451,7 @@ export class GameBot {
       newBoard[move.eatenPiece.row][move.eatenPiece.col] = null;
       if (movingPiece.type === PieceType.CIRCLE) {
         // Make sure to update the count on the new piece object!
-        movingPiece.eatenCount = (movingPiece.eatenCount ?? 0) + 1;
+        movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
       }
     }
 
@@ -447,11 +462,11 @@ export class GameBot {
     };
   }
 
-  private isValidPosition(row: number, col: number, boardRows: number, boardCols: number): boolean {
+  isValidPosition(row, col, boardRows, boardCols) {
     return row >= 0 && row < boardRows && col >= 0 && col < boardCols;
   }
 
-  private isGameOver(state: GameState): boolean {
+  isGameOver(state) {
     if (this.countPieces(state, Player.BOT) === 0 || this.countPieces(state, Player.PLAYER) === 0) {
               return true;
     }
@@ -462,7 +477,7 @@ export class GameBot {
     return false;
   }
 
-  private getWinner(state: GameState): Player | null {
+  getWinner(state) {
     const botPieces = this.countPieces(state, Player.BOT);
     const playerPieces = this.countPieces(state, Player.PLAYER);
     
@@ -477,7 +492,7 @@ export class GameBot {
     return null;
   }
 
-  private countPieces(state: GameState, player: Player): number {
+  countPieces(state, player) {
       let count = 0;
       for (let r = 0; r < state.board.length; r++) {
           for (let c = 0; c < state.board[0].length; c++) {
@@ -496,7 +511,7 @@ export class GameBot {
  * Helper function to convert your game's board format to the GameBot's format
  * Note: The new bot uses column-based win conditions (bot wins at right column, player at left column)
  */
-export function convertBoardForBot(board: any[][]): (Piece | null)[][] {
+export function convertBoardForBot(board) {
   const convertedBoard = board.map(row => 
     row.map(cell => {
       if (!cell) return null;
@@ -514,7 +529,7 @@ export function convertBoardForBot(board: any[][]): (Piece | null)[][] {
 /**
  * Helper function to convert a GameBot move back to your game's format
  */
-export function convertMoveFromBot(move: Move): { from: [number, number], to: [number, number] } {
+export function convertMoveFromBot(move) {
   return {
     from: [move.from.row, move.from.col],
     to: [move.to.row, move.to.col]
