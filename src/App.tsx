@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import LoadingScreen from './components/LoadingScreen';
+import ShopScreen from './components/ShopScreen';
 import './App.css';
 import Login from './Login';
 import { GameBot, convertBoardForBot, convertMoveFromBot } from './GameBot.js';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
-type GameScreen = 'home' | 'game' | 'help' | 'bots' | 'private';
+type GameScreen = 'home' | 'game' | 'help' | 'bots' | 'private' | 'shop';
 
 interface Piece {
   type: PieceType;
@@ -76,6 +77,15 @@ function App() {
     const savedLanguage = localStorage.getItem('language');
     return savedLanguage || 'English';
   });
+  const [currentTheme, setCurrentTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('boardTheme');
+    return savedTheme || 'original';
+  });
+
+  const handleThemeSelect = (theme: string) => {
+    setCurrentTheme(theme);
+    localStorage.setItem('boardTheme', theme);
+  };
 
   useEffect(() => {
     // Socket event listeners
@@ -1189,6 +1199,9 @@ function App() {
         <div className="nav-option" onClick={() => setScreen('private')}>
           <span>{getTranslation(language).navigation.private}</span>
         </div>
+        <div className="nav-option" onClick={() => setScreen('shop')}>
+          <span>🛍️ Shop</span>
+        </div>
       </div>
       
       <div className="home-buttons">
@@ -1766,6 +1779,17 @@ function App() {
     return <HelpScreen />;
   }
 
+  if (screen === 'shop') {
+    return (
+      <ShopScreen
+        language={language}
+        currentTheme={currentTheme}
+        onThemeSelect={handleThemeSelect}
+        onBack={() => setScreen('home')}
+      />
+    );
+  }
+
   if (screen === 'bots') {
     return <BotsScreen />;
   }
@@ -1861,7 +1885,7 @@ function App() {
         </div>
         
         <div className="board-container">
-          <div className="board">
+          <div className={`board theme-${currentTheme}`}>
             {board.map((row, rowIndex) => (
               <div key={rowIndex} className="row">
                 {row.map((piece, colIndex) => {
