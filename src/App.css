@@ -916,6 +916,98 @@ button {
   100% { opacity: 0.6; }
 }
 
+/* Shop Screen Styles */
+.shop-screen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 20px;
+}
+
+.shop-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.shop-title {
+  text-align: center;
+  font-size: 3rem;
+  color: #333;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.shop-subtitle {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #666;
+  margin-bottom: 40px;
+}
+
+.themes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  padding: 20px 0;
+}
+
+.theme-card {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 3px solid transparent;
+  position: relative;
+}
+
+.theme-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.theme-card.selected {
+  border-color: #4CAF50;
+  background: #f8fff8;
+}
+
+.theme-preview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.preview-cell {
+  aspect-ratio: 1;
+}
+
+.theme-name {
+  font-size: 1.8rem;
+  color: #333;
+  margin: 10px 0;
+  font-weight: bold;
+}
+
+.selected-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #4CAF50;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
 .help-screen {
   display: flex;
   justify-content: center;
@@ -1121,254 +1213,6 @@ button {
   justify-content: center;
   align-items: center;
   z-index: 1001;
-}
-
-/* Shop Screen Styles */
-.shop-screen {
-  width: 100%;
-  max-width: 1200px;
-  padding: 20px;
-  margin: 0 auto;
-}
-
-.shop-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.back-button {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: #3498db;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.back-button:hover {
-  background: #2980b9;
-  transform: translateY(-2px);
-}
-
-.shop-title {
-  font-size: 3rem;
-  color: #2c3e50;
-  margin: 0 0 10px 0;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-}
-
-.shop-subtitle {
-  font-size: 1.2rem;
-  color: #7f8c8d;
-  margin: 0;
-}
-
-.themes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-  margin-top: 30px;
-}
-
-.theme-card {
-  background: white;
-  border-radius: 15px;
-  padding: 25px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: 3px solid transparent;
-  position: relative;
-}
-
-.theme-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-}
-
-.theme-card.selected {
-  border-color: #27ae60;
-  box-shadow: 0 15px 35px rgba(39, 174, 96, 0.3);
-}
-
-.theme-preview {
-  position: relative;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.theme-board-preview {
-  width: 120px;
-  height: 80px;
-  border-radius: 10px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 10px;
-  margin-bottom: 10px;
-}
-
-.preview-piece {
-  font-size: 20px;
-  font-weight: bold;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-}
-
-.red-piece {
-  color: #e74c3c;
-}
-
-.blue-piece {
-  color: #3498db;
-}
-
-.theme-emoji {
-  font-size: 2rem;
-  margin-top: 10px;
-}
-
-.theme-info {
-  text-align: center;
-}
-
-.theme-name {
-  font-size: 1.5rem;
-  color: #2c3e50;
-  margin: 0 0 8px 0;
-  font-weight: bold;
-}
-
-.theme-description {
-  color: #7f8c8d;
-  margin: 0 0 15px 0;
-  font-size: 0.9rem;
-}
-
-.theme-colors {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 15px;
-}
-
-.color-dot {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid #ecf0f1;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.selected-badge {
-  background: #27ae60;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  display: inline-block;
-}
-
-.selected-checkmark {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #27ae60;
-  color: white;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
-  z-index: 10;
-}
-
-/* Theme-specific board styles */
-.board.theme-default {
-  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-}
-
-.board.theme-default .cell {
-  background: rgba(248, 249, 250, 0.8);
-  border: 1px solid rgba(233, 236, 239, 0.8);
-}
-
-.board.theme-default .cell:nth-child(odd) {
-  background: rgba(233, 236, 239, 0.8);
-}
-.board.theme-original {
-  background: linear-gradient(135deg, #FF6B35, #2D3436);
-}
-
-.board.theme-original .cell {
-  background: rgba(255, 107, 53, 0.1);
-  border: 1px solid rgba(45, 52, 54, 0.3);
-}
-
-.board.theme-original .cell:nth-child(odd) {
-  background: rgba(45, 52, 54, 0.1);
-}
-
-.board.theme-summer {
-  background: linear-gradient(135deg, #FFD93D, #74B9FF);
-}
-
-.board.theme-summer .cell {
-  background: rgba(255, 217, 61, 0.15);
-  border: 1px solid rgba(116, 185, 255, 0.3);
-}
-
-.board.theme-summer .cell:nth-child(odd) {
-  background: rgba(116, 185, 255, 0.15);
-}
-
-.board.theme-fall {
-  background: linear-gradient(135deg, #E17055, #FDCB6E);
-}
-
-.board.theme-fall .cell {
-  background: rgba(225, 112, 85, 0.15);
-  border: 1px solid rgba(253, 203, 110, 0.3);
-}
-
-.board.theme-fall .cell:nth-child(odd) {
-  background: rgba(253, 203, 110, 0.15);
-}
-
-.board.theme-winter {
-  background: linear-gradient(135deg, #74B9FF, #FFFFFF);
-}
-
-.board.theme-winter .cell {
-  background: rgba(116, 185, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.board.theme-winter .cell:nth-child(odd) {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-.board.theme-spring {
-  background: linear-gradient(135deg, #55a3ff, #81C784);
-}
-
-.board.theme-spring .cell {
-  background: rgba(85, 163, 255, 0.15);
-  border: 1px solid rgba(129, 199, 132, 0.3);
-}
-
-.board.theme-spring .cell:nth-child(odd) {
-  background: rgba(129, 199, 132, 0.15);
 }
 
 .logout-confirm-dialog {

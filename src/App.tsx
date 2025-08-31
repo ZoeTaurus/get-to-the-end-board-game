@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import LoadingScreen from './components/LoadingScreen';
-import ShopScreen from './components/ShopScreen';
 import './App.css';
 import Login from './Login';
 import { GameBot, convertBoardForBot, convertMoveFromBot } from './GameBot.js';
@@ -77,15 +76,10 @@ function App() {
     const savedLanguage = localStorage.getItem('language');
     return savedLanguage || 'English';
   });
-  const [currentTheme, setCurrentTheme] = useState(() => {
+  const [boardTheme, setBoardTheme] = useState(() => {
     const savedTheme = localStorage.getItem('boardTheme');
     return savedTheme || 'default';
   });
-
-  const handleThemeSelect = (theme: string) => {
-    setCurrentTheme(theme);
-    localStorage.setItem('boardTheme', theme);
-  };
 
   useEffect(() => {
     // Socket event listeners
@@ -1183,6 +1177,72 @@ function App() {
     console.log('🤖 Forced random move completed using GameBot');
   };
 
+  // Board theme definitions
+  const boardThemes = {
+    default: { light: '#f0d9b5', dark: '#b58863', name: 'Default' },
+    original: { light: '#ffcc80', dark: '#ff6f00', name: 'Original' },
+    summer: { light: '#fff176', dark: '#388e3c', name: 'Summer' },
+    fall: { light: '#ffab91', dark: '#5d4037', name: 'Fall' },
+    winter: { light: '#e1f5fe', dark: '#0277bd', name: 'Winter' },
+    spring: { light: '#c8e6c9', dark: '#2e7d32', name: 'Spring' }
+  };
+
+  const ShopScreen = () => (
+    <div className="shop-screen">
+      {/* Navigation Bar */}
+      <div className="nav-bar">
+        <div className="nav-option" onClick={() => setScreen('home')}>
+          <span>{getTranslation(language).navigation.home}</span>
+        </div>
+        <div className="nav-option" onClick={() => setScreen('private')}>
+          <span>{getTranslation(language).navigation.private}</span>
+        </div>
+        <div className="nav-option active">
+          <span>Shop</span>
+        </div>
+      </div>
+      
+      <div className="shop-content">
+        <h1 className="shop-title">🛍️ Board Themes Shop</h1>
+        <p className="shop-subtitle">Choose your favorite board theme!</p>
+        
+        <div className="themes-grid">
+          {Object.entries(boardThemes).map(([themeKey, theme]) => (
+            <div 
+              key={themeKey}
+              className={`theme-card ${boardTheme === themeKey ? 'selected' : ''}`}
+              onClick={() => {
+                setBoardTheme(themeKey);
+                localStorage.setItem('boardTheme', themeKey);
+              }}
+            >
+              <div className="theme-preview">
+                <div 
+                  className="preview-cell light"
+                  style={{ backgroundColor: theme.light }}
+                ></div>
+                <div 
+                  className="preview-cell dark"
+                  style={{ backgroundColor: theme.dark }}
+                ></div>
+                <div 
+                  className="preview-cell dark"
+                  style={{ backgroundColor: theme.dark }}
+                ></div>
+                <div 
+                  className="preview-cell light"
+                  style={{ backgroundColor: theme.light }}
+                ></div>
+              </div>
+              <h3 className="theme-name">{theme.name}</h3>
+              {boardTheme === themeKey && <div className="selected-badge">✓ Selected</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   const HomeScreen = () => (
     <div className="home-screen">
       
@@ -1200,7 +1260,7 @@ function App() {
           <span>{getTranslation(language).navigation.private}</span>
         </div>
         <div className="nav-option" onClick={() => setScreen('shop')}>
-          <span>🛍️ Shop</span>
+          <span>Shop</span>
         </div>
       </div>
       
@@ -1780,14 +1840,7 @@ function App() {
   }
 
   if (screen === 'shop') {
-    return (
-      <ShopScreen
-        language={language}
-        currentTheme={currentTheme}
-        onThemeSelect={handleThemeSelect}
-        onBack={() => setScreen('home')}
-      />
-    );
+    return <ShopScreen />;
   }
 
   if (screen === 'bots') {
@@ -1885,7 +1938,7 @@ function App() {
         </div>
         
         <div className="board-container">
-          <div className={`board theme-${currentTheme}`}>
+          <div className="board">
             {board.map((row, rowIndex) => (
               <div key={rowIndex} className="row">
                 {row.map((piece, colIndex) => {
@@ -1901,6 +1954,12 @@ function App() {
                     ([r, c]) => r === rowIndex && c === colIndex
                   );
                   
+                  const cellStyle = {
+                    backgroundColor: (rowIndex + colIndex) % 2 === 0 
+                      ? boardThemes[boardTheme]?.light || '#f0d9b5'
+                      : boardThemes[boardTheme]?.dark || '#b58863'
+                  };
+                  
                   return (
                     <div 
                       key={`${rowIndex}-${colIndex}`} 
@@ -1908,6 +1967,7 @@ function App() {
                         ${isSelected ? 'selected' : ''} 
                         ${isValidMove ? 'valid-move' : ''} 
                         ${isValidCapture ? 'valid-capture' : ''}`}
+                      style={cellStyle}
                       onClick={() => handleCellClick(rowIndex, colIndex)}
                     >
                       {piece && (
