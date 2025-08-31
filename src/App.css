@@ -946,20 +946,20 @@ button {
 
 .themes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 15px;
   padding: 20px 0;
 }
 
 .theme-card {
   background: white;
-  border-radius: 20px;
-  padding: 30px;
+  border-radius: 15px;
+  padding: 15px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 3px solid transparent;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: 2px solid transparent;
   position: relative;
 }
 
@@ -977,12 +977,12 @@ button {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
-  width: 120px;
-  height: 120px;
-  margin: 0 auto 20px;
-  border-radius: 10px;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 10px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
 }
 
 .preview-cell {
@@ -990,21 +990,21 @@ button {
 }
 
 .theme-name {
-  font-size: 1.8rem;
+  font-size: 1.1rem;
   color: #333;
-  margin: 10px 0;
+  margin: 5px 0;
   font-weight: bold;
 }
 
 .selected-badge {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 8px;
+  right: 8px;
   background: #4CAF50;
   color: white;
-  padding: 8px 15px;
-  border-radius: 20px;
-  font-size: 1rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: bold;
 }
 
