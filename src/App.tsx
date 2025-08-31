@@ -1609,7 +1609,7 @@ function App() {
 
           {/* Game Options */}
           <div className="private-options">
-            <div className={`private-option ${generatedCode ? 'disabled' : ''}`} onClick={!generatedCode ? generateGameCode : undefined}>
+            <div className="private-option" onClick={!generatedCode ? generateGameCode : undefined}>
               {!generatedCode ? (
                 <div>
                   <h3>🎮 {getTranslation(language).private.generateGameCode}</h3>
