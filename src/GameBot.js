@@ -204,9 +204,9 @@ export class GameBot {
           );
           
           if (isThreatenedByPlayer) {
-            totalScore -= 3000; // Heavy penalty for being threatened
+            totalScore -= 1500; // Reduced penalty for being threatened (was 3000)
             
-            // Check if piece can retreat (find safe moves for this piece)
+            // Only retreat if there's IMMEDIATE danger and no other options
             const retreatMoves = botMoves.filter(move => 
               move.from.row === r && move.from.col === c
             );
@@ -223,9 +223,21 @@ export class GameBot {
               
               if (!stillThreatened) {
                 canRetreatSafely = true;
-                totalScore += 1500; // Bonus for having a safe retreat option
+                totalScore += 800; // Reduced bonus for retreat (was 1500)
                 break;
               }
+            }
+            
+            // Prefer capturing threats over retreating
+            const canCaptureAttacker = botCaptures.some(capture => {
+              return playerCaptures.some(threat => 
+                threat.from.row === capture.to.row && 
+                threat.from.col === capture.to.col
+              );
+            });
+            
+            if (canCaptureAttacker) {
+              totalScore += 2000; // Big bonus for counter-attacking instead of retreating
             }
             
             // Check if other pieces can defend this threatened piece
@@ -241,7 +253,7 @@ export class GameBot {
             });
             
             if (canBeDefended) {
-              totalScore += 1000; // Bonus for defensive options
+              totalScore += 600; // Reduced bonus for defense (was 1000)
             }
           }
         }
@@ -289,10 +301,24 @@ export class GameBot {
       }
     }
 
-    // --- STEP 5: ANTICIPATE PLAYER MOVES ---
-    // Predict what the player might do and prepare for it
-    if (state.currentPlayer === Player.PLAYER) {
-      // Look at player's best captures and try to block them
+    // --- STEP 5: BALANCED OFFENSE AND DEFENSE ---
+    // Be more aggressive and forward-thinking
+    
+    // Big bonus for advancing pieces towards the goal
+    for (const move of botMoves) {
+      if (move.to.col > move.from.col) {
+        totalScore += 150; // Bonus for advancing forward
+      }
+      
+      // Extra bonus for getting close to the goal
+      if (move.to.col >= state.board[0].length - 2) {
+        totalScore += 500; // Near the goal!
+      }
+    }
+    
+    // Only worry about player threats if they're immediate and dangerous
+    if (state.currentPlayer === Player.PLAYER && playerCaptures.length > 0) {
+      // Look at player's best captures and try to block them ONLY if critical
       for (const playerCapture of playerCaptures) {
         // Check if we can block this capture
         const canBlock = botMoves.some(move => {
@@ -306,31 +332,36 @@ export class GameBot {
         });
         
         if (canBlock) {
-          totalScore += 500; // Bonus for being able to block player threats
+          totalScore += 300; // Reduced bonus for blocking (was 500)
         } else {
-          totalScore -= 1000; // Penalty for unstoppable player threats
+          totalScore -= 400; // Reduced penalty for unstoppable threats (was 1000)
         }
       }
       
-      totalScore -= playerCaptures.length * 800; // General penalty for player threats
+      totalScore -= playerCaptures.length * 300; // Much reduced penalty (was 800)
     }
 
-    // --- STEP 6: TRAP DETECTION ---
-    // Check if moves lead us into traps (positions where we'll be surrounded)
+    // --- STEP 6: SMART TRAP DETECTION ---
+    // Check for obvious traps but don't be too paranoid
     for (const move of botMoves) {
       const afterMove = this.simulateMove(state, move);
       const playerResponseMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
       const playerResponses = playerResponseMoves.filter(m => m.eatenPiece);
       
-      // If this move puts us in a position where player has multiple capture options, it's a trap
-      if (playerResponses.length > 1) {
-        totalScore -= 2000; // Heavy penalty for walking into traps
+      // Only worry about traps if there are MANY capture options (3+)
+      if (playerResponses.length >= 3) {
+        totalScore -= 1000; // Reduced penalty for obvious traps (was 2000)
       }
       
       // Check if this move helps us control the center or create formations
       if (move.to.row > 0 && move.to.row < state.board.length - 1 && 
           move.to.col > 0 && move.to.col < state.board[0].length - 1) {
-        totalScore += 100; // Small bonus for central control
+        totalScore += 200; // Increased bonus for central control (was 100)
+      }
+      
+      // Bonus for moving pieces together in formation
+      if (move.to.col > move.from.col) {
+        totalScore += 80; // Additional forward movement bonus
       }
     }
 
