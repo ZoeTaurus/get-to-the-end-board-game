@@ -100,7 +100,8 @@ function App() {
     const savedPoints = localStorage.getItem('playerPoints');
     return savedPoints ? JSON.parse(savedPoints) : { red: 0, blue: 0 };
   });
-  const [pointsBriefing, setPointsBriefing] = useState<{ show: boolean; winner: string; points: number } | null>(null);
+  const [showPreGameBriefing, setShowPreGameBriefing] = useState(false);
+  const [briefingInfo, setBriefingInfo] = useState({ opponent: '', points: 0 });
 
   useEffect(() => {
     // Socket event listeners
@@ -115,7 +116,13 @@ function App() {
       const isPlayer1 = data.players[0].id === socket.id;
       const player1Name = data.players[0].username;
       const player2Name = data.players[1].username;
-      setOpponent(isPlayer1 ? player2Name : player1Name);
+      const opponentName = isPlayer1 ? player2Name : player1Name;
+      setOpponent(opponentName);
+      
+      // Show briefing with opponent info
+      const opponentColor = isPlayer1 ? 'blue' : 'red';
+      const opponentPoints = playerPoints[opponentColor];
+      showGameBriefing(opponentName, opponentPoints);
       setGameId(data.gameId);
       
       // Set initial turn state
@@ -205,6 +212,9 @@ function App() {
       setGameStarted(true);
       setCurrentPlayer('red');
       setIsMyTurn(false); // Host goes first
+      
+      // Show briefing with host info
+      showGameBriefing(data.hostUsername, playerPoints.red);
     });
 
     socket.on('privateGameCreated', (data) => {
@@ -246,6 +256,9 @@ function App() {
       setGameStarted(true);
       setCurrentPlayer('red');
       setIsMyTurn(true); // Host goes first
+      
+      // Show briefing with guest info
+      showGameBriefing(data.guestUsername, playerPoints.blue);
     });
 
     return () => {
@@ -1200,13 +1213,13 @@ function App() {
     console.log('🤖 Forced random move completed using GameBot');
   };
 
-    const awardPoints = (winnerColor: PlayerColor) => {
+  const awardPoints = (winnerColor: PlayerColor) => {
     const redPoints = playerPoints.red;
     const bluePoints = playerPoints.blue;
     
     let pointsToAward = 0;
     
-    if (winnerColor === 'red') {
+          if (winnerColor === 'red') {
       // Red wins: gets opponent's points (blue) divided by 4
       const opponentBonus = Math.floor(bluePoints / 4);
       
@@ -1248,22 +1261,15 @@ function App() {
       });
     }
     
-    // Get winner's username
-    const winnerUsername = winnerColor === 'red' ? players.red.username : players.blue.username;
-    
-    // Show briefing message
-    setPointsBriefing({ 
-      show: true, 
-      winner: winnerUsername, 
-      points: pointsToAward 
-    });
-    
-    // Hide briefing after 5 seconds
-    setTimeout(() => {
-      setPointsBriefing(null);
-    }, 5000);
-    
     console.log(`${winnerColor} wins and gets ${pointsToAward} points!`);
+  };
+
+  const showGameBriefing = (opponentName: string, opponentPoints: number) => {
+    setBriefingInfo({ opponent: opponentName, points: opponentPoints });
+    setShowPreGameBriefing(true);
+    setTimeout(() => {
+      setShowPreGameBriefing(false);
+    }, 5000);
   };
 
   // Board theme definitions
@@ -1529,6 +1535,9 @@ function App() {
             setGameMode('bot');
             setBotDifficulty('easy');
             
+            // Show briefing with bot info
+            showGameBriefing('Easy Bot', playerPoints.blue);
+            
             // Set initial game message for bot game
             setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
@@ -1565,6 +1574,9 @@ function App() {
             setScreen('game');
             setGameMode('bot');
             setBotDifficulty('normal');
+            
+            // Show briefing with bot info
+            showGameBriefing('Normal Bot', playerPoints.blue);
             
             // Set initial game message for bot game
             setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
@@ -1603,6 +1615,9 @@ function App() {
             setGameMode('bot');
             setBotDifficulty('hard');
             
+            // Show briefing with bot info
+            showGameBriefing('Hard Bot', playerPoints.blue);
+            
             // Set initial game message for bot game
             setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
@@ -1640,6 +1655,9 @@ function App() {
             setGameMode('bot');
             setBotDifficulty('pro');
             
+            // Show briefing with bot info
+            showGameBriefing('Pro Bot', playerPoints.blue);
+            
             // Set initial game message for bot game
             setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
@@ -1676,6 +1694,9 @@ function App() {
             setScreen('game');
             setGameMode('bot');
             setBotDifficulty('wizard');
+            
+            // Show briefing with bot info
+            showGameBriefing('Wizard Bot', playerPoints.blue);
             
             // Set initial game message for bot game
             setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
@@ -2036,11 +2057,11 @@ function App() {
   return (
     <div className="app">
       <div className="game-content">
-        {pointsBriefing && pointsBriefing.show && (
+        {showPreGameBriefing && (
           <div className="points-briefing">
             <div className="briefing-content">
-              <h2>🏆 {pointsBriefing.winner} Wins!</h2>
-              <p>+{pointsBriefing.points} points earned</p>
+              <h2>🎯 Opponent</h2>
+              <p><strong>{briefingInfo.opponent}</strong> - {briefingInfo.points} points</p>
             </div>
           </div>
         )}
