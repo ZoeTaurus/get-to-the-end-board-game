@@ -102,6 +102,8 @@ function App() {
   });
   const [showPreGameBriefing, setShowPreGameBriefing] = useState(false);
   const [briefingInfo, setBriefingInfo] = useState({ opponent: '', points: 0 });
+  const [showPostGameSummary, setShowPostGameSummary] = useState(false);
+  const [pointsSummary, setPointsSummary] = useState({ gained: 0, lost: 0, winner: '' });
 
   useEffect(() => {
     // Socket event listeners
@@ -1213,53 +1215,89 @@ function App() {
     console.log('🤖 Forced random move completed using GameBot');
   };
 
-  const awardPoints = (winnerColor: PlayerColor) => {
+    const awardPoints = (winnerColor: PlayerColor) => {
     const redPoints = playerPoints.red;
     const bluePoints = playerPoints.blue;
     
     let pointsToAward = 0;
     
-          if (winnerColor === 'red') {
+    if (winnerColor === 'red') {
       // Red wins: gets opponent's points (blue) divided by 4
-      const opponentBonus = Math.floor(bluePoints / 4);
+      const opponentPoints = bluePoints;
       
-      // Plus the difference between opponent's points and winner's points
-      // If opponent has more points, add the difference
-      // If opponent has less points, subtract the difference (but can't go negative)
-      let pointDifference = 0;
-      if (bluePoints > redPoints) {
-        pointDifference = bluePoints - redPoints;
+      // Special case: if opponent has 0 points, just give 1 point
+      if (opponentPoints === 0) {
+        pointsToAward = 1;
       } else {
-        pointDifference = -(redPoints - bluePoints);
+        const opponentBonus = Math.floor(opponentPoints / 4);
+        
+        // Plus the difference between opponent's points and winner's points
+        let pointDifference = 0;
+        if (opponentPoints > redPoints) {
+          pointDifference = opponentPoints - redPoints;
+        } else {
+          pointDifference = -(redPoints - opponentPoints);
+        }
+        
+        pointsToAward = Math.max(0, opponentBonus + pointDifference);
       }
-      
-      pointsToAward = Math.max(0, opponentBonus + pointDifference);
       
       setPlayerPoints(prev => {
         const newPoints = { ...prev, red: prev.red + pointsToAward };
         localStorage.setItem('playerPoints', JSON.stringify(newPoints));
         return newPoints;
       });
+      
+      // Show post-game summary
+      if (getMyColor() === 'red') {
+        // You won, you gained points
+        setPointsSummary({ gained: pointsToAward, lost: 0, winner: 'red' });
+      } else {
+        // You lost, opponent gained points (you gained 0)
+        setPointsSummary({ gained: 0, lost: 0, winner: 'red' });
+      }
     } else {
       // Blue wins: gets opponent's points (red) divided by 4
-      const opponentBonus = Math.floor(redPoints / 4);
+      const opponentPoints = redPoints;
       
-      // Plus the difference between opponent's points and winner's points
-      let pointDifference = 0;
-      if (redPoints > bluePoints) {
-        pointDifference = redPoints - bluePoints;
+      // Special case: if opponent has 0 points, just give 1 point
+      if (opponentPoints === 0) {
+        pointsToAward = 1;
       } else {
-        pointDifference = -(bluePoints - redPoints);
+        const opponentBonus = Math.floor(opponentPoints / 4);
+        
+        // Plus the difference between opponent's points and winner's points
+        let pointDifference = 0;
+        if (opponentPoints > bluePoints) {
+          pointDifference = opponentPoints - bluePoints;
+        } else {
+          pointDifference = -(bluePoints - opponentPoints);
+        }
+        
+        pointsToAward = Math.max(0, opponentBonus + pointDifference);
       }
-      
-      pointsToAward = Math.max(0, opponentBonus + pointDifference);
       
       setPlayerPoints(prev => {
         const newPoints = { ...prev, blue: prev.blue + pointsToAward };
         localStorage.setItem('playerPoints', JSON.stringify(newPoints));
         return newPoints;
       });
+      
+      // Show post-game summary
+      if (getMyColor() === 'blue') {
+        // You won, you gained points
+        setPointsSummary({ gained: pointsToAward, lost: 0, winner: 'blue' });
+      } else {
+        // You lost, opponent gained points (you gained 0)
+        setPointsSummary({ gained: 0, lost: 0, winner: 'blue' });
+      }
     }
+    
+    // Show summary for 5 seconds
+    setShowPostGameSummary(true);
+    setTimeout(() => {
+      setShowPostGameSummary(false);
+    }, 5000);
     
     console.log(`${winnerColor} wins and gets ${pointsToAward} points!`);
   };
@@ -2047,6 +2085,24 @@ function App() {
             <div className="briefing-content">
               <h2>🎯 Opponent</h2>
               <p><strong>{briefingInfo.opponent}</strong> - {briefingInfo.points} points</p>
+            </div>
+          </div>
+        )}
+        
+        {showPostGameSummary && (
+          <div className="points-summary">
+            <div className="summary-content">
+              {pointsSummary.gained > 0 ? (
+                <>
+                  <h2>🎉 Victory!</h2>
+                  <p>You gained <strong>+{pointsSummary.gained}</strong> points!</p>
+                </>
+              ) : (
+                <>
+                  <h2>💪 Defeat</h2>
+                  <p>You gained <strong>0</strong> points</p>
+                </>
+              )}
             </div>
           </div>
         )}
