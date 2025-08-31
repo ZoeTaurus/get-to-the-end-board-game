@@ -77,17 +77,41 @@ export class GameBot {
     }
   }
 
-  // Easy and Medium moves are fine as they don't use minimax.
+  // Easy bot - random but avoid obvious suicide moves
   easyMove(moves) {
-    return moves[Math.floor(Math.random() * moves.length)];
+    // Try to avoid immediate capture if possible
+    const safeMoves = moves.filter(move => {
+      // Simple check - just see if moving here is obviously dangerous
+      // (This is a very basic check for the easy bot)
+      return Math.random() > 0.3; // 70% chance to avoid dangerous moves
+    });
+    
+    const movesToConsider = safeMoves.length > 0 ? safeMoves : moves;
+    return movesToConsider[Math.floor(Math.random() * movesToConsider.length)];
   }
 
   mediumMove(gameState, moves) {
     let bestMove = null;
     let bestScore = -Infinity;
 
-    for (const move of moves) {
-        // This simple evaluation is fine for a medium bot
+    // Filter out dangerous moves first
+    const safeMoves = moves.filter(move => {
+      const afterMove = this.simulateMove(gameState, move);
+      const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
+      const playerCaptures = playerMoves.filter(m => m.eatenPiece);
+      
+      // Don't walk into immediate capture
+      const isImmediatelyThreatened = playerCaptures.some(capture => 
+        capture.to.row === move.to.row && capture.to.col === move.to.col
+      );
+      
+      return !isImmediatelyThreatened;
+    });
+    
+    const movesToConsider = safeMoves.length > 0 ? safeMoves : moves;
+
+    for (const move of movesToConsider) {
+        // Simple evaluation - prefer advancing forward
         const score = (move.to.col - move.from.col) * 10;
         if (score > bestScore) {
             bestScore = score;
@@ -102,7 +126,24 @@ export class GameBot {
     let bestMove = null;
     let bestValue = -Infinity;
     
-    for (const move of moves) {
+    // CRITICAL: Filter out moves that walk into immediate capture!
+    const safeMoves = moves.filter(move => {
+      const afterMove = this.simulateMove(gameState, move);
+      const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
+      const playerCaptures = playerMoves.filter(m => m.eatenPiece);
+      
+      // Check if this move puts our piece in immediate danger
+      const isImmediatelyThreatened = playerCaptures.some(capture => 
+        capture.to.row === move.to.row && capture.to.col === move.to.col
+      );
+      
+      return !isImmediatelyThreatened; // Only keep safe moves
+    });
+    
+    // If all moves are dangerous, use the original list (better to move than not move)
+    const movesToConsider = safeMoves.length > 0 ? safeMoves : moves;
+    
+    for (const move of movesToConsider) {
       const newGameState = this.simulateMove(gameState, move);
       const boardValue = this.minimax(newGameState, depth - 1, false, -Infinity, Infinity);
       
