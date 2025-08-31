@@ -1338,6 +1338,9 @@ function App() {
         <div className="nav-option" onClick={() => setScreen('private')}>
           <span>{getTranslation(language).navigation.private}</span>
         </div>
+        <div className="nav-option" onClick={() => setScreen('shop')}>
+          <span>Shop</span>
+        </div>
       </div>
       
       <div className="bots-content">
@@ -1667,6 +1670,9 @@ function App() {
           */}
           <div className="nav-option active">
             <span>{getTranslation(language).navigation.private}</span>
+          </div>
+          <div className="nav-option" onClick={() => setScreen('shop')}>
+            <span>Shop</span>
           </div>
         </div>
         
