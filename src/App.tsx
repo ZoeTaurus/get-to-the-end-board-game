@@ -76,7 +76,10 @@ function App() {
     const savedLanguage = localStorage.getItem('language');
     return savedLanguage || 'English';
   });
-  const [boardTheme, setBoardTheme] = useState('default');
+  const [boardTheme, setBoardTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('boardTheme');
+    return savedTheme || 'default';
+  });
 
   useEffect(() => {
     // Socket event listeners
