@@ -48,8 +48,8 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ language, currentTheme, onTheme
     {
       id: 'spring',
       name: 'Spring',
-      description: 'Fresh green and flowers',
-      colors: ['#00B894', '#FF7675'],
+      description: 'Fresh green and blossoms',
+      colors: ['#55a3ff', '#81C784'],
       preview: '🌸'
     }
   ];

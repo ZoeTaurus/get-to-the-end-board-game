@@ -1359,16 +1359,16 @@ button {
 }
 
 .board.theme-spring {
-  background: linear-gradient(135deg, #00B894, #FF7675);
+  background: linear-gradient(135deg, #55a3ff, #81C784);
 }
 
 .board.theme-spring .cell {
-  background: rgba(0, 184, 148, 0.15);
-  border: 1px solid rgba(255, 118, 117, 0.3);
+  background: rgba(85, 163, 255, 0.15);
+  border: 1px solid rgba(129, 199, 132, 0.3);
 }
 
 .board.theme-spring .cell:nth-child(odd) {
-  background: rgba(255, 118, 117, 0.15);
+  background: rgba(129, 199, 132, 0.15);
 }
 
 .logout-confirm-dialog {
