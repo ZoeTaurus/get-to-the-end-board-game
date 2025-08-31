@@ -100,6 +100,7 @@ function App() {
     const savedPoints = localStorage.getItem('playerPoints');
     return savedPoints ? JSON.parse(savedPoints) : { red: 0, blue: 0 };
   });
+  const [pointsBriefing, setPointsBriefing] = useState<{ show: boolean; winner: string; points: number } | null>(null);
 
   useEffect(() => {
     // Socket event listeners
@@ -1199,7 +1200,7 @@ function App() {
     console.log('🤖 Forced random move completed using GameBot');
   };
 
-  const awardPoints = (winnerColor: PlayerColor) => {
+    const awardPoints = (winnerColor: PlayerColor) => {
     const redPoints = playerPoints.red;
     const bluePoints = playerPoints.blue;
     
@@ -1246,6 +1247,21 @@ function App() {
         return newPoints;
       });
     }
+    
+    // Get winner's username
+    const winnerUsername = winnerColor === 'red' ? players.red.username : players.blue.username;
+    
+    // Show briefing message
+    setPointsBriefing({ 
+      show: true, 
+      winner: winnerUsername, 
+      points: pointsToAward 
+    });
+    
+    // Hide briefing after 5 seconds
+    setTimeout(() => {
+      setPointsBriefing(null);
+    }, 5000);
     
     console.log(`${winnerColor} wins and gets ${pointsToAward} points!`);
   };
@@ -2020,6 +2036,15 @@ function App() {
   return (
     <div className="app">
       <div className="game-content">
+        {pointsBriefing && pointsBriefing.show && (
+          <div className="points-briefing">
+            <div className="briefing-content">
+              <h2>🏆 {pointsBriefing.winner} Wins!</h2>
+              <p>+{pointsBriefing.points} points earned</p>
+            </div>
+          </div>
+        )}
+        
         {winner && (
           <div className="winner-announcement">
             {gameMode === 'local' ? (
