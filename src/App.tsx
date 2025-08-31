@@ -172,6 +172,10 @@ function App() {
         setGameMode('online');
       }
       setGameId(data.gameId); // Set the private game ID
+      
+      // Initialize the game board with pieces
+      initializeGame();
+      
       setScreen('game');
       setGameStarted(true);
       setCurrentPlayer('red');
@@ -209,6 +213,10 @@ function App() {
         setGameMode('online');
       }
       setGameId(data.gameId); // Set the private game ID
+      
+      // Initialize the game board with pieces
+      initializeGame();
+      
       setScreen('game');
       setGameStarted(true);
       setCurrentPlayer('red');
