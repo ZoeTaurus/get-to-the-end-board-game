@@ -53,6 +53,41 @@ button {
   gap: 40px;
 }
 
+.points-display {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.player-points {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.red-points {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff4444 100%);
+  color: white;
+}
+
+.blue-points {
+  background: linear-gradient(135deg, #6b6bff 0%, #4444ff 100%);
+  color: white;
+}
+
+.points-label {
+  font-size: 1.2rem;
+}
+
+.points-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
 .player-indicator {
   font-size: 2.2rem;
   padding: 22px 44px;

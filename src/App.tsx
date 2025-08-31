@@ -96,6 +96,10 @@ function App() {
     const savedPieceTheme = localStorage.getItem('pieceTheme');
     return savedPieceTheme || 'default';
   });
+  const [playerPoints, setPlayerPoints] = useState(() => {
+    const savedPoints = localStorage.getItem('playerPoints');
+    return savedPoints ? JSON.parse(savedPoints) : { red: 0, blue: 0 };
+  });
 
   useEffect(() => {
     // Socket event listeners
@@ -550,6 +554,7 @@ function App() {
             
             setWinner(winnerColor);
             setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
+            awardPoints(winnerColor);
             if (winnerColor === 'red') {
               setShowConfetti(true);
             }
@@ -592,6 +597,7 @@ function App() {
             console.log('Setting game message to:', `${players[winnerColor].username} wins!`);
             setWinner(winnerColor);
             setGameMessage(`${players[winnerColor].username} wins!`);
+            awardPoints(winnerColor);
             if (winnerColor === 'red') {
               setShowConfetti(true);
             }
@@ -1191,6 +1197,57 @@ function App() {
       setBotTimeouts({ move: null, fallback: null });
       
     console.log('🤖 Forced random move completed using GameBot');
+  };
+
+  const awardPoints = (winnerColor: PlayerColor) => {
+    const redPoints = playerPoints.red;
+    const bluePoints = playerPoints.blue;
+    
+    let pointsToAward = 0;
+    
+    if (winnerColor === 'red') {
+      // Red wins: gets opponent's points (blue) divided by 4
+      const opponentBonus = Math.floor(bluePoints / 4);
+      
+      // Plus the difference between opponent's points and winner's points
+      // If opponent has more points, add the difference
+      // If opponent has less points, subtract the difference (but can't go negative)
+      let pointDifference = 0;
+      if (bluePoints > redPoints) {
+        pointDifference = bluePoints - redPoints;
+      } else {
+        pointDifference = -(redPoints - bluePoints);
+      }
+      
+      pointsToAward = Math.max(0, opponentBonus + pointDifference);
+      
+      setPlayerPoints(prev => {
+        const newPoints = { ...prev, red: prev.red + pointsToAward };
+        localStorage.setItem('playerPoints', JSON.stringify(newPoints));
+        return newPoints;
+      });
+    } else {
+      // Blue wins: gets opponent's points (red) divided by 4
+      const opponentBonus = Math.floor(redPoints / 4);
+      
+      // Plus the difference between opponent's points and winner's points
+      let pointDifference = 0;
+      if (redPoints > bluePoints) {
+        pointDifference = redPoints - bluePoints;
+      } else {
+        pointDifference = -(bluePoints - redPoints);
+      }
+      
+      pointsToAward = Math.max(0, opponentBonus + pointDifference);
+      
+      setPlayerPoints(prev => {
+        const newPoints = { ...prev, blue: prev.blue + pointsToAward };
+        localStorage.setItem('playerPoints', JSON.stringify(newPoints));
+        return newPoints;
+      });
+    }
+    
+    console.log(`${winnerColor} wins and gets ${pointsToAward} points!`);
   };
 
   // Board theme definitions
@@ -2007,6 +2064,16 @@ function App() {
         )}
         <div className="game-info-container">
           <div className="game-status">
+            <div className="points-display">
+              <div className="player-points red-points">
+                <span className="points-label">Red:</span>
+                <span className="points-value">{playerPoints.red}</span>
+              </div>
+              <div className="player-points blue-points">
+                <span className="points-label">Blue:</span>
+                <span className="points-value">{playerPoints.blue}</span>
+              </div>
+            </div>
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
               {gameMode === 'local'
                 ? `${currentPlayer === 'red' ? players.red.username : players.blue.username} ${getTranslation(language).game.opponentTurn}`
