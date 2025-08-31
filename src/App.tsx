@@ -171,7 +171,7 @@ function App() {
       if (gameMode !== 'local') {
         setGameMode('online');
       }
-      setGameId(data.gameId); // Set the private game ID
+      setPrivateGameId(data.gameId); // Set the private game ID
       
       // Initialize the game board with pieces
       initializeGame();
@@ -212,7 +212,7 @@ function App() {
       if (gameMode !== 'local') {
         setGameMode('online');
       }
-      setGameId(data.gameId); // Set the private game ID
+      setPrivateGameId(data.gameId); // Set the private game ID
       
       // Initialize the game board with pieces
       initializeGame();
