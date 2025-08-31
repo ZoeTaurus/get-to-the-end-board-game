@@ -11,6 +11,13 @@ interface ShopScreenProps {
 const ShopScreen: React.FC<ShopScreenProps> = ({ language, currentTheme, onThemeSelect, onBack }) => {
   const themes = [
     {
+      id: 'default',
+      name: 'Default',
+      description: 'Classic game board',
+      colors: ['#f8f9fa', '#e9ecef'],
+      preview: '🎮'
+    },
+    {
       id: 'original',
       name: 'Original',
       description: 'Classic orange and black board',
@@ -64,6 +71,9 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ language, currentTheme, onTheme
             className={`theme-card ${currentTheme === theme.id ? 'selected' : ''}`}
             onClick={() => onThemeSelect(theme.id)}
           >
+            {currentTheme === theme.id && (
+              <div className="selected-checkmark">✓</div>
+            )}
             <div className="theme-preview">
               <div 
                 className="theme-board-preview"

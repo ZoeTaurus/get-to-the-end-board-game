@@ -79,7 +79,7 @@ function App() {
   });
   const [currentTheme, setCurrentTheme] = useState(() => {
     const savedTheme = localStorage.getItem('boardTheme');
-    return savedTheme || 'original';
+    return savedTheme || 'default';
   });
 
   const handleThemeSelect = (theme: string) => {
