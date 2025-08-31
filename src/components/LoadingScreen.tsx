@@ -1,13 +1,18 @@
 import React from 'react';
 import '../styles/LoadingScreen.css';
+import { getTranslation } from '../translations';
 
-const LoadingScreen: React.FC = () => {
+interface LoadingScreenProps {
+  language?: string;
+}
+
+const LoadingScreen: React.FC<LoadingScreenProps> = ({ language = 'English' }) => {
   return (
     <div className="loading-screen">
       <div className="loading-content">
         <div className="loading-spinner"></div>
-        <h2>Finding a player...</h2>
-        <p>Please wait while we connect you with an opponent</p>
+        <h2>{getTranslation(language).game.searchingForGame}</h2>
+        <p>{getTranslation(language).game.waitingForOpponent}</p>
       </div>
     </div>
   );

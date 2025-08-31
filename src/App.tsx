@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import Login from './Login';
-import { GameBot, convertBoardForBot, convertMoveFromBot, Player as GameBotPlayer } from './GameBot';
+import { GameBot, convertBoardForBot, convertMoveFromBot } from './GameBot';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
@@ -22,84 +22,8 @@ interface Player {
 
 const socket = io(window.location.origin);
 
-// Add translations
-const translations = {
-  en: {
-    playGame: 'Play Game',
-    help: 'Help',
-    logout: 'Logout',
-    selectLanguage: 'Select Language:',
-    moreComingSoon: 'More stuff coming soon!',
-    yourTurn: 'Your Turn',
-    opponentTurn: (name: string) => `${name}'s Turn`,
-    selectPiece: 'Select a piece to move.',
-    waitingForMove: (name: string) => `Waiting for ${name}'s move...`,
-    timeLeft: (time: number) => `Time left: ${time}s`,
-    youWon: 'You WON!!!!',
-    youLost: 'Sorry, you lost.',
-    backToHome: 'Back to Home'
-  },
-  zh: {
-    playGame: '开始游戏',
-    help: '帮助',
-    logout: '退出',
-    selectLanguage: '选择语言:',
-    moreComingSoon: '更多内容即将推出！',
-    yourTurn: '轮到你了',
-    opponentTurn: (name: string) => `${name}的回合`,
-    selectPiece: '选择一个棋子移动。',
-    waitingForMove: (name: string) => `等待${name}移动...`,
-    timeLeft: (time: number) => `剩余时间: ${time}秒`,
-    youWon: '你赢了！',
-    youLost: '抱歉，你输了。',
-    backToHome: '返回主页'
-  },
-  pt: {
-    playGame: 'Jogar',
-    help: 'Ajuda',
-    logout: 'Sair',
-    selectLanguage: 'Selecione o idioma:',
-    moreComingSoon: 'Mais em breve!',
-    yourTurn: 'Sua vez',
-    opponentTurn: (name: string) => `Vez de ${name}`,
-    selectPiece: 'Selecione uma peça para mover.',
-    waitingForMove: (name: string) => `Aguardando ${name} mover...`,
-    timeLeft: (time: number) => `Tempo restante: ${time}s`,
-    youWon: 'Você GANHOU!',
-    youLost: 'Desculpe, você perdeu.',
-    backToHome: 'Voltar ao Início'
-  },
-  th: {
-    playGame: 'เริ่มเกม',
-    help: 'ช่วยเหลือ',
-    logout: 'ออกจากระบบ',
-    selectLanguage: 'เลือกภาษา:',
-    moreComingSoon: 'เร็วๆ นี้จะมีเพิ่มเติม!',
-    yourTurn: 'ตาคุณ',
-    opponentTurn: (name: string) => `ตาของ ${name}`,
-    selectPiece: 'เลือกตัวหมากที่จะเดิน',
-    waitingForMove: (name: string) => `รอ ${name} เดิน...`,
-    timeLeft: (time: number) => `เวลาที่เหลือ: ${time} วินาที`,
-    youWon: 'คุณชนะ!',
-    youLost: 'เสียใจด้วย คุณแพ้',
-    backToHome: 'กลับหน้าแรก'
-  },
-  ar: {
-    playGame: 'ابدأ اللعبة',
-    help: 'مساعدة',
-    logout: 'تسجيل الخروج',
-    selectLanguage: 'اختر اللغة:',
-    moreComingSoon: 'المزيد قريباً!',
-    yourTurn: 'دورك',
-    opponentTurn: (name: string) => `دور ${name}`,
-    selectPiece: 'اختر قطعة للتحرك.',
-    waitingForMove: (name: string) => `في انتظار تحرك ${name}...`,
-    timeLeft: (time: number) => `الوقت المتبقي: ${time} ثانية`,
-    youWon: 'لقد فزت!',
-    youLost: 'عذراً، لقد خسرت.',
-    backToHome: 'العودة للصفحة الرئيسية'
-  }
-};
+// Import the comprehensive translation system
+import { getTranslation, languageDisplayNames, languageList } from './translations';
 
 function App() {
   const [screen, setScreen] = useState<GameScreen>('home');
@@ -148,7 +72,10 @@ function App() {
   const [timeLeft, setTimeLeft] = useState<number>(30);
   const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
   const isMyTurnRef = useRef(isMyTurn);
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState(() => {
+    const savedLanguage = localStorage.getItem('language');
+    return savedLanguage || 'English';
+  });
 
   useEffect(() => {
     // Socket event listeners
@@ -411,9 +338,9 @@ function App() {
     
     // Set appropriate game message based on game mode
     if (gameMode === 'local') {
-      setGameMessage(`It's ${players.red.username}'s turn. Select a piece to move.`);
+      setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', players.red.username));
     } else {
-      setGameMessage(`It's ${players.red.username}'s turn. Select a piece to move.`);
+      setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', players.red.username));
     }
   };
 
@@ -647,7 +574,7 @@ function App() {
             setIsMyTurn(true);
             
             // Update game message for local game
-            setGameMessage(`It's ${players[nextPlayer].username}'s turn. Select a piece to move.`);
+            setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', players[nextPlayer].username));
           }
         } else {
           // Online play - emit move to server
@@ -1071,7 +998,7 @@ function App() {
     const botBoard = convertBoardForBot(board);
     const gameState = { 
       board: botBoard, 
-      currentPlayer: GameBotPlayer.BOT // The bot is playing as Player.BOT (blue pieces)
+      currentPlayer: 'bot' as any // The bot is playing as Player.BOT (blue pieces)
     };
     
     const botMove = gameBot.makeMove(gameState);
@@ -1084,13 +1011,6 @@ function App() {
     }
     
     console.log('🤖 GameBot AI chose move:', botMove);
-    
-    // DEBUG: Check if this is a capture move
-    if (botMove.eatenPiece) {
-      console.log('🤖 CAPTURE MOVE DETECTED! Bot will eat piece at:', botMove.eatenPiece.row, botMove.eatenPiece.col);
-    } else {
-      console.log('🤖 NO CAPTURE: This is a regular move');
-    }
     
     // Convert GameBot move back to our format
     const gameMove = convertMoveFromBot(botMove);
@@ -1109,12 +1029,13 @@ function App() {
       const updatedBoard = prevBoard.map(row => [...row]);
       const movingPiece = {...piece};
       
-      // Handle captures properly - use the GameBot's capture information
+      // Handle captures using the GameBot's eatenPiece information (more reliable)
       if (botMove.eatenPiece) {
-        console.log('🤖 BOT CAPTURE: Removing piece at', [botMove.eatenPiece.row, botMove.eatenPiece.col], 'Piece was:', updatedBoard[botMove.eatenPiece.row][botMove.eatenPiece.col]);
-        // Remove the captured piece from the board FIRST
-        updatedBoard[botMove.eatenPiece.row][botMove.eatenPiece.col] = null;
-        console.log('🤖 BOT CAPTURE: Board after removal:', JSON.stringify(updatedBoard));
+        const [eatenRow, eatenCol] = [botMove.eatenPiece.row, botMove.eatenPiece.col];
+        console.log('🤖 BOT CAPTURE: Removing piece at', [eatenRow, eatenCol], 'Piece was:', updatedBoard[eatenRow][eatenCol]);
+        
+        // Remove the captured piece from the board
+        updatedBoard[eatenRow][eatenCol] = null;
         
         if (movingPiece.type === 'circle') {
           movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
@@ -1197,12 +1118,13 @@ function App() {
       const updatedBoard = prevBoard.map(row => [...row]);
       const movingPiece = {...piece};
       
-      // Check if this is a capture
-      const targetCell = updatedBoard[toRow][toCol];
-      const isCapture = targetCell && targetCell.color !== movingPiece.color;
-      if (isCapture) {
+      // Check if this is a capture using the GameBot's eatenPiece information
+      if (botMove.eatenPiece) {
+        const [eatenRow, eatenCol] = [botMove.eatenPiece.row, botMove.eatenPiece.col];
+        console.log('🤖 FORCED BOT CAPTURE: Removing piece at', [eatenRow, eatenCol], 'Piece was:', updatedBoard[eatenRow][eatenCol]);
+        
         // Remove the captured piece from the board
-        updatedBoard[toRow][toCol] = null;
+        updatedBoard[eatenRow][eatenCol] = null;
         
         if (movingPiece.type === 'circle') {
           movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
@@ -1245,13 +1167,13 @@ function App() {
       {/* Navigation Bar */}
       <div className="nav-bar">
         <div className="nav-option active">
-          <span>Home</span>
+          <span>{getTranslation(language).navigation.home}</span>
         </div>
         <div className="nav-option" onClick={() => setScreen('bots')}>
-          <span>Bots</span>
+          <span>{getTranslation(language).navigation.bots}</span>
         </div>
         <div className="nav-option" onClick={() => setScreen('private')}>
-          <span>Private</span>
+          <span>{getTranslation(language).navigation.private}</span>
         </div>
       </div>
       
@@ -1260,31 +1182,31 @@ function App() {
           socket.emit('joinQueue', username);
           setIsSearching(true);
         }}>
-          {translations[language].playGame}
+          {getTranslation(language).game.startGame}
         </button>
         <button type="button" onClick={() => setScreen('help')}>
-          {translations[language].help}
+          {getTranslation(language).help.title}
         </button>
         <button
           type="button"
           onClick={handleLogoutClick}
           className="logout-button"
         >
-          {translations[language].logout}
+          {getTranslation(language).game.logout}
         </button>
         <div className="language-select-container">
-          <label htmlFor="language-select">{translations[language].selectLanguage}</label>
+          <label htmlFor="language-select">{getTranslation(language).login.language}:</label>
           <select 
             id="language-select"
             className="language-select"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
           >
-            <option value="en">English</option>
-            <option value="zh">中文 (Chinese)</option>
-            <option value="pt">Português (Portuguese)</option>
-            <option value="th">ไทย (Thai)</option>
-            <option value="ar">العربية (Arabic)</option>
+            {languageList.map(lang => (
+              <option key={lang} value={lang}>
+                {languageDisplayNames[lang]}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -1309,13 +1231,13 @@ function App() {
       {/* Navigation Bar */}
       <div className="nav-bar">
         <div className="nav-option" onClick={() => setScreen('home')}>
-          <span>Home</span>
+          <span>{getTranslation(language).navigation.home}</span>
         </div>
         <div className="nav-option active">
-          <span>Bots</span>
+          <span>{getTranslation(language).navigation.bots}</span>
         </div>
         <div className="nav-option" onClick={() => setScreen('private')}>
-          <span>Private</span>
+          <span>{getTranslation(language).navigation.private}</span>
         </div>
       </div>
       
@@ -1328,7 +1250,7 @@ function App() {
             // Set up players for bot game
             setPlayers({
               red: { color: 'red', username: username || 'Player 1' },
-              blue: { color: 'blue', username: 'Bot (Easy)' }
+              blue: { color: 'blue', username: `Bot (${getTranslation(language).bots.easyBot})` }
             });
             // Don't call initializeGame() as it resets currentPlayer
             const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
@@ -1354,18 +1276,18 @@ function App() {
             setBotDifficulty('easy');
             
             // Set initial game message for bot game
-            setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
+            setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
-            <h3>🤖 Easy Bot</h3>
-            <p>Random moves, occasionally captures</p>
-            <p className="bot-description">Good for beginners</p>
+            <h3>🤖 {getTranslation(language).bots.easyBot}</h3>
+                          <p>{getTranslation(language).bots.easyDescription}</p>
+              <p className="bot-description">{getTranslation(language).bots.goodForBeginners}</p>
           </div>
           
           <div className="bot-option" onClick={() => {
             // Set up players for bot game
             setPlayers({
               red: { color: 'red', username: username || 'Player 1' },
-              blue: { color: 'blue', username: 'Bot (Normal)' }
+              blue: { color: 'blue', username: `Bot (${getTranslation(language).bots.normalBot})` }
             });
             // Don't call initializeGame() as it resets currentPlayer
             const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
@@ -1391,18 +1313,18 @@ function App() {
             setBotDifficulty('normal');
             
             // Set initial game message for bot game
-            setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
+            setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
-            <h3>🤖 Normal Bot</h3>
-            <p>Smart moves, tries to advance</p>
-            <p className="bot-description">Challenging but fair</p>
+            <h3>🤖 {getTranslation(language).bots.normalBot}</h3>
+                          <p>{getTranslation(language).bots.normalDescription}</p>
+              <p className="bot-description">{getTranslation(language).bots.challengingButFair}</p>
           </div>
           
           <div className="bot-option" onClick={() => {
             // Set up players for bot game
             setPlayers({
               red: { color: 'red', username: username || 'Player 1' },
-              blue: { color: 'blue', username: 'Bot (Hard)' }
+              blue: { color: 'blue', username: `Bot (${getTranslation(language).bots.hardBot})` }
             });
             // Don't call initializeGame() as it resets currentPlayer
             const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
@@ -1428,18 +1350,18 @@ function App() {
             setBotDifficulty('hard');
             
             // Set initial game message for bot game
-            setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
+            setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
-            <h3>🤖 Hard Bot</h3>
-            <p>Strategic moves, looks for wins</p>
-            <p className="bot-description">For experienced players</p>
+            <h3>🤖 {getTranslation(language).bots.hardBot}</h3>
+                          <p>{getTranslation(language).bots.hardDescription}</p>
+              <p className="bot-description">{getTranslation(language).bots.forExperiencedPlayers}</p>
           </div>
           
           <div className="bot-option" onClick={() => {
             // Set up players for bot game
             setPlayers({
               red: { color: 'red', username: username || 'Player 1' },
-              blue: { color: 'blue', username: 'Bot (Pro)' }
+              blue: { color: 'blue', username: `Bot (${getTranslation(language).bots.proBot})` }
             });
             // Don't call initializeGame() as it resets currentPlayer
             const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
@@ -1465,18 +1387,18 @@ function App() {
             setBotDifficulty('pro');
             
             // Set initial game message for bot game
-            setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
+            setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
-            <h3>🤖 Pro Bot</h3>
-            <p>AI-powered moves with prediction</p>
-            <p className="bot-description">For advanced players</p>
+            <h3>🤖 {getTranslation(language).bots.proBot}</h3>
+                          <p>{getTranslation(language).bots.proDescription}</p>
+              <p className="bot-description">{getTranslation(language).bots.forAdvancedPlayers}</p>
           </div>
           
           <div className="bot-option" onClick={() => {
             // Set up players for bot game
             setPlayers({
               red: { color: 'red', username: username || 'Player 1' },
-              blue: { color: 'blue', username: 'Bot (Wizard)' }
+              blue: { color: 'blue', username: `Bot (${getTranslation(language).bots.wizardBot})` }
             });
             // Don't call initializeGame() as it resets currentPlayer
             const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
@@ -1502,11 +1424,11 @@ function App() {
             setBotDifficulty('wizard');
             
             // Set initial game message for bot game
-            setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
+            setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
-            <h3>🤖 Wizard Bot</h3>
-            <p>Complex AI with deep thinking</p>
-            <p className="bot-description">For master players</p>
+            <h3>🤖 {getTranslation(language).bots.wizardBot}</h3>
+                          <p>{getTranslation(language).bots.wizardDescription}</p>
+              <p className="bot-description">{getTranslation(language).bots.forMasterPlayers}</p>
           </div>
         </div>
       </div>
@@ -1593,7 +1515,7 @@ function App() {
         setScreen('game');
         
         // Set initial game message for local game
-        setGameMessage(`It's ${username || 'Player 1'}'s turn. Select a piece to move.`);
+        setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
         
         setShowNicknameInput(false);
         setOpponentNickname('');
@@ -1637,23 +1559,23 @@ function App() {
         {/* Navigation Bar */}
         <div className="nav-bar">
           <div className="nav-option" onClick={() => setScreen('home')}>
-            <span>Home</span>
+            <span>{getTranslation(language).navigation.home}</span>
           </div>
           <div className="nav-option" onClick={() => setScreen('bots')}>
-            <span>Bots</span>
+            <span>{getTranslation(language).navigation.bots}</span>
           </div>
           <div className="nav-option active">
-            <span>Private</span>
+            <span>{getTranslation(language).navigation.private}</span>
           </div>
         </div>
         
         <div className="private-content">
-          <h2>Private Games</h2>
-          <p>Create or join private games with friends</p>
+          <h2>{getTranslation(language).private.title}</h2>
+          <p>{getTranslation(language).private.subtitle}</p>
           
           {/* Game Code Input Section */}
           <div className="game-code-section">
-            <h3>Enter Game Code</h3>
+            <h3>{getTranslation(language).private.enterGameCode}</h3>
             <div className="code-input-container">
               <input
                 type="text"
@@ -1668,7 +1590,7 @@ function App() {
                 disabled={gameCode.length !== 4}
                 className="join-code-button"
               >
-                Join Game
+                {getTranslation(language).private.joinGame}
               </button>
             </div>
           </div>
@@ -1678,21 +1600,21 @@ function App() {
             <div className={`private-option ${generatedCode ? 'disabled' : ''}`} onClick={!generatedCode ? generateGameCode : undefined}>
               {!generatedCode ? (
                 <div>
-                  <h3>🎮 Generate Game Code</h3>
-                  <p>Create a new private game</p>
-                  <p className="private-description">Generate a 4-character code for friends</p>
+                  <h3>🎮 {getTranslation(language).private.generateGameCode}</h3>
+                  <p>{getTranslation(language).private.createNewGame}</p>
+                  <p className="private-description">{getTranslation(language).private.generateCodeDescription}</p>
                 </div>
               ) : (
                 <div>
-                  <h3>🎮 Game Created!</h3>
-                  <p>Share this code with your friend</p>
+                  <h3>🎮 {getTranslation(language).private.gameCreated}</h3>
+                  <p>{getTranslation(language).private.shareCodeWithFriend}</p>
                   <div className="generated-code">
-                    <strong>Game Code: {generatedCode}</strong>
+                    <strong>{getTranslation(language).private.gameCode}: {generatedCode}</strong>
                     {waitingForOpponent && (
-                      <p className="waiting-message">⏳ Waiting for opponent to join...</p>
+                      <p className="waiting-message">⏳ {getTranslation(language).game.waitingForOpponent}</p>
                     )}
                     {timeRemaining > 0 && (
-                      <p className="timer-message">⏰ Code expires in {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}</p>
+                      <p className="timer-message">⏰ {getTranslation(language).private.codeExpiresIn} {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}</p>
                     )}
                     <button 
                       onClick={() => {
@@ -1721,7 +1643,7 @@ function App() {
                       }}
                       className="cancel-code-button"
                     >
-                      Cancel
+                      {getTranslation(language).private.cancel}
                     </button>
                   </div>
                 </div>
@@ -1729,9 +1651,9 @@ function App() {
             </div>
             
             <div className="private-option" onClick={startSameDeviceGame}>
-              <h3>📱 Play on Same Device</h3>
-              <p>Play with someone on this device</p>
-              <p className="private-description">No account needed, just enter nicknames</p>
+              <h3>📱 {getTranslation(language).private.playOnSameDevice}</h3>
+              <p>{getTranslation(language).private.playWithSomeoneOnDevice}</p>
+              <p className="private-description">{getTranslation(language).private.noAccountNeeded}</p>
             </div>
           </div>
 
@@ -1739,24 +1661,24 @@ function App() {
           {showNicknameInput && (
             <div className="nickname-modal-overlay">
               <div className="nickname-modal">
-                <h3>Enter Opponent's Nickname</h3>
-                <p>This won't be saved - just for this game</p>
+                <h3>{getTranslation(language).private.enterOpponentsNickname}</h3>
+                <p>{getTranslation(language).private.nicknameNotSaved}</p>
                 <input
                   type="text"
-                  placeholder="Opponent's nickname"
+                  placeholder={getTranslation(language).private.opponentsNickname}
                   value={opponentNickname}
                   onChange={(e) => setOpponentNickname(e.target.value)}
                   className="nickname-input"
                 />
                 <div className="nickname-modal-buttons">
                   <button onClick={confirmSameDeviceGame} className="confirm-button">
-                    Start Game
+                    {getTranslation(language).private.startGame}
                   </button>
                   <button onClick={() => {
                     setShowNicknameInput(false);
                     setOpponentNickname('');
                   }} className="cancel-button">
-                    Cancel
+                    {getTranslation(language).private.cancel}
                   </button>
                 </div>
               </div>
@@ -1803,7 +1725,7 @@ function App() {
         </div>
 
         <button onClick={() => setScreen('home')} className="back-button">
-          Back to Home
+          {getTranslation(language).game.backToHome}
         </button>
       </div>
     </div>
@@ -1811,12 +1733,12 @@ function App() {
 
   // Show loading screen when searching for opponent
   if (isSearching) {
-    return <LoadingScreen />;
+    return <LoadingScreen language={language} />;
   }
 
   // If not logged in, show login screen
   if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
+    return <Login onLogin={handleLogin} language={language} />;
   }
 
   // Show different screens based on state
@@ -1864,13 +1786,13 @@ function App() {
               winner === getMyColor() ? (
                 <>
                   <h2 style={{ color: winner === 'red' ? '#ff4444' : '#4444ff' }}>
-                    {translations[language].youWon}
+                    {getTranslation(language).game.youWin}
                   </h2>
                   {showConfetti && <ConfettiOverlay />}
                 </>
               ) : (
                 <>
-                  <h2 style={{ color: '#888' }}>{translations[language].youLost}</h2>
+                  <h2 style={{ color: '#888' }}>{getTranslation(language).game.youLose}</h2>
                   <div className="rain">
                     {Array.from({ length: 60 }).map((_, i) => (
                       <div
@@ -1890,33 +1812,33 @@ function App() {
             <button onClick={() => {
               initializeGame();
               setScreen('home');
-            }}>{translations[language].backToHome}</button>
+            }}>{getTranslation(language).game.backToHome}</button>
           </div>
         )}
         <div className="game-info-container">
           <div className="game-status">
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
               {gameMode === 'local'
-                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username}'s Turn`
+                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username} ${getTranslation(language).game.opponentTurn}`
                 : (isMyTurn
-                  ? translations[language].yourTurn
+                  ? getTranslation(language).game.yourTurn
                   : (gameMode === 'bot'
-                      ? 'Bot\'s Turn'
-                      : translations[language].opponentTurn(opponent)
+                      ? getTranslation(language).game.opponentTurn.replace('{opponent}', 'Bot')
+                      : getTranslation(language).game.opponentTurn.replace('{opponent}', opponent)
                     )
                   )
               }
               {gameMode === 'online' && (
                 <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-                  {translations[language].timeLeft(timeLeft)}
+                  {getTranslation(language).game.timeLeft.replace('{seconds}', timeLeft.toString())}
                 </div>
               )}
             </div>
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? translations[language].selectPiece : (
-                gameMode === 'bot' ? 'Bot is thinking...' : 
-                gameMode === 'local' ? `Waiting for ${currentPlayer === 'red' ? players.red.username : players.blue.username} to move` :
-                translations[language].waitingForMove(opponent)
+              {isMyTurn ? getTranslation(language).game.selectPiece : (
+                gameMode === 'bot' ? getTranslation(language).game.waitingForOpponent : 
+                gameMode === 'local' ? getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username) :
+                                  getTranslation(language).game.waitingForMove.replace('{opponent}', opponent)
               )}
             </div>
           </div>

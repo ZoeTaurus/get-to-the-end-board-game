@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import { getTranslation } from './translations';
 
 interface LoginProps {
   onLogin: (username: string) => void;
+  language?: string;
 }
 
 interface User {
@@ -11,7 +13,7 @@ interface User {
   email: string;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, language = 'English' }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
@@ -39,7 +41,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const validatePassword = (pass: string) => {
     if (pass.length < 4) {
-      return 'Password must be at least 4 characters long';
+      return getTranslation(language).login.passwordTooShort;
     }
     return '';
   };
@@ -50,12 +52,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     const user = users.find(u => u.username === username);
     if (!user) {
-      setError('User not found');
+      setError(getTranslation(language).login.userNotFound);
       return;
     }
 
     if (user.password !== password) {
-      setError('Incorrect password');
+      setError(getTranslation(language).login.incorrectPassword);
       return;
     }
 
@@ -68,17 +70,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError('');
 
     if (!email.trim()) {
-      setError('Please enter your email address');
+      setError(getTranslation(language).login.emailRequired);
       return;
     }
 
     if (users.some(u => u.username === username)) {
-      setError('Username already taken');
+      setError(getTranslation(language).login.usernameTaken);
       return;
     }
 
     if (users.some(u => u.email === email)) {
-      setError('Email already registered');
+      setError(getTranslation(language).login.emailRegistered);
       return;
     }
 
@@ -89,7 +91,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(getTranslation(language).login.passwordsDontMatch);
       return;
     }
 
