@@ -933,15 +933,27 @@ button {
   text-align: center;
   font-size: 3rem;
   color: #333;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   font-weight: bold;
 }
 
-.shop-subtitle {
+.theme-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.section-subtitle {
+  text-align: center;
+  font-size: 1.2rem;
   color: #666;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
 
 .themes-grid {
@@ -987,6 +999,23 @@ button {
 
 .preview-cell {
   aspect-ratio: 1;
+}
+
+.piece-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 10px;
+}
+
+.preview-piece {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .theme-name {

@@ -92,6 +92,10 @@ function App() {
     // If no theme is saved, default to 'default' (chess colors)
     return savedTheme || 'default';
   });
+  const [pieceTheme, setPieceTheme] = useState(() => {
+    const savedPieceTheme = localStorage.getItem('pieceTheme');
+    return savedPieceTheme || 'default';
+  });
 
   useEffect(() => {
     // Socket event listeners
@@ -1199,6 +1203,40 @@ function App() {
     spring: { light: '#ffb3d9', dark: '#ff69b4', name: 'Spring' }
   };
 
+  // Piece theme definitions
+  const pieceThemes = {
+    default: { 
+      player1: { bg: '#ff6b6b', border: '#cc0000', name: 'Red' },
+      player2: { bg: '#6b6bff', border: '#0000cc', name: 'Blue' },
+      name: 'Default'
+    },
+    original: { 
+      player1: { bg: '#4caf50', border: '#2e7d32', name: 'Green' },
+      player2: { bg: '#2196f3', border: '#1565c0', name: 'Blue' },
+      name: 'Original'
+    },
+    summer: { 
+      player1: { bg: '#ffeb3b', border: '#f57f17', name: 'Yellow' },
+      player2: { bg: '#00bcd4', border: '#006064', name: 'Cyan' },
+      name: 'Summer'
+    },
+    fall: { 
+      player1: { bg: '#ff9800', border: '#e65100', name: 'Orange' },
+      player2: { bg: '#795548', border: '#3e2723', name: 'Brown' },
+      name: 'Fall'
+    },
+    winter: { 
+      player1: { bg: '#e3f2fd', border: '#0d47a1', name: 'Ice Blue' },
+      player2: { bg: '#263238', border: '#000000', name: 'Dark Gray' },
+      name: 'Winter'
+    },
+    spring: { 
+      player1: { bg: '#e8f5e8', border: '#2e7d32', name: 'Light Green' },
+      player2: { bg: '#f8bbd9', border: '#c2185b', name: 'Pink' },
+      name: 'Spring'
+    }
+  };
+
   const ShopScreen = () => (
     <div className="shop-screen">
       {/* Navigation Bar */}
@@ -1215,41 +1253,82 @@ function App() {
       </div>
       
       <div className="shop-content">
-        <h1 className="shop-title">🛍️ Board Themes Shop</h1>
-        <p className="shop-subtitle">Choose your favorite board theme!</p>
+        <h1 className="shop-title">🛍️ Themes Shop</h1>
         
-        <div className="themes-grid">
-          {Object.entries(boardThemes).map(([themeKey, theme]) => (
-            <div 
-              key={themeKey}
-              className={`theme-card ${boardTheme === themeKey ? 'selected' : ''}`}
-              onClick={() => {
-                setBoardTheme(themeKey);
-                localStorage.setItem('boardTheme', themeKey);
-              }}
-            >
-              <div className="theme-preview">
-                <div 
-                  className="preview-cell light"
-                  style={{ backgroundColor: theme.light }}
-                ></div>
-                <div 
-                  className="preview-cell dark"
-                  style={{ backgroundColor: theme.dark }}
-                ></div>
-                <div 
-                  className="preview-cell dark"
-                  style={{ backgroundColor: theme.dark }}
-                ></div>
-                <div 
-                  className="preview-cell light"
-                  style={{ backgroundColor: theme.light }}
-                ></div>
+        <div className="theme-section">
+          <h2 className="section-title">Board Themes</h2>
+          <p className="section-subtitle">Choose your board colors</p>
+          
+          <div className="themes-grid">
+            {Object.entries(boardThemes).map(([themeKey, theme]) => (
+              <div 
+                key={themeKey}
+                className={`theme-card ${boardTheme === themeKey ? 'selected' : ''}`}
+                onClick={() => {
+                  setBoardTheme(themeKey);
+                  localStorage.setItem('boardTheme', themeKey);
+                }}
+              >
+                <div className="theme-preview">
+                  <div 
+                    className="preview-cell light"
+                    style={{ backgroundColor: theme.light }}
+                  ></div>
+                  <div 
+                    className="preview-cell dark"
+                    style={{ backgroundColor: theme.dark }}
+                  ></div>
+                  <div 
+                    className="preview-cell dark"
+                    style={{ backgroundColor: theme.dark }}
+                  ></div>
+                  <div 
+                    className="preview-cell light"
+                    style={{ backgroundColor: theme.light }}
+                  ></div>
+                </div>
+                <h3 className="theme-name">{theme.name}</h3>
+                {boardTheme === themeKey && <div className="selected-badge">✓</div>}
               </div>
-              <h3 className="theme-name">{theme.name}</h3>
-              {boardTheme === themeKey && <div className="selected-badge">✓ Selected</div>}
-            </div>
-          ))}
+            ))}
+          </div>
+        </div>
+
+        <div className="theme-section">
+          <h2 className="section-title">Piece Themes</h2>
+          <p className="section-subtitle">Choose your piece colors</p>
+          
+          <div className="themes-grid">
+            {Object.entries(pieceThemes).map(([themeKey, theme]) => (
+              <div 
+                key={themeKey}
+                className={`theme-card ${pieceTheme === themeKey ? 'selected' : ''}`}
+                onClick={() => {
+                  setPieceTheme(themeKey);
+                  localStorage.setItem('pieceTheme', themeKey);
+                }}
+              >
+                <div className="piece-preview">
+                  <div 
+                    className="preview-piece"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.player1.bg} 0%, ${theme.player1.bg} 100%)`,
+                      border: `3px solid ${theme.player1.border}`
+                    }}
+                  ></div>
+                  <div 
+                    className="preview-piece"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.player2.bg} 0%, ${theme.player2.bg} 100%)`,
+                      border: `3px solid ${theme.player2.border}`
+                    }}
+                  ></div>
+                </div>
+                <h3 className="theme-name">{theme.name}</h3>
+                {pieceTheme === themeKey && <div className="selected-badge">✓</div>}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -1989,7 +2068,13 @@ function App() {
                       onClick={() => handleCellClick(rowIndex, colIndex)}
                     >
                       {piece && (
-                        <div className={`piece ${piece.type} ${piece.color}`}>
+                        <div 
+                          className={`piece ${piece.type} ${piece.color}`}
+                          style={{
+                            background: `linear-gradient(135deg, ${pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].bg} 0%, ${pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].bg} 100%)`,
+                            borderColor: pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].border
+                          }}
+                        >
                           {piece.type === 'circle' && piece.eatenCount !== undefined && 
                             <span className="eaten-count">{piece.eatenCount}</span>
                           }
