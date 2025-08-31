@@ -1346,7 +1346,7 @@ function App() {
     spring: { light: '#ffb3d9', dark: '#ff69b4', name: 'Spring' }
   };
 
-  // Piece theme definitions
+  // Piece theme definitions - improved contrast for better visibility
   const pieceThemes = {
     default: { 
       player1: { bg: '#ff6b6b', border: '#cc0000', name: 'Red' },
@@ -1359,23 +1359,23 @@ function App() {
       name: 'Original'
     },
     summer: { 
-      player1: { bg: '#ffeb3b', border: '#f57f17', name: 'Yellow' },
-      player2: { bg: '#00bcd4', border: '#006064', name: 'Cyan' },
+      player1: { bg: '#ff4444', border: '#cc0000', name: 'Red' },
+      player2: { bg: '#1a237e', border: '#000051', name: 'Navy' },
       name: 'Summer'
     },
     fall: { 
-      player1: { bg: '#ff9800', border: '#e65100', name: 'Orange' },
-      player2: { bg: '#795548', border: '#3e2723', name: 'Brown' },
+      player1: { bg: '#ff6f00', border: '#bf360c', name: 'Orange' },
+      player2: { bg: '#1b5e20', border: '#000000', name: 'Dark Green' },
       name: 'Fall'
     },
     winter: { 
-      player1: { bg: '#e3f2fd', border: '#0d47a1', name: 'Ice Blue' },
-      player2: { bg: '#263238', border: '#000000', name: 'Dark Gray' },
+      player1: { bg: '#ff1744', border: '#d50000', name: 'Red' },
+      player2: { bg: '#212121', border: '#000000', name: 'Black' },
       name: 'Winter'
     },
     spring: { 
-      player1: { bg: '#e8f5e8', border: '#2e7d32', name: 'Light Green' },
-      player2: { bg: '#f8bbd9', border: '#c2185b', name: 'Pink' },
+      player1: { bg: '#2e7d32', border: '#1b5e20', name: 'Green' },
+      player2: { bg: '#ad1457', border: '#880e4f', name: 'Magenta' },
       name: 'Spring'
     }
   };
