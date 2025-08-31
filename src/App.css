@@ -1135,6 +1135,102 @@ button {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+/* Coins and Shop System Styles */
+.coins-display {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.coins-info, .points-exchange {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.coins-label, .points-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.coins-value, .points-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.exchange-button {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.exchange-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+}
+
+.theme-price {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #666;
+  margin: 5px 0;
+}
+
+.use-button, .buy-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 5px;
+}
+
+.use-button {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+}
+
+.use-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.buy-button.can-afford {
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+  color: white;
+}
+
+.buy-button.cannot-afford {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.buy-button.can-afford:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.theme-card.locked {
+  opacity: 0.6;
+  border: 2px dashed #ccc;
+}
+
 .theme-name {
   font-size: 1.1rem;
   color: #333;

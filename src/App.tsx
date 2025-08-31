@@ -100,6 +100,14 @@ function App() {
     const savedPoints = localStorage.getItem('playerPoints');
     return savedPoints ? JSON.parse(savedPoints) : { red: 0, blue: 0 };
   });
+  const [playerCoins, setPlayerCoins] = useState(() => {
+    const savedCoins = localStorage.getItem('playerCoins');
+    return savedCoins ? parseInt(savedCoins) : 0;
+  });
+  const [ownedItems, setOwnedItems] = useState(() => {
+    const savedOwned = localStorage.getItem('ownedItems');
+    return savedOwned ? JSON.parse(savedOwned) : { boards: ['default'], pieces: ['default'] };
+  });
   const [showPreGameBriefing, setShowPreGameBriefing] = useState(false);
   const [briefingInfo, setBriefingInfo] = useState({ opponent: '', points: 0 });
   const [showPostGameSummary, setShowPostGameSummary] = useState(false);
@@ -818,6 +826,7 @@ function App() {
             });
           }
           clearInterval(newTimerId);
+          setTimerId(null);
           return 0;
         }
         return prevTime - 1;
@@ -1336,47 +1345,105 @@ function App() {
     }, 5000);
   };
 
-  // Board theme definitions
-  const boardThemes = {
-    default: { light: '#f0d9b5', dark: '#b58863', name: 'Default' },
-    original: { light: '#ffa500', dark: '#000000', name: 'Original' },
-    summer: { light: '#87ceeb', dark: '#ffd700', name: 'Summer' },
-    fall: { light: '#ffab91', dark: '#5d4037', name: 'Fall' },
-    winter: { light: '#e1f5fe', dark: '#0277bd', name: 'Winter' },
-    spring: { light: '#ffb3d9', dark: '#ff69b4', name: 'Spring' }
+  // Coin exchange function: 1 point = 0.5 coins (only full coins)
+  const exchangePointsForCoins = (pointsToExchange: number) => {
+    const myColor = getMyColor();
+    const myPoints = playerPoints[myColor];
+    
+    if (pointsToExchange > myPoints) return false;
+    
+    const coinsEarned = Math.floor(pointsToExchange * 0.5);
+    const pointsUsed = coinsEarned * 2; // Only use points that give full coins
+    const remainingPoints = pointsToExchange - pointsUsed;
+    
+    // Update points and coins
+    setPlayerPoints(prev => {
+      const newPoints = { ...prev, [myColor]: prev[myColor] - pointsUsed };
+      localStorage.setItem('playerPoints', JSON.stringify(newPoints));
+      return newPoints;
+    });
+    
+    setPlayerCoins(prev => {
+      const newCoins = prev + coinsEarned;
+      localStorage.setItem('playerCoins', newCoins.toString());
+      return newCoins;
+    });
+    
+    return { coinsEarned, pointsUsed, remainingPoints };
   };
 
-  // Piece theme definitions - improved contrast for better visibility
+  // Purchase function for shop items
+  const purchaseItem = (itemKey: string, itemType: 'boards' | 'pieces', price: number) => {
+    if (playerCoins < price) return false;
+    if (ownedItems[itemType].includes(itemKey)) return false;
+
+    // Deduct coins
+    setPlayerCoins(prev => {
+      const newCoins = prev - price;
+      localStorage.setItem('playerCoins', newCoins.toString());
+      return newCoins;
+    });
+
+    // Add to owned items
+    setOwnedItems(prev => {
+      const newOwned = { 
+        ...prev, 
+        [itemType]: [...prev[itemType], itemKey] 
+      };
+      localStorage.setItem('ownedItems', JSON.stringify(newOwned));
+      return newOwned;
+    });
+
+    return true;
+  };
+
+  // Board theme definitions with pricing
+  const boardThemes = {
+    default: { light: '#f0d9b5', dark: '#b58863', name: 'Default', price: 0 },
+    original: { light: '#ffa500', dark: '#000000', name: 'Classic', price: 200 },
+    summer: { light: '#87ceeb', dark: '#ffd700', name: 'Summer', price: 100 },
+    fall: { light: '#ffab91', dark: '#5d4037', name: 'Fall', price: 100 },
+    winter: { light: '#e1f5fe', dark: '#0277bd', name: 'Winter', price: 100 },
+    spring: { light: '#ffb3d9', dark: '#ff69b4', name: 'Spring', price: 100 }
+  };
+
+  // Piece theme definitions with pricing - improved contrast for better visibility
   const pieceThemes = {
     default: { 
       player1: { bg: '#ff6b6b', border: '#cc0000', name: 'Red' },
       player2: { bg: '#6b6bff', border: '#0000cc', name: 'Blue' },
-      name: 'Default'
+      name: 'Default',
+      price: 0
     },
     original: { 
       player1: { bg: '#4caf50', border: '#2e7d32', name: 'Green' },
       player2: { bg: '#2196f3', border: '#1565c0', name: 'Blue' },
-      name: 'Original'
+      name: 'Classic',
+      price: 100
     },
     summer: { 
       player1: { bg: '#ff4444', border: '#cc0000', name: 'Red' },
       player2: { bg: '#1a237e', border: '#000051', name: 'Navy' },
-      name: 'Summer'
+      name: 'Summer',
+      price: 50
     },
     fall: { 
       player1: { bg: '#ff6f00', border: '#bf360c', name: 'Orange' },
       player2: { bg: '#1b5e20', border: '#000000', name: 'Dark Green' },
-      name: 'Fall'
+      name: 'Fall',
+      price: 50
     },
     winter: { 
       player1: { bg: '#ff1744', border: '#d50000', name: 'Red' },
       player2: { bg: '#212121', border: '#000000', name: 'Black' },
-      name: 'Winter'
+      name: 'Winter',
+      price: 50
     },
     spring: { 
       player1: { bg: '#2e7d32', border: '#1b5e20', name: 'Green' },
       player2: { bg: '#ad1457', border: '#880e4f', name: 'Magenta' },
-      name: 'Spring'
+      name: 'Spring',
+      price: 50
     }
   };
 
@@ -1398,42 +1465,98 @@ function App() {
       <div className="shop-content">
         <h1 className="shop-title">🛍️ Themes Shop</h1>
         
+        {/* Coins and Points Display */}
+        <div className="coins-display">
+          <div className="coins-info">
+            <span className="coins-label">💰 Your Coins:</span>
+            <span className="coins-value">{playerCoins}</span>
+          </div>
+          <div className="points-exchange">
+            <span className="points-label">📊 Your Points:</span>
+            <span className="points-value">{playerPoints.red + playerPoints.blue}</span>
+            <button 
+              className="exchange-button"
+              onClick={() => {
+                const totalPoints = playerPoints.red + playerPoints.blue;
+                if (totalPoints < 2) {
+                  alert('You need at least 2 points to exchange for 1 coin!');
+                  return;
+                }
+                const result = exchangePointsForCoins(totalPoints);
+                if (result) {
+                  alert(`Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`);
+                }
+              }}
+            >
+              Exchange All Points → Coins
+            </button>
+          </div>
+        </div>
+        
         <div className="theme-section">
           <h2 className="section-title">Board Themes</h2>
           <p className="section-subtitle">Choose your board colors</p>
           
           <div className="themes-grid">
-            {Object.entries(boardThemes).map(([themeKey, theme]) => (
-              <div 
-                key={themeKey}
-                className={`theme-card ${boardTheme === themeKey ? 'selected' : ''}`}
-                onClick={() => {
-                  setBoardTheme(themeKey);
-                  localStorage.setItem('boardTheme', themeKey);
-                }}
-              >
-                <div className="theme-preview">
-                  <div 
-                    className="preview-cell light"
-                    style={{ backgroundColor: theme.light }}
-                  ></div>
-                  <div 
-                    className="preview-cell dark"
-                    style={{ backgroundColor: theme.dark }}
-                  ></div>
-                  <div 
-                    className="preview-cell dark"
-                    style={{ backgroundColor: theme.dark }}
-                  ></div>
-                  <div 
-                    className="preview-cell light"
-                    style={{ backgroundColor: theme.light }}
-                  ></div>
+            {Object.entries(boardThemes).map(([themeKey, theme]) => {
+              const isOwned = ownedItems.boards.includes(themeKey);
+              const canAfford = playerCoins >= theme.price;
+              const isFree = theme.price === 0;
+              
+              return (
+                <div 
+                  key={themeKey}
+                  className={`theme-card ${boardTheme === themeKey ? 'selected' : ''} ${!isOwned && !isFree ? 'locked' : ''}`}
+                >
+                  <div className="theme-preview">
+                    <div 
+                      className="preview-cell light"
+                      style={{ backgroundColor: theme.light }}
+                    ></div>
+                    <div 
+                      className="preview-cell dark"
+                      style={{ backgroundColor: theme.dark }}
+                    ></div>
+                    <div 
+                      className="preview-cell dark"
+                      style={{ backgroundColor: theme.dark }}
+                    ></div>
+                    <div 
+                      className="preview-cell light"
+                      style={{ backgroundColor: theme.light }}
+                    ></div>
+                  </div>
+                  <h3 className="theme-name">{theme.name}</h3>
+                  <div className="theme-price">
+                    {isFree ? 'FREE' : `${theme.price} coins`}
+                  </div>
+                  
+                  {isOwned || isFree ? (
+                    <button 
+                      className="use-button"
+                      onClick={() => {
+                        setBoardTheme(themeKey);
+                        localStorage.setItem('boardTheme', themeKey);
+                      }}
+                    >
+                      {boardTheme === themeKey ? 'Using' : 'Use'}
+                    </button>
+                  ) : (
+                    <button 
+                      className={`buy-button ${canAfford ? 'can-afford' : 'cannot-afford'}`}
+                      onClick={() => {
+                        if (canAfford && purchaseItem(themeKey, 'boards', theme.price)) {
+                          alert(`Purchased ${theme.name} board theme!`);
+                        }
+                      }}
+                      disabled={!canAfford}
+                    >
+                      {canAfford ? 'Buy' : 'Not enough coins'}
+                    </button>
+                  )}
                 </div>
-                <h3 className="theme-name">{theme.name}</h3>
-                {boardTheme === themeKey && <div className="selected-badge">✓</div>}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -1442,35 +1565,63 @@ function App() {
           <p className="section-subtitle">Choose your piece colors</p>
           
           <div className="themes-grid">
-            {Object.entries(pieceThemes).map(([themeKey, theme]) => (
-              <div 
-                key={themeKey}
-                className={`theme-card ${pieceTheme === themeKey ? 'selected' : ''}`}
-                onClick={() => {
-                  setPieceTheme(themeKey);
-                  localStorage.setItem('pieceTheme', themeKey);
-                }}
-              >
-                <div className="piece-preview">
-                  <div 
-                    className="preview-piece"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${theme.player1.bg} 0%, ${theme.player1.bg} 100%)`,
-                      border: `3px solid ${theme.player1.border}`
-                    }}
-                  ></div>
-                  <div 
-                    className="preview-piece"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${theme.player2.bg} 0%, ${theme.player2.bg} 100%)`,
-                      border: `3px solid ${theme.player2.border}`
-                    }}
-                  ></div>
+            {Object.entries(pieceThemes).map(([themeKey, theme]) => {
+              const isOwned = ownedItems.pieces.includes(themeKey);
+              const canAfford = playerCoins >= theme.price;
+              const isFree = theme.price === 0;
+              
+              return (
+                <div 
+                  key={themeKey}
+                  className={`theme-card ${pieceTheme === themeKey ? 'selected' : ''} ${!isOwned && !isFree ? 'locked' : ''}`}
+                >
+                  <div className="piece-preview">
+                    <div 
+                      className="preview-piece"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${theme.player1.bg} 0%, ${theme.player1.bg} 100%)`,
+                        border: `3px solid ${theme.player1.border}`
+                      }}
+                    ></div>
+                    <div 
+                      className="preview-piece"
+                      style={{ 
+                        background: `linear-gradient(135deg, ${theme.player2.bg} 0%, ${theme.player2.bg} 100%)`,
+                        border: `3px solid ${theme.player2.border}`
+                      }}
+                    ></div>
+                  </div>
+                  <h3 className="theme-name">{theme.name}</h3>
+                  <div className="theme-price">
+                    {isFree ? 'FREE' : `${theme.price} coins`}
+                  </div>
+                  
+                  {isOwned || isFree ? (
+                    <button 
+                      className="use-button"
+                      onClick={() => {
+                        setPieceTheme(themeKey);
+                        localStorage.setItem('pieceTheme', themeKey);
+                      }}
+                    >
+                      {pieceTheme === themeKey ? 'Using' : 'Use'}
+                    </button>
+                  ) : (
+                    <button 
+                      className={`buy-button ${canAfford ? 'can-afford' : 'cannot-afford'}`}
+                      onClick={() => {
+                        if (canAfford && purchaseItem(themeKey, 'pieces', theme.price)) {
+                          alert(`Purchased ${theme.name} piece theme!`);
+                        }
+                      }}
+                      disabled={!canAfford}
+                    >
+                      {canAfford ? 'Buy' : 'Not enough coins'}
+                    </button>
+                  )}
                 </div>
-                <h3 className="theme-name">{theme.name}</h3>
-                {pieceTheme === themeKey && <div className="selected-badge">✓</div>}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
