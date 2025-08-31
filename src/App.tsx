@@ -1535,9 +1535,6 @@ function App() {
             setGameMode('bot');
             setBotDifficulty('easy');
             
-            // Show briefing with bot info
-            showGameBriefing('Easy Bot', playerPoints.blue);
-            
             // Set initial game message for bot game
             setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
@@ -1574,9 +1571,6 @@ function App() {
             setScreen('game');
             setGameMode('bot');
             setBotDifficulty('normal');
-            
-            // Show briefing with bot info
-            showGameBriefing('Normal Bot', playerPoints.blue);
             
             // Set initial game message for bot game
             setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
@@ -1615,9 +1609,6 @@ function App() {
             setGameMode('bot');
             setBotDifficulty('hard');
             
-            // Show briefing with bot info
-            showGameBriefing('Hard Bot', playerPoints.blue);
-            
             // Set initial game message for bot game
             setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
@@ -1655,9 +1646,6 @@ function App() {
             setGameMode('bot');
             setBotDifficulty('pro');
             
-            // Show briefing with bot info
-            showGameBriefing('Pro Bot', playerPoints.blue);
-            
             // Set initial game message for bot game
             setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
           }}>
@@ -1694,9 +1682,6 @@ function App() {
             setScreen('game');
             setGameMode('bot');
             setBotDifficulty('wizard');
-            
-            // Show briefing with bot info
-            showGameBriefing('Wizard Bot', playerPoints.blue);
             
             // Set initial game message for bot game
             setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
