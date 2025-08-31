@@ -142,7 +142,8 @@ function App() {
       }
       
       setPlayerPoints(prev => {
-        const newPoints = { ...prev, red: prev.red + pointsToAward };
+        // Ensure points never go below 0
+        const newPoints = { ...prev, red: Math.max(0, prev.red + pointsToAward) };
         localStorage.setItem('playerPoints', JSON.stringify(newPoints));
         return newPoints;
       });
@@ -177,7 +178,8 @@ function App() {
       }
       
       setPlayerPoints(prev => {
-        const newPoints = { ...prev, blue: prev.blue + pointsToAward };
+        // Ensure points never go below 0
+        const newPoints = { ...prev, blue: Math.max(0, prev.blue + pointsToAward) };
         localStorage.setItem('playerPoints', JSON.stringify(newPoints));
         return newPoints;
       });
@@ -460,6 +462,7 @@ function App() {
 
   // Initialize the game
   const initializeGame = () => {
+    // Force complete board reset to prevent ghost pieces
     const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
     
     // Set up blue pieces on the left side
@@ -474,12 +477,18 @@ function App() {
     newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
     newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
     
+    // Complete state reset to prevent issues
     setBoard(newBoard);
     setCurrentPlayer('red');
     setWinner(null);
     setSelectedPiece(null);
     setValidMoves([]);
     setValidCaptures([]);
+    setGameStarted(false);
+    setIsMyTurn(false);
+    setShowConfetti(false);
+    setShowPostGameSummary(false);
+    setShowPreGameBriefing(false);
     
     // Set appropriate game message based on game mode
     if (gameMode === 'local') {
@@ -591,8 +600,20 @@ function App() {
   };
 
   const handleCellClick = (rowIndex: number, colIndex: number) => {
-    // Don't allow moves if game is over
-    if (!gameStarted || !isMyTurn || winner) return;
+    // Don't allow moves if game is over or not player's turn
+    if (!gameStarted || winner) return;
+    
+    // For online games, strict turn checking
+    if (gameMode === 'online' && !isMyTurn) {
+      console.log('🚫 Not your turn - move blocked');
+      return;
+    }
+    
+    // For local games, check current player matches interface
+    if (gameMode === 'local' && getMyColor() !== currentPlayer) {
+      console.log('🚫 Local game turn mismatch - move blocked');
+      return;
+    }
     
     const piece = board[rowIndex][colIndex];
     const myColor = getMyColor();
@@ -1306,7 +1327,9 @@ function App() {
 
 
   const showGameBriefing = (opponentName: string, opponentPoints: number) => {
-    setBriefingInfo({ opponent: opponentName, points: opponentPoints });
+    // Ensure opponent points are never negative in the briefing
+    const displayPoints = Math.max(0, opponentPoints);
+    setBriefingInfo({ opponent: opponentName, points: displayPoints });
     setShowPreGameBriefing(true);
       setTimeout(() => {
       setShowPreGameBriefing(false);
@@ -2136,7 +2159,7 @@ function App() {
                       key={i}
                       className="raindrop"
                       style={{
-                        left: `${Math.random() * 100}vw`,
+                        left: `${Math.random() * 80 + 10}%`,
                         animationDelay: `${Math.random()}s`,
                         animationDuration: `${0.8 + Math.random() * 0.7}s`,
                       }}
@@ -2259,7 +2282,7 @@ const ConfettiOverlay = () => {
           key={i}
           className="confetti-piece"
           style={{
-            left: `${Math.random() * 100}vw`,
+            left: `${Math.random() * 80 + 10}%`,
             backgroundColor: colors[Math.floor(Math.random() * colors.length)],
             transform: `rotate(${Math.random() * 360}deg)`,
             animationDelay: `${Math.random() * 0.7}s`,
