@@ -78,6 +78,8 @@ function App() {
   });
   const [boardTheme, setBoardTheme] = useState(() => {
     const savedTheme = localStorage.getItem('boardTheme');
+    const savedOwned = localStorage.getItem('ownedItems');
+    const ownedBoards = savedOwned ? JSON.parse(savedOwned).boards || ['default'] : ['default'];
     
     // One-time fix: if someone has 'original' from testing, reset to 'default'
     // This ensures first-time users get chess colors, not orange
@@ -89,12 +91,24 @@ function App() {
       }
     }
     
-    // If no theme is saved, default to 'default' (chess colors)
-    return savedTheme || 'default';
+    // Validate that the saved theme is owned or free, otherwise default to 'default'
+    if (savedTheme && (ownedBoards.includes(savedTheme) || savedTheme === 'default')) {
+      return savedTheme;
+    }
+    
+    return 'default';
   });
   const [pieceTheme, setPieceTheme] = useState(() => {
     const savedPieceTheme = localStorage.getItem('pieceTheme');
-    return savedPieceTheme || 'default';
+    const savedOwned = localStorage.getItem('ownedItems');
+    const ownedPieces = savedOwned ? JSON.parse(savedOwned).pieces || ['default'] : ['default'];
+    
+    // Validate that the saved piece theme is owned or free, otherwise default to 'default'
+    if (savedPieceTheme && (ownedPieces.includes(savedPieceTheme) || savedPieceTheme === 'default')) {
+      return savedPieceTheme;
+    }
+    
+    return 'default';
   });
   const [playerPoints, setPlayerPoints] = useState(() => {
     const savedPoints = localStorage.getItem('playerPoints');
@@ -621,6 +635,26 @@ function App() {
     if (gameMode === 'local' && getMyColor() !== currentPlayer) {
       console.log('🚫 Local game turn mismatch - move blocked');
       return;
+    }
+    
+    // Special diagnostic for bottom-left piece (row 3, col 0)
+    if (rowIndex === 3 && colIndex === 0) {
+      const piece = board[rowIndex][colIndex];
+      console.log('🔍 Bottom-left piece clicked:', {
+        position: [rowIndex, colIndex],
+        piece: piece,
+        gameMode: gameMode,
+        currentPlayer: currentPlayer,
+        myColor: getMyColor(),
+        gameStarted: gameStarted,
+        winner: winner,
+        isMyTurn: isMyTurn
+      });
+      
+      if (piece) {
+        const moves = calculateValidMoves(board, rowIndex, colIndex);
+        console.log('🔍 Bottom-left piece moves:', moves);
+      }
     }
     
     const piece = board[rowIndex][colIndex];
@@ -1535,8 +1569,10 @@ function App() {
                     <button 
                       className="use-button"
                       onClick={() => {
-                        setBoardTheme(themeKey);
-                        localStorage.setItem('boardTheme', themeKey);
+                        if (isOwned || isFree) {
+                          setBoardTheme(themeKey);
+                          localStorage.setItem('boardTheme', themeKey);
+                        }
                       }}
                     >
                       {boardTheme === themeKey ? 'Using' : 'Use'}
@@ -1600,8 +1636,10 @@ function App() {
                     <button 
                       className="use-button"
                       onClick={() => {
-                        setPieceTheme(themeKey);
-                        localStorage.setItem('pieceTheme', themeKey);
+                        if (isOwned || isFree) {
+                          setPieceTheme(themeKey);
+                          localStorage.setItem('pieceTheme', themeKey);
+                        }
                       }}
                     >
                       {pieceTheme === themeKey ? 'Using' : 'Use'}
