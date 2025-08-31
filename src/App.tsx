@@ -688,7 +688,7 @@ function App() {
             
             setWinner(winnerColor);
             setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
-            awardPoints(winnerColor);
+            // No points awarded for bot games
             if (winnerColor === 'red') {
               setShowConfetti(true);
             }
@@ -731,7 +731,7 @@ function App() {
             console.log('Setting game message to:', `${players[winnerColor].username} wins!`);
             setWinner(winnerColor);
             setGameMessage(`${players[winnerColor].username} wins!`);
-            awardPoints(winnerColor);
+            // No points awarded for local same-device games
             if (winnerColor === 'red') {
               setShowConfetti(true);
             }
