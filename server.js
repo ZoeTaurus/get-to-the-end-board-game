@@ -338,6 +338,7 @@ io.on('connection', (socket) => {
   });
   
   socket.on('makeMove', ({ gameId, move }) => {
+    // Check if it's a regular active game
     const game = activeGames.get(gameId);
     if (game && game.currentTurn === socket.id) {
       const currentPlayerIndex = game.players.findIndex(p => p.id === socket.id);
@@ -349,6 +350,24 @@ io.on('connection', (socket) => {
         move,
         nextTurn: game.currentTurn
       });
+      return;
+    }
+
+    // Check if it's a private game
+    for (const [gameCode, privateGame] of privateGames.entries()) {
+      if (privateGame.gameId === gameId && privateGame.players.includes(socket.id)) {
+        console.log(`♟️  Private game move made by ${socket.id} from ${session.ip}:`, JSON.stringify(move));
+        
+        // Find the other player for turn management
+        const otherPlayer = privateGame.players.find(id => id !== socket.id);
+        
+        // Emit move to all players in the private game
+        io.to(gameCode).emit('moveMade', {
+          move,
+          nextTurn: otherPlayer
+        });
+        return;
+      }
     }
   });
 

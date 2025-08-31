@@ -587,7 +587,7 @@ function App() {
         } else {
           // Online play - emit move to server
           socket.emit('makeMove', {
-            gameId,
+            gameId: gameId || privateGameId, // Use privateGameId for private games
             move: {
               row: rowIndex,
               col: colIndex,
@@ -605,7 +605,7 @@ function App() {
           // If there's a winner, emit gameOver
           if (winnerColor) {
             socket.emit('gameOver', { 
-              gameId, 
+              gameId: gameId || privateGameId, // Use privateGameId for private games
               winner: winnerColor, 
               message: `${players[winnerColor].username} wins!` 
             });
@@ -657,7 +657,7 @@ function App() {
           if (isMyTurnRef.current) {
             const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
             socket.emit('gameOver', { 
-              gameId, 
+              gameId: gameId || privateGameId, // Use privateGameId for private games
               winner: otherPlayer, 
               message: `${players[otherPlayer].username} wins by timeout!` 
             });
