@@ -133,7 +133,19 @@ function App() {
       // In local mode, red always goes first, so the current player is the one whose turn it is
       return currentPlayer;
     }
-    return username === players.red.username ? 'red' : 'blue';
+    // For online/bot games, determine based on username
+    if (username === players.red.username) {
+      return 'red';
+    } else if (username === players.blue.username) {
+      return 'blue';
+    }
+    // Fallback: if username doesn't match either player, default to red
+    console.warn('🚨 getMyColor: Username does not match either player, defaulting to red', {
+      username,
+      players,
+      gameMode
+    });
+    return 'red';
   };
 
   const awardPoints = (winnerColor: PlayerColor) => {
@@ -648,12 +660,34 @@ function App() {
         myColor: getMyColor(),
         gameStarted: gameStarted,
         winner: winner,
-        isMyTurn: isMyTurn
+        isMyTurn: isMyTurn,
+        players: players,
+        username: username,
+        pieceColorMatchesMyColor: piece?.color === getMyColor(),
+        allBoardPieces: board.flat().filter(p => p !== null).map(p => ({ type: p.type, color: p.color })),
+        turnValidation: {
+          localGame: gameMode === 'local',
+          localTurnMatch: getMyColor() === currentPlayer,
+          onlineGame: gameMode === 'online',
+          isMyTurnOnline: isMyTurn
+        }
       });
       
       if (piece) {
         const moves = calculateValidMoves(board, rowIndex, colIndex);
         console.log('🔍 Bottom-left piece moves:', moves);
+        console.log('🔍 Will this piece be selectable?', piece.color === getMyColor());
+        
+        // Special test: if it's a local game and this is a blue piece, and we're testing
+        if (gameMode === 'local' && piece.color === 'blue' && currentPlayer === 'red') {
+          console.log('🧪 TEST MODE: You clicked a blue piece during red\'s turn in local game');
+          console.log('🧪 TEST MODE: Switch to blue\'s turn to test this piece');
+          console.log('🧪 TEST MODE: Auto-switching to blue\'s turn for testing...');
+          setCurrentPlayer('blue');
+          return; // Allow the click to continue after state change
+        }
+      } else {
+        console.log('🔍 No piece at bottom-left position!');
       }
     }
     
@@ -819,10 +853,25 @@ function App() {
       }
     } 
     else if (piece && piece.color === myColor) {
+      console.log('✅ Piece selected:', {
+        position: [rowIndex, colIndex],
+        piece: piece,
+        myColor: myColor,
+        colorMatch: piece.color === myColor
+      });
       setSelectedPiece([rowIndex, colIndex]);
       const { moves, captures } = calculateValidMoves(board, rowIndex, colIndex);
       setValidMoves(moves);
       setValidCaptures(captures);
+    } else {
+      console.log('❌ Piece NOT selected:', {
+        position: [rowIndex, colIndex],
+        piece: piece,
+        myColor: myColor,
+        haspiece: !!piece,
+        colorMatch: piece ? piece.color === myColor : false,
+        reason: !piece ? 'No piece' : piece.color !== myColor ? 'Wrong color' : 'Unknown'
+      });
     }
   };
 
@@ -2438,10 +2487,15 @@ function App() {
                     >
                       {piece && (
                         <div 
-                          className={`piece ${piece.type} ${piece.color}`}
+                          className={`piece ${piece.type} ${piece.color} ${piece.color === getMyColor() ? 'my-piece' : 'opponent-piece'}`}
                           style={{
                             background: `linear-gradient(135deg, ${pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].bg} 0%, ${pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].bg} 100%)`,
-                            borderColor: pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].border
+                            borderColor: pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].border,
+                            // Special styling for debugging: highlight the bottom-left piece
+                            ...(rowIndex === 3 && colIndex === 0 ? {
+                              boxShadow: '0 0 10px rgba(255, 255, 0, 0.8)',
+                              border: '3px solid yellow'
+                            } : {})
                           }}
                         >
                           {piece.type === 'circle' && piece.eatenCount !== undefined && 
