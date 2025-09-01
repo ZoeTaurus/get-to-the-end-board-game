@@ -678,11 +678,9 @@ function App() {
         console.log('🔍 Bottom-left piece moves:', moves);
         console.log('🔍 Will this piece be selectable?', piece.color === getMyColor());
         
-        // Special test: if it's a local game and this is a blue piece, and we're testing
+        // Test mode: if it's a local game and this is a blue piece during red's turn
         if (gameMode === 'local' && piece.color === 'blue' && currentPlayer === 'red') {
-          console.log('🧪 TEST MODE: You clicked a blue piece during red\'s turn in local game');
-          console.log('🧪 TEST MODE: Switch to blue\'s turn to test this piece');
-          console.log('🧪 TEST MODE: Auto-switching to blue\'s turn for testing...');
+          console.log('🧪 TEST MODE: Auto-switching to blue\'s turn for bottom-left piece testing...');
           setCurrentPlayer('blue');
           return; // Allow the click to continue after state change
         }
@@ -2490,6 +2488,11 @@ function App() {
                 gameMode === 'bot' ? getTranslation(language).game.waitingForOpponent : 
                 gameMode === 'local' ? getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username) :
                                   getTranslation(language).game.waitingForMove.replace('{opponent}', opponent)
+              )}
+              {gameMode === 'local' && (
+                <div style={{ fontSize: '0.9rem', marginTop: '5px', opacity: 0.7 }}>
+                  💡 Test Mode: Click bottom-left blue piece to auto-switch turns
+                </div>
               )}
             </div>
           </div>
