@@ -1532,7 +1532,7 @@ function App() {
                 }}
                 disabled={exchangeAmount <= 0 || exchangeAmount > playerPoints[getMyColor()]}
               >
-                Exchange
+                Exchange Points
               </button>
             </div>
           </div>
