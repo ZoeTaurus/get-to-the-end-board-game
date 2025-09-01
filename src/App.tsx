@@ -2468,7 +2468,10 @@ function App() {
             </div>
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
               {gameMode === 'local'
-                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username} ${getTranslation(language).game.opponentTurn}`
+                ? (getMyColor() === currentPlayer 
+                    ? getTranslation(language).game.yourTurn
+                    : getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username)
+                  )
                 : (isMyTurn
                   ? getTranslation(language).game.yourTurn
                   : (gameMode === 'bot'
@@ -2484,11 +2487,14 @@ function App() {
               )}
             </div>
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? getTranslation(language).game.selectPiece : (
-                gameMode === 'bot' ? getTranslation(language).game.waitingForOpponent : 
-                gameMode === 'local' ? getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username) :
-                                  getTranslation(language).game.waitingForMove.replace('{opponent}', opponent)
-              )}
+              {(gameMode === 'local' && getMyColor() === currentPlayer) || (gameMode !== 'local' && isMyTurn) 
+                ? getTranslation(language).game.selectPiece 
+                : (
+                  gameMode === 'bot' ? getTranslation(language).game.waitingForOpponent : 
+                  gameMode === 'local' ? getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username) :
+                                    getTranslation(language).game.waitingForMove.replace('{opponent}', opponent)
+                )
+              }
               {gameMode === 'local' && (
                 <div style={{ fontSize: '0.9rem', marginTop: '5px', opacity: 0.7 }}>
                   💡 Test Mode: Click bottom-left blue piece to auto-switch turns
