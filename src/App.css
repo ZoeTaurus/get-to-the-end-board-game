@@ -2091,4 +2091,25 @@ button {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* Simple Exchange All Button */
+.exchange-all-button {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+  margin: 10px 0 20px 0;
+}
+
+.exchange-all-button:hover {
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
 } 

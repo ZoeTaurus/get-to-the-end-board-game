@@ -881,19 +881,21 @@ function App() {
       setTimerId(null);
     }
     
+    // Only start timer if it's my turn and game is active
+    if (!isMyTurn || !gameStarted || winner) return;
+    
     setTimeLeft(30);
     const newTimerId = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
-          if (isMyTurnRef.current) {
-            const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
-            const roomId = privateGameId ? privateGameId : gameId;
-            socket.emit('gameOver', { 
-              gameId: roomId,
-              winner: otherPlayer, 
-              message: `${players[otherPlayer].username} wins by timeout!` 
-            });
-          }
+          // Time's up - other player wins
+          const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
+          const roomId = privateGameId ? privateGameId : gameId;
+          socket.emit('gameOver', { 
+            gameId: roomId,
+            winner: otherPlayer, 
+            message: `${players[otherPlayer].username} wins by timeout!` 
+          });
           clearInterval(newTimerId);
           setTimerId(null);
           return 0;
@@ -902,22 +904,20 @@ function App() {
       });
     }, 1000);
     setTimerId(newTimerId);
-  }, [timerId, gameId, privateGameId, players, socket, isMyTurnRef]);
+  }, [timerId, gameId, privateGameId, players, socket, isMyTurn, gameStarted, winner, getMyColor]);
 
-  // Reset timer on turn change and game start (only for online games)
+    // Reset timer on turn change and game start (only for online games)
   useEffect(() => {
     if (gameStarted && !winner && gameMode === 'online') {
-      if (isMyTurn) {
       resetTimer();
-      } else {
-        // Stop timer when not my turn
-        if (timerId) {
-          clearInterval(timerId);
-          setTimerId(null);
-    }
+    } else {
+      // Stop timer for non-online games or when game is over
+      if (timerId) {
+        clearInterval(timerId);
+        setTimerId(null);
       }
     }
-  }, [isMyTurn, gameStarted, winner, gameMode, resetTimer, timerId]);
+  }, [isMyTurn, gameStarted, winner, gameMode, resetTimer]);
 
   // Clean up timer on unmount and logout
   useEffect(() => {
@@ -1473,8 +1473,6 @@ function App() {
   };
 
   const ShopScreen = () => {
-    const [exchangeAmount, setExchangeAmount] = useState(0);
-    
     return (
       <div className="shop-screen">
         {/* Navigation Bar */}
@@ -1505,37 +1503,23 @@ function App() {
             </div>
           </div>
           
-          {/* Points to Coins Exchange */}
-          <div className="exchange-section">
-            <h3>Exchange Points for Coins</h3>
-            <p>Rate: 1 Point = 0.5 Coins (full coins only)</p>
-            <div className="exchange-controls">
-              <input 
-                type="number" 
-                min="0" 
-                max={playerPoints[getMyColor()]}
-                value={exchangeAmount}
-                onChange={(e) => setExchangeAmount(parseInt(e.target.value) || 0)}
-                placeholder="Points to exchange"
-              />
-              <button 
-                onClick={() => {
-                  if (exchangeAmount > 0) {
-                    const result = exchangePointsForCoins(exchangeAmount);
-                    if (result) {
-                      setExchangeAmount(0);
-                      alert(`Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`);
-                    } else {
-                      alert('Invalid exchange amount!');
-                    }
-                  }
-                }}
-                disabled={exchangeAmount <= 0 || exchangeAmount > playerPoints[getMyColor()]}
-              >
-                Exchange Points
-              </button>
-            </div>
-          </div>
+          {/* Exchange All Points Button */}
+          {playerPoints[getMyColor()] > 0 && (
+            <button 
+              className="exchange-all-button"
+              onClick={() => {
+                const allPoints = playerPoints[getMyColor()];
+                const result = exchangePointsForCoins(allPoints);
+                if (result) {
+                  alert(`Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`);
+                } else {
+                  alert('Exchange failed!');
+                }
+              }}
+            >
+              Exchange All Points
+            </button>
+          )}
         
         <div className="theme-section">
           <h2 className="section-title">Board Themes</h2>
@@ -2390,13 +2374,19 @@ function App() {
                 </div>
               )}
             </div>
-            <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {isMyTurn ? getTranslation(language).game.selectPiece : (
-                gameMode === 'bot' ? getTranslation(language).game.waitingForOpponent : 
-                gameMode === 'local' ? getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username) :
-                                  getTranslation(language).game.waitingForMove.replace('{opponent}', opponent)
-              )}
-            </div>
+                          <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
+               {(() => {
+                 if (gameMode === 'local') {
+                   // In local games, show whose turn it is
+                   return isMyTurn ? getTranslation(language).game.selectPiece : `${currentPlayer === 'red' ? players.red.username : players.blue.username}'s turn`;
+                 } else if (gameMode === 'bot') {
+                   return isMyTurn ? getTranslation(language).game.selectPiece : getTranslation(language).game.waitingForOpponent;
+                 } else {
+                   // Online games
+                   return isMyTurn ? getTranslation(language).game.selectPiece : getTranslation(language).game.waitingForMove.replace('{opponent}', opponent);
+                 }
+               })()}
+              </div>
           </div>
         </div>
         
