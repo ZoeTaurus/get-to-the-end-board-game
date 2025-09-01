@@ -1433,37 +1433,66 @@ function App() {
     const myColor = getMyColor();
     const myPoints = playerPoints[myColor];
     
-    if (pointsToExchange > myPoints) return false;
+    console.log('🪙 Exchange request:', { pointsToExchange, myColor, myPoints, totalPoints: playerPoints.red + playerPoints.blue });
+    
+    if (pointsToExchange > myPoints) {
+      console.warn('🪙 Exchange failed: insufficient points');
+      return false;
+    }
     
     const coinsEarned = Math.floor(pointsToExchange * 0.5);
     const pointsUsed = coinsEarned * 2; // Only use points that give full coins
     const remainingPoints = pointsToExchange - pointsUsed;
     
+    console.log('🪙 Exchange calculation:', { coinsEarned, pointsUsed, remainingPoints });
+    
+    if (coinsEarned <= 0) {
+      console.warn('🪙 Exchange failed: no coins would be earned');
+      return false;
+    }
+    
     // Update points and coins
     setPlayerPoints(prev => {
-      const newPoints = { ...prev, [myColor]: prev[myColor] - pointsUsed };
+      const newPoints = { ...prev, [myColor]: Math.max(0, prev[myColor] - pointsUsed) };
       localStorage.setItem('playerPoints', JSON.stringify(newPoints));
+      console.log('🪙 Points updated:', { old: prev, new: newPoints });
       return newPoints;
     });
     
     setPlayerCoins(prev => {
       const newCoins = prev + coinsEarned;
       localStorage.setItem('playerCoins', newCoins.toString());
+      console.log('🪙 Coins updated:', { old: prev, new: newCoins });
       return newCoins;
     });
     
+    console.log('🪙 Exchange completed successfully!');
     return { coinsEarned, pointsUsed, remainingPoints };
   };
 
   // Purchase function for shop items
   const purchaseItem = (itemKey: string, itemType: 'boards' | 'pieces', price: number) => {
-    if (playerCoins < price) return false;
-    if (ownedItems[itemType].includes(itemKey)) return false;
+    // Safety checks
+    if (playerCoins < price) {
+      console.warn('🛒 Purchase failed: insufficient coins', { playerCoins, price });
+      return false;
+    }
+    if (ownedItems[itemType].includes(itemKey)) {
+      console.warn('🛒 Purchase failed: item already owned', { itemKey, itemType });
+      return false;
+    }
+
+    console.log('🛒 Processing purchase:', { itemKey, itemType, price, currentCoins: playerCoins });
 
     // Deduct coins
     setPlayerCoins(prev => {
       const newCoins = prev - price;
+      if (newCoins < 0) {
+        console.error('🛒 Error: coins would go negative!', { prev, price, newCoins });
+        return prev; // Don't allow negative coins
+      }
       localStorage.setItem('playerCoins', newCoins.toString());
+      console.log('🛒 Coins updated:', { old: prev, new: newCoins });
       return newCoins;
     });
 
@@ -1474,9 +1503,11 @@ function App() {
         [itemType]: [...prev[itemType], itemKey] 
       };
       localStorage.setItem('ownedItems', JSON.stringify(newOwned));
+      console.log('🛒 Owned items updated:', newOwned);
       return newOwned;
     });
 
+    console.log('🛒 Purchase completed successfully!');
     return true;
   };
 
@@ -1562,12 +1593,14 @@ function App() {
               onClick={() => {
                 const totalPoints = playerPoints.red + playerPoints.blue;
                 if (totalPoints < 2) {
-                  alert('You need at least 2 points to exchange for 1 coin!');
+                  alert('💡 You need at least 2 points to exchange for 1 coin! Play more games to earn points.');
                   return;
                 }
                 const result = exchangePointsForCoins(totalPoints);
                 if (result) {
-                  alert(`Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`);
+                  alert(`🪙 Successfully exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!${result.remainingPoints > 0 ? ` (${result.remainingPoints} points couldn't be exchanged - need even numbers)` : ''}`);
+                } else {
+                  alert('❌ Exchange failed. Please try again.');
                 }
               }}
             >
@@ -1631,7 +1664,12 @@ function App() {
                       className={`buy-button ${canAfford ? 'can-afford' : 'cannot-afford'}`}
                       onClick={() => {
                         if (canAfford && purchaseItem(themeKey, 'boards', theme.price)) {
-                          alert(`Purchased ${theme.name} board theme!`);
+                          alert(`🎉 Successfully purchased ${theme.name} board theme for ${theme.price} coins!`);
+                          // Auto-select the newly purchased theme
+                          setBoardTheme(themeKey);
+                          localStorage.setItem('boardTheme', themeKey);
+                        } else if (!canAfford) {
+                          alert(`💰 Not enough coins! You need ${theme.price} coins but only have ${playerCoins}.`);
                         }
                       }}
                       disabled={!canAfford}
@@ -1698,7 +1736,12 @@ function App() {
                       className={`buy-button ${canAfford ? 'can-afford' : 'cannot-afford'}`}
                       onClick={() => {
                         if (canAfford && purchaseItem(themeKey, 'pieces', theme.price)) {
-                          alert(`Purchased ${theme.name} piece theme!`);
+                          alert(`🎉 Successfully purchased ${theme.name} piece theme for ${theme.price} coins!`);
+                          // Auto-select the newly purchased theme
+                          setPieceTheme(themeKey);
+                          localStorage.setItem('pieceTheme', themeKey);
+                        } else if (!canAfford) {
+                          alert(`💰 Not enough coins! You need ${theme.price} coins but only have ${playerCoins}.`);
                         }
                       }}
                       disabled={!canAfford}
