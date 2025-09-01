@@ -916,9 +916,11 @@ function App() {
     setTimerId(newTimerId);
   }, [gameId, players, socket]);
 
-  // Reset timer on turn change and game start (only for online games)
+  // Reset timer on turn change and game start (for online and local games)
   useEffect(() => {
-    if (gameStarted && !winner && gameMode === 'online') {
+    console.log('⏰ Timer useEffect:', { gameStarted, winner, gameMode, currentPlayer });
+    if (gameStarted && !winner && (gameMode === 'online' || gameMode === 'local')) {
+      console.log('⏰ Starting timer for game mode:', gameMode);
       resetTimer();
     }
   }, [currentPlayer, gameStarted, winner, resetTimer, gameMode]);
@@ -1782,7 +1784,23 @@ function App() {
           socket.emit('joinQueue', username);
           setIsSearching(true);
         }}>
-          {getTranslation(language).game.startGame}
+          🌐 {getTranslation(language).game.startGame} (Online)
+        </button>
+        <button type="button" onClick={() => {
+          // Start local game
+          setGameMode('local');
+          setScreen('game');
+          initializeGame();
+          setGameStarted(true);
+          setCurrentPlayer('red');
+          setIsMyTurn(true);
+          setPlayers({
+            red: { color: 'red', username: username || 'Player 1' },
+            blue: { color: 'blue', username: 'Player 2' }
+          });
+          console.log('🏠 Starting local game');
+        }}>
+          🏠 Start Local Game
         </button>
         <button type="button" onClick={() => setScreen('help')}>
           {getTranslation(language).help.title}
@@ -2467,22 +2485,32 @@ function App() {
               </div>
             </div>
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {gameMode === 'local'
-                ? (getMyColor() === currentPlayer 
+              {(() => {
+                console.log('🎮 Turn Debug:', { 
+                  gameMode, 
+                  currentPlayer, 
+                  myColor: getMyColor(), 
+                  isMyTurn, 
+                  gameStarted,
+                  isMyColorCurrent: getMyColor() === currentPlayer 
+                });
+                
+                if (gameMode === 'local') {
+                  return getMyColor() === currentPlayer 
                     ? getTranslation(language).game.yourTurn
-                    : getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username)
-                  )
-                : (isMyTurn
-                  ? getTranslation(language).game.yourTurn
-                  : (gameMode === 'bot'
-                      ? getTranslation(language).game.opponentTurn.replace('{opponent}', 'Bot')
-                      : getTranslation(language).game.opponentTurn.replace('{opponent}', opponent)
-                    )
-                  )
-              }
-              {gameMode === 'online' && (
+                    : getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username);
+                } else {
+                  return isMyTurn
+                    ? getTranslation(language).game.yourTurn
+                    : (gameMode === 'bot'
+                        ? getTranslation(language).game.opponentTurn.replace('{opponent}', 'Bot')
+                        : getTranslation(language).game.opponentTurn.replace('{opponent}', opponent)
+                      );
+                }
+              })()}
+              {(gameMode === 'online' || gameMode === 'local') && gameStarted && (
                 <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-                  {getTranslation(language).game.timeLeft.replace('{seconds}', timeLeft.toString())}
+                  ⏰ {getTranslation(language).game.timeLeft.replace('{seconds}', timeLeft.toString())}
                 </div>
               )}
             </div>
