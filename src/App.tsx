@@ -78,8 +78,6 @@ function App() {
   });
   const [boardTheme, setBoardTheme] = useState(() => {
     const savedTheme = localStorage.getItem('boardTheme');
-    const savedOwned = localStorage.getItem('ownedItems');
-    const ownedBoards = savedOwned ? JSON.parse(savedOwned).boards || ['default'] : ['default'];
     
     // One-time fix: if someone has 'original' from testing, reset to 'default'
     // This ensures first-time users get chess colors, not orange
@@ -91,24 +89,12 @@ function App() {
       }
     }
     
-    // Validate that the saved theme is owned or free, otherwise default to 'default'
-    if (savedTheme && (ownedBoards.includes(savedTheme) || savedTheme === 'default')) {
-      return savedTheme;
-    }
-    
-    return 'default';
+    // If no theme is saved, default to 'default' (chess colors)
+    return savedTheme || 'default';
   });
   const [pieceTheme, setPieceTheme] = useState(() => {
     const savedPieceTheme = localStorage.getItem('pieceTheme');
-    const savedOwned = localStorage.getItem('ownedItems');
-    const ownedPieces = savedOwned ? JSON.parse(savedOwned).pieces || ['default'] : ['default'];
-    
-    // Validate that the saved piece theme is owned or free, otherwise default to 'default'
-    if (savedPieceTheme && (ownedPieces.includes(savedPieceTheme) || savedPieceTheme === 'default')) {
-      return savedPieceTheme;
-    }
-    
-    return 'default';
+    return savedPieceTheme || 'default';
   });
   const [playerPoints, setPlayerPoints] = useState(() => {
     const savedPoints = localStorage.getItem('playerPoints');
@@ -128,24 +114,78 @@ function App() {
   const [pointsSummary, setPointsSummary] = useState({ gained: 0, lost: 0, winner: '' });
 
   // Helper to get local player's color
-  const getMyColor = () => {
+    const getMyColor = () => {
     if (gameMode === 'local') {
       // In local mode, red always goes first, so the current player is the one whose turn it is
       return currentPlayer;
     }
-    // For online/bot games, determine based on username
-    if (username === players.red.username) {
-      return 'red';
-    } else if (username === players.blue.username) {
-      return 'blue';
+    return username === players.red.username ? 'red' : 'blue';
+  };
+ 
+  // Coin exchange function: 1 point = 0.5 coins (only full coins)
+  const exchangePointsForCoins = (pointsToExchange: number) => {
+    const myColor = getMyColor();
+    const myPoints = playerPoints[myColor];
+    
+    if (pointsToExchange > myPoints) {
+      return false;
     }
-    // Fallback: if username doesn't match either player, default to red
-    console.warn('🚨 getMyColor: Username does not match either player, defaulting to red', {
-      username,
-      players,
-      gameMode
+    
+    const coinsEarned = Math.floor(pointsToExchange * 0.5);
+    const pointsUsed = coinsEarned * 2; // Only use points that give full coins
+    const remainingPoints = pointsToExchange - pointsUsed;
+    
+    if (coinsEarned <= 0) {
+      return false;
+    }
+    
+    // Update points and coins
+    setPlayerPoints(prev => {
+      const newPoints = { ...prev, [myColor]: Math.max(0, prev[myColor] - pointsUsed) };
+      localStorage.setItem('playerPoints', JSON.stringify(newPoints));
+      return newPoints;
     });
-    return 'red';
+    
+    setPlayerCoins(prev => {
+      const newCoins = prev + coinsEarned;
+      localStorage.setItem('playerCoins', newCoins.toString());
+      return newCoins;
+    });
+    
+    return { coinsEarned, pointsUsed, remainingPoints };
+  };
+
+  // Purchase function for shop items
+  const purchaseItem = (itemKey: string, itemType: 'boards' | 'pieces', price: number) => {
+    // Safety checks
+    if (playerCoins < price) {
+      return false;
+    }
+    if (ownedItems[itemType].includes(itemKey)) {
+      return false;
+    }
+
+    // Deduct coins
+    setPlayerCoins(prev => {
+      const newCoins = prev - price;
+      if (newCoins < 0) {
+        return prev; // Don't allow negative coins
+      }
+      localStorage.setItem('playerCoins', newCoins.toString());
+      return newCoins;
+    });
+
+    // Add to owned items
+    setOwnedItems(prev => {
+      const newOwned = { 
+        ...prev, 
+        [itemType]: [...prev[itemType], itemKey] 
+      };
+      localStorage.setItem('ownedItems', JSON.stringify(newOwned));
+      return newOwned;
+    });
+
+    return true;
   };
 
   const awardPoints = (winnerColor: PlayerColor) => {
@@ -643,50 +683,11 @@ function App() {
       return;
     }
     
-    // For local games, check current player matches interface
-    if (gameMode === 'local' && getMyColor() !== currentPlayer) {
-      console.log('🚫 Local game turn mismatch - move blocked');
-      return;
-    }
-    
-    // Special diagnostic for bottom-left piece (row 3, col 0)
-    if (rowIndex === 3 && colIndex === 0) {
-      const piece = board[rowIndex][colIndex];
-      console.log('🔍 Bottom-left piece clicked:', {
-        position: [rowIndex, colIndex],
-        piece: piece,
-        gameMode: gameMode,
-        currentPlayer: currentPlayer,
-        myColor: getMyColor(),
-        gameStarted: gameStarted,
-        winner: winner,
-        isMyTurn: isMyTurn,
-        players: players,
-        username: username,
-        pieceColorMatchesMyColor: piece?.color === getMyColor(),
-        allBoardPieces: board.flat().filter(p => p !== null).map(p => ({ type: p.type, color: p.color })),
-        turnValidation: {
-          localGame: gameMode === 'local',
-          localTurnMatch: getMyColor() === currentPlayer,
-          onlineGame: gameMode === 'online',
-          isMyTurnOnline: isMyTurn
-        }
-      });
-      
-      if (piece) {
-        const moves = calculateValidMoves(board, rowIndex, colIndex);
-        console.log('🔍 Bottom-left piece moves:', moves);
-        console.log('🔍 Will this piece be selectable?', piece.color === getMyColor());
-        
-        // Test mode: if it's a local game and this is a blue piece during red's turn
-        if (gameMode === 'local' && piece.color === 'blue' && currentPlayer === 'red') {
-          console.log('🧪 TEST MODE: Auto-switching to blue\'s turn for bottom-left piece testing...');
-          setCurrentPlayer('blue');
-          return; // Allow the click to continue after state change
-        }
-      } else {
-        console.log('🔍 No piece at bottom-left position!');
-      }
+    // For local games, allow pieces to be selected only on their turn
+    if (gameMode === 'local') {
+      // Allow any piece of the current player's color to be selected
+      // getMyColor() in local mode returns currentPlayer, so this check is redundant
+      // We'll handle this in the piece selection logic below
     }
     
     const piece = board[rowIndex][colIndex];
@@ -705,7 +706,7 @@ function App() {
       }
       
       // Clicking another piece of your color selects it instead
-      if (piece && piece.color === myColor) {
+      if (piece && piece.color === currentPlayer) {
         setSelectedPiece([rowIndex, colIndex]);
         const { moves, captures } = calculateValidMoves(board, rowIndex, colIndex);
         setValidMoves(moves);
@@ -850,26 +851,12 @@ function App() {
         }
       }
     } 
-    else if (piece && piece.color === myColor) {
-      console.log('✅ Piece selected:', {
-        position: [rowIndex, colIndex],
-        piece: piece,
-        myColor: myColor,
-        colorMatch: piece.color === myColor
-      });
+    else if (piece && piece.color === currentPlayer) {
+      // In local games, allow selection of any piece belonging to the current player
       setSelectedPiece([rowIndex, colIndex]);
       const { moves, captures } = calculateValidMoves(board, rowIndex, colIndex);
       setValidMoves(moves);
       setValidCaptures(captures);
-    } else {
-      console.log('❌ Piece NOT selected:', {
-        position: [rowIndex, colIndex],
-        piece: piece,
-        myColor: myColor,
-        haspiece: !!piece,
-        colorMatch: piece ? piece.color === myColor : false,
-        reason: !piece ? 'No piece' : piece.color !== myColor ? 'Wrong color' : 'Unknown'
-      });
     }
   };
 
@@ -891,6 +878,7 @@ function App() {
     // Clear existing timer
     if (timerId) {
       clearInterval(timerId);
+      setTimerId(null);
     }
     
     setTimeLeft(30);
@@ -914,16 +902,22 @@ function App() {
       });
     }, 1000);
     setTimerId(newTimerId);
-  }, [gameId, players, socket]);
+  }, [timerId, gameId, privateGameId, players, socket, isMyTurnRef]);
 
-  // Reset timer on turn change and game start (for online and local games)
+  // Reset timer on turn change and game start (only for online games)
   useEffect(() => {
-    console.log('⏰ Timer useEffect:', { gameStarted, winner, gameMode, currentPlayer });
-    if (gameStarted && !winner && (gameMode === 'online' || gameMode === 'local')) {
-      console.log('⏰ Starting timer for game mode:', gameMode);
+    if (gameStarted && !winner && gameMode === 'online') {
+      if (isMyTurn) {
       resetTimer();
+      } else {
+        // Stop timer when not my turn
+        if (timerId) {
+          clearInterval(timerId);
+          setTimerId(null);
     }
-  }, [currentPlayer, gameStarted, winner, resetTimer, gameMode]);
+      }
+    }
+  }, [isMyTurn, gameStarted, winner, gameMode, resetTimer, timerId]);
 
   // Clean up timer on unmount and logout
   useEffect(() => {
@@ -1428,89 +1422,6 @@ function App() {
     }, 5000);
   };
 
-  // Coin exchange function: 1 point = 0.5 coins (only full coins)
-  const exchangePointsForCoins = (pointsToExchange: number) => {
-    const myColor = getMyColor();
-    const myPoints = playerPoints[myColor];
-    
-    console.log('🪙 Exchange request:', { pointsToExchange, myColor, myPoints, totalPoints: playerPoints.red + playerPoints.blue });
-    
-    if (pointsToExchange > myPoints) {
-      console.warn('🪙 Exchange failed: insufficient points');
-      return false;
-    }
-    
-    const coinsEarned = Math.floor(pointsToExchange * 0.5);
-    const pointsUsed = coinsEarned * 2; // Only use points that give full coins
-    const remainingPoints = pointsToExchange - pointsUsed;
-    
-    console.log('🪙 Exchange calculation:', { coinsEarned, pointsUsed, remainingPoints });
-    
-    if (coinsEarned <= 0) {
-      console.warn('🪙 Exchange failed: no coins would be earned');
-      return false;
-    }
-    
-    // Update points and coins
-    setPlayerPoints(prev => {
-      const newPoints = { ...prev, [myColor]: Math.max(0, prev[myColor] - pointsUsed) };
-      localStorage.setItem('playerPoints', JSON.stringify(newPoints));
-      console.log('🪙 Points updated:', { old: prev, new: newPoints });
-      return newPoints;
-    });
-    
-    setPlayerCoins(prev => {
-      const newCoins = prev + coinsEarned;
-      localStorage.setItem('playerCoins', newCoins.toString());
-      console.log('🪙 Coins updated:', { old: prev, new: newCoins });
-      return newCoins;
-    });
-    
-    console.log('🪙 Exchange completed successfully!');
-    return { coinsEarned, pointsUsed, remainingPoints };
-  };
-
-  // Purchase function for shop items
-  const purchaseItem = (itemKey: string, itemType: 'boards' | 'pieces', price: number) => {
-    // Safety checks
-    if (playerCoins < price) {
-      console.warn('🛒 Purchase failed: insufficient coins', { playerCoins, price });
-      return false;
-    }
-    if (ownedItems[itemType].includes(itemKey)) {
-      console.warn('🛒 Purchase failed: item already owned', { itemKey, itemType });
-      return false;
-    }
-
-    console.log('🛒 Processing purchase:', { itemKey, itemType, price, currentCoins: playerCoins });
-
-    // Deduct coins
-    setPlayerCoins(prev => {
-      const newCoins = prev - price;
-      if (newCoins < 0) {
-        console.error('🛒 Error: coins would go negative!', { prev, price, newCoins });
-        return prev; // Don't allow negative coins
-      }
-      localStorage.setItem('playerCoins', newCoins.toString());
-      console.log('🛒 Coins updated:', { old: prev, new: newCoins });
-      return newCoins;
-    });
-
-    // Add to owned items
-    setOwnedItems(prev => {
-      const newOwned = { 
-        ...prev, 
-        [itemType]: [...prev[itemType], itemKey] 
-      };
-      localStorage.setItem('ownedItems', JSON.stringify(newOwned));
-      console.log('🛒 Owned items updated:', newOwned);
-      return newOwned;
-    });
-
-    console.log('🛒 Purchase completed successfully!');
-    return true;
-  };
-
   // Board theme definitions with pricing
   const boardThemes = {
     default: { light: '#f0d9b5', dark: '#b58863', name: 'Default', price: 0 },
@@ -1532,7 +1443,7 @@ function App() {
     original: { 
       player1: { bg: '#4caf50', border: '#2e7d32', name: 'Green' },
       player2: { bg: '#2196f3', border: '#1565c0', name: 'Blue' },
-      name: 'Classic',
+      name: 'Original',
       price: 100
     },
     summer: { 
@@ -1561,53 +1472,70 @@ function App() {
     }
   };
 
-  const ShopScreen = () => (
-    <div className="shop-screen">
-      {/* Navigation Bar */}
-      <div className="nav-bar">
-        <div className="nav-option" onClick={() => setScreen('home')}>
-          <span>{getTranslation(language).navigation.home}</span>
+  const ShopScreen = () => {
+    const [exchangeAmount, setExchangeAmount] = useState(0);
+    
+    return (
+      <div className="shop-screen">
+        {/* Navigation Bar */}
+        <div className="nav-bar">
+          <div className="nav-option" onClick={() => setScreen('home')}>
+            <span>{getTranslation(language).navigation.home}</span>
+          </div>
+          <div className="nav-option" onClick={() => setScreen('private')}>
+            <span>{getTranslation(language).navigation.private}</span>
+          </div>
+          <div className="nav-option active">
+            <span>Shop</span>
+          </div>
         </div>
-        <div className="nav-option" onClick={() => setScreen('private')}>
-          <span>{getTranslation(language).navigation.private}</span>
-        </div>
-        <div className="nav-option active">
-          <span>Shop</span>
-        </div>
-      </div>
-      
-      <div className="shop-content">
-        <h1 className="shop-title">🛍️ Themes Shop</h1>
         
-        {/* Coins and Points Display */}
-        <div className="coins-display">
-          <div className="coins-info">
-            <span className="coins-label">💰 Your Coins:</span>
-            <span className="coins-value">{playerCoins}</span>
+        <div className="shop-content">
+          <h1 className="shop-title">🛍️ Themes Shop</h1>
+          
+          {/* Coin and Points Display */}
+          <div className="currency-display">
+            <div className="currency-item">
+              <span className="currency-label">Points:</span>
+              <span className="currency-value">{playerPoints[getMyColor()]}</span>
+            </div>
+            <div className="currency-item">
+              <span className="currency-label">Coins:</span>
+              <span className="currency-value">{playerCoins}</span>
+            </div>
           </div>
-          <div className="points-exchange">
-            <span className="points-label">📊 Your Points:</span>
-            <span className="points-value">{playerPoints.red + playerPoints.blue}</span>
-            <button 
-              className="exchange-button"
-              onClick={() => {
-                const totalPoints = playerPoints.red + playerPoints.blue;
-                if (totalPoints < 2) {
-                  alert('💡 You need at least 2 points to exchange for 1 coin! Play more games to earn points.');
-                  return;
-                }
-                const result = exchangePointsForCoins(totalPoints);
-                if (result) {
-                  alert(`🪙 Successfully exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!${result.remainingPoints > 0 ? ` (${result.remainingPoints} points couldn't be exchanged - need even numbers)` : ''}`);
-                } else {
-                  alert('❌ Exchange failed. Please try again.');
-                }
-              }}
-            >
-              Exchange All Points → Coins
-            </button>
+          
+          {/* Points to Coins Exchange */}
+          <div className="exchange-section">
+            <h3>Exchange Points for Coins</h3>
+            <p>Rate: 1 Point = 0.5 Coins (full coins only)</p>
+            <div className="exchange-controls">
+              <input 
+                type="number" 
+                min="0" 
+                max={playerPoints[getMyColor()]}
+                value={exchangeAmount}
+                onChange={(e) => setExchangeAmount(parseInt(e.target.value) || 0)}
+                placeholder="Points to exchange"
+              />
+              <button 
+                onClick={() => {
+                  if (exchangeAmount > 0) {
+                    const result = exchangePointsForCoins(exchangeAmount);
+                    if (result) {
+                      setExchangeAmount(0);
+                      alert(`Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`);
+                    } else {
+                      alert('Invalid exchange amount!');
+                    }
+                  }
+                }}
+                disabled={exchangeAmount <= 0 || exchangeAmount > playerPoints[getMyColor()]}
+              >
+                Exchange
+              </button>
+            </div>
           </div>
-        </div>
         
         <div className="theme-section">
           <h2 className="section-title">Board Themes</h2>
@@ -1617,67 +1545,55 @@ function App() {
             {Object.entries(boardThemes).map(([themeKey, theme]) => {
               const isOwned = ownedItems.boards.includes(themeKey);
               const canAfford = playerCoins >= theme.price;
-              const isFree = theme.price === 0;
               
               return (
                 <div 
                   key={themeKey}
-                  className={`theme-card ${boardTheme === themeKey ? 'selected' : ''} ${!isOwned && !isFree ? 'locked' : ''}`}
+                  className={`theme-card ${boardTheme === themeKey ? 'selected' : ''} ${!isOwned && !canAfford ? 'locked' : ''}`}
+                  onClick={() => {
+                    if (isOwned) {
+                      setBoardTheme(themeKey);
+                      localStorage.setItem('boardTheme', themeKey);
+                    } else if (canAfford) {
+                      if (purchaseItem(themeKey, 'boards', theme.price)) {
+                        setBoardTheme(themeKey);
+                        localStorage.setItem('boardTheme', themeKey);
+                      }
+                    }
+                  }}
                 >
-                  <div className="theme-preview">
-                    <div 
-                      className="preview-cell light"
-                      style={{ backgroundColor: theme.light }}
-                    ></div>
-                    <div 
-                      className="preview-cell dark"
-                      style={{ backgroundColor: theme.dark }}
-                    ></div>
-                    <div 
-                      className="preview-cell dark"
-                      style={{ backgroundColor: theme.dark }}
-                    ></div>
-                    <div 
-                      className="preview-cell light"
-                      style={{ backgroundColor: theme.light }}
-                    ></div>
-                  </div>
-                  <h3 className="theme-name">{theme.name}</h3>
-                  <div className="theme-price">
-                    {isFree ? 'FREE' : `${theme.price} coins`}
-                  </div>
-                  
-                  {isOwned || isFree ? (
-                    <button 
-                      className="use-button"
-                      onClick={() => {
-                        if (isOwned || isFree) {
-                          setBoardTheme(themeKey);
-                          localStorage.setItem('boardTheme', themeKey);
-                        }
-                      }}
-                    >
-                      {boardTheme === themeKey ? 'Using' : 'Use'}
-                    </button>
-                  ) : (
-                    <button 
-                      className={`buy-button ${canAfford ? 'can-afford' : 'cannot-afford'}`}
-                      onClick={() => {
-                        if (canAfford && purchaseItem(themeKey, 'boards', theme.price)) {
-                          alert(`🎉 Successfully purchased ${theme.name} board theme for ${theme.price} coins!`);
-                          // Auto-select the newly purchased theme
-                          setBoardTheme(themeKey);
-                          localStorage.setItem('boardTheme', themeKey);
-                        } else if (!canAfford) {
-                          alert(`💰 Not enough coins! You need ${theme.price} coins but only have ${playerCoins}.`);
-                        }
-                      }}
-                      disabled={!canAfford}
-                    >
-                      {canAfford ? 'Buy' : 'Not enough coins'}
-                    </button>
-                  )}
+                <div className="theme-preview">
+                  <div 
+                    className="preview-cell light"
+                    style={{ backgroundColor: theme.light }}
+                  ></div>
+                  <div 
+                    className="preview-cell dark"
+                    style={{ backgroundColor: theme.dark }}
+                  ></div>
+                  <div 
+                    className="preview-cell dark"
+                    style={{ backgroundColor: theme.dark }}
+                  ></div>
+                  <div 
+                    className="preview-cell light"
+                    style={{ backgroundColor: theme.light }}
+                  ></div>
                 </div>
+                <h3 className="theme-name">{theme.name}</h3>
+                {boardTheme === themeKey && <div className="selected-badge">✓</div>}
+                <div className="theme-price">
+                  {theme.price === 0 ? 'Free' : `${theme.price} coins`}
+                </div>
+                {!isOwned && theme.price > 0 && (
+                  <div className={`purchase-status ${canAfford ? 'can-buy' : 'locked'}`}>
+                    {canAfford ? '🛒 Click to Buy' : '🔒 Need more coins'}
+                  </div>
+                )}
+                {isOwned && theme.price > 0 && (
+                  <div className="owned-badge">✅ Owned</div>
+                )}
+              </div>
               );
             })}
           </div>
@@ -1691,72 +1607,61 @@ function App() {
             {Object.entries(pieceThemes).map(([themeKey, theme]) => {
               const isOwned = ownedItems.pieces.includes(themeKey);
               const canAfford = playerCoins >= theme.price;
-              const isFree = theme.price === 0;
               
               return (
                 <div 
                   key={themeKey}
-                  className={`theme-card ${pieceTheme === themeKey ? 'selected' : ''} ${!isOwned && !isFree ? 'locked' : ''}`}
+                  className={`theme-card ${pieceTheme === themeKey ? 'selected' : ''} ${!isOwned && !canAfford ? 'locked' : ''}`}
+                  onClick={() => {
+                    if (isOwned) {
+                      setPieceTheme(themeKey);
+                      localStorage.setItem('pieceTheme', themeKey);
+                    } else if (canAfford) {
+                      if (purchaseItem(themeKey, 'pieces', theme.price)) {
+                        setPieceTheme(themeKey);
+                        localStorage.setItem('pieceTheme', themeKey);
+                      }
+                    }
+                  }}
                 >
-                  <div className="piece-preview">
-                    <div 
-                      className="preview-piece"
-                      style={{ 
-                        background: `linear-gradient(135deg, ${theme.player1.bg} 0%, ${theme.player1.bg} 100%)`,
-                        border: `3px solid ${theme.player1.border}`
-                      }}
-                    ></div>
-                    <div 
-                      className="preview-piece"
-                      style={{ 
-                        background: `linear-gradient(135deg, ${theme.player2.bg} 0%, ${theme.player2.bg} 100%)`,
-                        border: `3px solid ${theme.player2.border}`
-                      }}
-                    ></div>
-                  </div>
-                  <h3 className="theme-name">{theme.name}</h3>
-                  <div className="theme-price">
-                    {isFree ? 'FREE' : `${theme.price} coins`}
-                  </div>
-                  
-                  {isOwned || isFree ? (
-                    <button 
-                      className="use-button"
-                      onClick={() => {
-                        if (isOwned || isFree) {
-                          setPieceTheme(themeKey);
-                          localStorage.setItem('pieceTheme', themeKey);
-                        }
-                      }}
-                    >
-                      {pieceTheme === themeKey ? 'Using' : 'Use'}
-                    </button>
-                  ) : (
-                    <button 
-                      className={`buy-button ${canAfford ? 'can-afford' : 'cannot-afford'}`}
-                      onClick={() => {
-                        if (canAfford && purchaseItem(themeKey, 'pieces', theme.price)) {
-                          alert(`🎉 Successfully purchased ${theme.name} piece theme for ${theme.price} coins!`);
-                          // Auto-select the newly purchased theme
-                          setPieceTheme(themeKey);
-                          localStorage.setItem('pieceTheme', themeKey);
-                        } else if (!canAfford) {
-                          alert(`💰 Not enough coins! You need ${theme.price} coins but only have ${playerCoins}.`);
-                        }
-                      }}
-                      disabled={!canAfford}
-                    >
-                      {canAfford ? 'Buy' : 'Not enough coins'}
-                    </button>
-                  )}
+                <div className="piece-preview">
+                  <div 
+                    className="preview-piece"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.player1.bg} 0%, ${theme.player1.bg} 100%)`,
+                      border: `3px solid ${theme.player1.border}`
+                    }}
+                  ></div>
+                  <div 
+                    className="preview-piece"
+                    style={{ 
+                      background: `linear-gradient(135deg, ${theme.player2.bg} 0%, ${theme.player2.bg} 100%)`,
+                      border: `3px solid ${theme.player2.border}`
+                    }}
+                  ></div>
                 </div>
+                <h3 className="theme-name">{theme.name}</h3>
+                {pieceTheme === themeKey && <div className="selected-badge">✓</div>}
+                <div className="theme-price">
+                  {theme.price === 0 ? 'Free' : `${theme.price} coins`}
+                </div>
+                {!isOwned && theme.price > 0 && (
+                  <div className={`purchase-status ${canAfford ? 'can-buy' : 'locked'}`}>
+                    {canAfford ? '🛒 Click to Buy' : '🔒 Need more coins'}
+                  </div>
+                )}
+                {isOwned && theme.price > 0 && (
+                  <div className="owned-badge">✅ Owned</div>
+                )}
+              </div>
               );
             })}
           </div>
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   const HomeScreen = () => (
     <div className="home-screen">
@@ -1784,23 +1689,7 @@ function App() {
           socket.emit('joinQueue', username);
           setIsSearching(true);
         }}>
-          🌐 {getTranslation(language).game.startGame} (Online)
-        </button>
-        <button type="button" onClick={() => {
-          // Start local game
-          setGameMode('local');
-          setScreen('game');
-          initializeGame();
-          setGameStarted(true);
-          setCurrentPlayer('red');
-          setIsMyTurn(true);
-          setPlayers({
-            red: { color: 'red', username: username || 'Player 1' },
-            blue: { color: 'blue', username: 'Player 2' }
-          });
-          console.log('🏠 Starting local game');
-        }}>
-          🏠 Start Local Game
+          {getTranslation(language).game.startGame}
         </button>
         <button type="button" onClick={() => setScreen('help')}>
           {getTranslation(language).help.title}
@@ -2485,48 +2374,27 @@ function App() {
               </div>
             </div>
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {(() => {
-                console.log('🎮 Turn Debug:', { 
-                  gameMode, 
-                  currentPlayer, 
-                  myColor: getMyColor(), 
-                  isMyTurn, 
-                  gameStarted,
-                  isMyColorCurrent: getMyColor() === currentPlayer 
-                });
-                
-                if (gameMode === 'local') {
-                  return getMyColor() === currentPlayer 
-                    ? getTranslation(language).game.yourTurn
-                    : getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username);
-                } else {
-                  return isMyTurn
-                    ? getTranslation(language).game.yourTurn
-                    : (gameMode === 'bot'
-                        ? getTranslation(language).game.opponentTurn.replace('{opponent}', 'Bot')
-                        : getTranslation(language).game.opponentTurn.replace('{opponent}', opponent)
-                      );
-                }
-              })()}
-              {(gameMode === 'online' || gameMode === 'local') && gameStarted && (
+              {gameMode === 'local'
+                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username} ${getTranslation(language).game.opponentTurn}`
+                : (isMyTurn
+                  ? getTranslation(language).game.yourTurn
+                  : (gameMode === 'bot'
+                      ? getTranslation(language).game.opponentTurn.replace('{opponent}', 'Bot')
+                      : getTranslation(language).game.opponentTurn.replace('{opponent}', opponent)
+                    )
+                  )
+              }
+              {gameMode === 'online' && (
                 <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-                  ⏰ {getTranslation(language).game.timeLeft.replace('{seconds}', timeLeft.toString())}
+                  {getTranslation(language).game.timeLeft.replace('{seconds}', timeLeft.toString())}
                 </div>
               )}
             </div>
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-              {(gameMode === 'local' && getMyColor() === currentPlayer) || (gameMode !== 'local' && isMyTurn) 
-                ? getTranslation(language).game.selectPiece 
-                : (
-                  gameMode === 'bot' ? getTranslation(language).game.waitingForOpponent : 
-                  gameMode === 'local' ? getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username) :
-                                    getTranslation(language).game.waitingForMove.replace('{opponent}', opponent)
-                )
-              }
-              {gameMode === 'local' && (
-                <div style={{ fontSize: '0.9rem', marginTop: '5px', opacity: 0.7 }}>
-                  💡 Test Mode: Click bottom-left blue piece to auto-switch turns
-                </div>
+              {isMyTurn ? getTranslation(language).game.selectPiece : (
+                gameMode === 'bot' ? getTranslation(language).game.waitingForOpponent : 
+                gameMode === 'local' ? getTranslation(language).game.waitingForMove.replace('{opponent}', currentPlayer === 'red' ? players.red.username : players.blue.username) :
+                                  getTranslation(language).game.waitingForMove.replace('{opponent}', opponent)
               )}
             </div>
           </div>
@@ -2567,15 +2435,10 @@ function App() {
                     >
                       {piece && (
                         <div 
-                          className={`piece ${piece.type} ${piece.color} ${piece.color === getMyColor() ? 'my-piece' : 'opponent-piece'}`}
+                          className={`piece ${piece.type} ${piece.color}`}
                           style={{
                             background: `linear-gradient(135deg, ${pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].bg} 0%, ${pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].bg} 100%)`,
-                            borderColor: pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].border,
-                            // Special styling for debugging: highlight the bottom-left piece
-                            ...(rowIndex === 3 && colIndex === 0 ? {
-                              boxShadow: '0 0 10px rgba(255, 255, 0, 0.8)',
-                              border: '3px solid yellow'
-                            } : {})
+                            borderColor: pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].border
                           }}
                         >
                           {piece.type === 'circle' && piece.eatenCount !== undefined && 
