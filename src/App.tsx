@@ -1491,35 +1491,39 @@ function App() {
         <div className="shop-content">
           <h1 className="shop-title">🛍️ Themes Shop</h1>
           
-          {/* Coin and Points Display */}
+          {/* Currency Display with Exchange Button */}
           <div className="currency-display">
-            <div className="currency-item">
-              <span className="currency-label">Points:</span>
-              <span className="currency-value">{playerPoints[getMyColor()]}</span>
+            <div className="exchange-explanation">
+              <span className="exchange-title">Trade Points for Coins</span>
+              <span className="exchange-rate">Rate: 2 Points = 1 Coin</span>
             </div>
-            <div className="currency-item">
-              <span className="currency-label">Coins:</span>
-              <span className="currency-value">{playerCoins}</span>
+            <div className="currency-values">
+              <div className="currency-item">
+                <span className="currency-label">Points:</span>
+                <span className="currency-value">{playerPoints[getMyColor()]}</span>
+              </div>
+              <div className="currency-item">
+                <span className="currency-label">Coins:</span>
+                <span className="currency-value">{playerCoins}</span>
+              </div>
             </div>
+            {playerPoints[getMyColor()] > 0 && (
+              <button 
+                className="exchange-all-button-inline"
+                onClick={() => {
+                  const allPoints = playerPoints[getMyColor()];
+                  const result = exchangePointsForCoins(allPoints);
+                  if (result) {
+                    alert(`Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`);
+                  } else {
+                    alert('Exchange failed!');
+                  }
+                }}
+              >
+                Exchange All Points
+              </button>
+            )}
           </div>
-          
-          {/* Exchange All Points Button */}
-          {playerPoints[getMyColor()] > 0 && (
-            <button 
-              className="exchange-all-button"
-              onClick={() => {
-                const allPoints = playerPoints[getMyColor()];
-                const result = exchangePointsForCoins(allPoints);
-                if (result) {
-                  alert(`Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`);
-                } else {
-                  alert('Exchange failed!');
-                }
-              }}
-            >
-              Exchange All Points
-            </button>
-          )}
         
         <div className="theme-section">
           <h2 className="section-title">Board Themes</h2>

@@ -1989,12 +1989,39 @@ button {
 /* Currency Display */
 .currency-display {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 30px;
   margin: 20px 0;
-  padding: 20px;
+  padding: 20px 30px;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 15px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  min-height: 60px;
+}
+
+.exchange-explanation {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.exchange-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.exchange-rate {
+  font-size: 14px;
+  color: #666;
+}
+
+.currency-values {
+  display: flex;
+  gap: 30px;
+  align-items: center;
 }
 
 .currency-item {
@@ -2014,6 +2041,26 @@ button {
   font-size: 24px;
   font-weight: bold;
   color: #333;
+}
+
+.exchange-all-button-inline {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+  white-space: nowrap;
+}
+
+.exchange-all-button-inline:hover {
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
 }
 
 /* Exchange Section */
