@@ -112,6 +112,8 @@ function App() {
   const [briefingInfo, setBriefingInfo] = useState({ opponent: '', points: 0 });
   const [showPostGameSummary, setShowPostGameSummary] = useState(false);
   const [pointsSummary, setPointsSummary] = useState({ gained: 0, lost: 0, winner: '' });
+  const [shopMessage, setShopMessage] = useState('');
+  const [showShopMessage, setShowShopMessage] = useState(false);
 
   // Helper to get local player's color
     const getMyColor = () => {
@@ -186,6 +188,16 @@ function App() {
     });
 
     return true;
+  };
+
+  const showShopMessageNotification = (message: string) => {
+    setShopMessage(message);
+    setShowShopMessage(true);
+    
+    // Hide after 3 seconds
+    setTimeout(() => {
+      setShowShopMessage(false);
+    }, 3000);
   };
 
   const awardPoints = (winnerColor: PlayerColor) => {
@@ -1491,6 +1503,13 @@ function App() {
         <div className="shop-content">
           <h1 className="shop-title">🛍️ Themes Shop</h1>
           
+          {/* Shop Message Notification */}
+          {showShopMessage && (
+            <div className="shop-message-notification">
+              {shopMessage}
+            </div>
+          )}
+          
           {/* Currency Display with Exchange Button */}
           <div className="currency-display">
             <div className="exchange-explanation">
@@ -1504,9 +1523,11 @@ function App() {
                   const allPoints = playerPoints[getMyColor()];
                   const result = exchangePointsForCoins(allPoints);
                   if (result) {
-                    alert(getTranslation(language).shop?.exchangeSuccess?.replace('{pointsUsed}', result.pointsUsed).replace('{coinsEarned}', result.coinsEarned) || `Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`);
+                    const successMessage = getTranslation(language).shop?.exchangeSuccess?.replace('{pointsUsed}', result.pointsUsed).replace('{coinsEarned}', result.coinsEarned) || `Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`;
+                    showShopMessageNotification(successMessage);
                   } else {
-                    alert(getTranslation(language).shop?.exchangeFailed || 'Exchange failed!');
+                    const failMessage = getTranslation(language).shop?.exchangeFailed || 'Exchange failed!';
+                    showShopMessageNotification(failMessage);
                   }
                 }}
               >
