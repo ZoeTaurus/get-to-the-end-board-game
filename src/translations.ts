@@ -117,6 +117,13 @@ export interface Translation {
     yes: string;
     no: string;
   };
+  shop: {
+    tradePoints: string;
+    exchangeRate: string;
+    exchangeAllPoints: string;
+    exchangeSuccess: string;
+    exchangeFailed: string;
+  };
 }
 
 export const translations: Record<string, Translation> = {
@@ -238,6 +245,18 @@ export const translations: Record<string, Translation> = {
       nicknameNotSaved: 'This won\'t be saved - just for this game',
       opponentsNickname: 'Opponent\'s nickname',
       startGame: 'Start Game'
+    },
+    logout: {
+      confirm: 'Are you sure you want to logout?',
+      yes: 'Yes',
+      no: 'No'
+    },
+    shop: {
+      tradePoints: 'Trade Points for Coins',
+      exchangeRate: 'Rate: 2 Points = 1 Coin',
+      exchangeAllPoints: 'Exchange All Points',
+      exchangeSuccess: 'Exchanged {pointsUsed} points for {coinsEarned} coins!',
+      exchangeFailed: 'Exchange failed!'
     }
   },
   Spanish: {
@@ -358,6 +377,18 @@ export const translations: Record<string, Translation> = {
       nicknameNotSaved: 'Esto no se guardará - solo para este juego',
       opponentsNickname: 'Apodo del oponente',
       startGame: 'Comenzar Juego'
+    },
+    logout: {
+      confirm: '¿Estás seguro de que quieres cerrar sesión?',
+      yes: 'Sí',
+      no: 'No'
+    },
+    shop: {
+      tradePoints: 'Intercambiar Puntos por Monedas',
+      exchangeRate: 'Tasa: 2 Puntos = 1 Moneda',
+      exchangeAllPoints: 'Intercambiar Todos los Puntos',
+      exchangeSuccess: '¡Intercambiado {pointsUsed} puntos por {coinsEarned} monedas!',
+      exchangeFailed: '¡Intercambio falló!'
     }
   },
   Chinese: {
@@ -478,6 +509,18 @@ export const translations: Record<string, Translation> = {
       nicknameNotSaved: '这不会被保存 - 仅用于此游戏',
       opponentsNickname: '对手昵称',
       startGame: '开始游戏'
+    },
+    logout: {
+      confirm: '您确定要退出登录吗？',
+      yes: '是',
+      no: '否'
+    },
+    shop: {
+      tradePoints: '用积分兑换硬币',
+      exchangeRate: '汇率：2积分 = 1硬币',
+      exchangeAllPoints: '兑换所有积分',
+      exchangeSuccess: '已兑换 {pointsUsed} 积分获得 {coinsEarned} 硬币！',
+      exchangeFailed: '兑换失败！'
     }
   }
 };

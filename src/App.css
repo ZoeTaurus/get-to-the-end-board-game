@@ -2018,31 +2018,6 @@ button {
   color: #666;
 }
 
-.currency-values {
-  display: flex;
-  gap: 30px;
-  align-items: center;
-}
-
-.currency-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-}
-
-.currency-label {
-  font-size: 14px;
-  color: #666;
-  font-weight: 500;
-}
-
-.currency-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
-}
-
 .exchange-all-button-inline {
   background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
   color: white;

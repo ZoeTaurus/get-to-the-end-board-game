@@ -1494,18 +1494,8 @@ function App() {
           {/* Currency Display with Exchange Button */}
           <div className="currency-display">
             <div className="exchange-explanation">
-              <span className="exchange-title">Trade Points for Coins</span>
-              <span className="exchange-rate">Rate: 2 Points = 1 Coin</span>
-            </div>
-            <div className="currency-values">
-              <div className="currency-item">
-                <span className="currency-label">Points:</span>
-                <span className="currency-value">{playerPoints[getMyColor()]}</span>
-              </div>
-              <div className="currency-item">
-                <span className="currency-label">Coins:</span>
-                <span className="currency-value">{playerCoins}</span>
-              </div>
+              <span className="exchange-title">{getTranslation(language).shop?.tradePoints || 'Trade Points for Coins'}</span>
+              <span className="exchange-rate">{getTranslation(language).shop?.exchangeRate || 'Rate: 2 Points = 1 Coin'}</span>
             </div>
             {playerPoints[getMyColor()] > 0 && (
               <button 
@@ -1514,13 +1504,13 @@ function App() {
                   const allPoints = playerPoints[getMyColor()];
                   const result = exchangePointsForCoins(allPoints);
                   if (result) {
-                    alert(`Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`);
+                    alert(getTranslation(language).shop?.exchangeSuccess?.replace('{pointsUsed}', result.pointsUsed).replace('{coinsEarned}', result.coinsEarned) || `Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`);
                   } else {
-                    alert('Exchange failed!');
+                    alert(getTranslation(language).shop?.exchangeFailed || 'Exchange failed!');
                   }
                 }}
               >
-                Exchange All Points
+                {getTranslation(language).shop?.exchangeAllPoints || 'Exchange All Points'}
               </button>
             )}
           </div>
