@@ -1518,21 +1518,22 @@ function App() {
               <span className="exchange-title">{getTranslation(language).shop?.tradePoints || 'Trade Points for Coins'}</span>
               <span className="exchange-rate">{getTranslation(language).shop?.exchangeRate || 'Rate: 2 Points = 1 Coin'}</span>
             </div>
-            {playerPoints[getMyColor()] >= 2 && (
-              <button 
-                className="exchange-all-button-inline"
-                onClick={() => {
+            <button 
+              className="exchange-all-button-inline"
+              disabled={playerPoints[getMyColor()] < 2}
+              onClick={() => {
+                if (playerPoints[getMyColor()] >= 2) {
                   const allPoints = playerPoints[getMyColor()];
                   const result = exchangePointsForCoins(allPoints);
                   if (result) {
                     const successMessage = getTranslation(language).shop?.exchangeSuccess?.replace('{pointsUsed}', result.pointsUsed).replace('{coinsEarned}', result.coinsEarned) || `Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`;
                     showShopMessageNotification(successMessage, 'success');
                   }
-                }}
-              >
-                {getTranslation(language).shop?.exchangeAllPoints || 'Exchange All Points'}
-              </button>
-            )}
+                }
+              }}
+            >
+              {getTranslation(language).shop?.exchangeAllPoints || 'Exchange All Points'}
+            </button>
           </div>
         
         <div className="theme-section">

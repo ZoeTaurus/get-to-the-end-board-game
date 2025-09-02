@@ -2032,10 +2032,18 @@ button {
   white-space: nowrap;
 }
 
-.exchange-all-button-inline:hover {
+.exchange-all-button-inline:hover:not(:disabled) {
   background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+.exchange-all-button-inline:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
 }
 
 /* Shop Message Notification */
