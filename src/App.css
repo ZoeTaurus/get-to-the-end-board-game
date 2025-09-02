@@ -2040,7 +2040,6 @@ button {
 
 /* Shop Message Notification */
 .shop-message-notification {
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
   color: white;
   padding: 15px 25px;
   border-radius: 12px;
@@ -2048,8 +2047,17 @@ button {
   text-align: center;
   font-size: 16px;
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
   animation: slideInFromTop 0.3s ease-out;
+}
+
+.shop-message-notification.success {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.shop-message-notification.error {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
 }
 
 @keyframes slideInFromTop {

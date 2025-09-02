@@ -114,6 +114,7 @@ function App() {
   const [pointsSummary, setPointsSummary] = useState({ gained: 0, lost: 0, winner: '' });
   const [shopMessage, setShopMessage] = useState('');
   const [showShopMessage, setShowShopMessage] = useState(false);
+  const [shopMessageType, setShopMessageType] = useState<'success' | 'error'>('success');
 
   // Helper to get local player's color
     const getMyColor = () => {
@@ -190,8 +191,9 @@ function App() {
     return true;
   };
 
-  const showShopMessageNotification = (message: string) => {
+  const showShopMessageNotification = (message: string, type: 'success' | 'error' = 'success') => {
     setShopMessage(message);
+    setShopMessageType(type);
     setShowShopMessage(true);
     
     // Hide after 3 seconds
@@ -1505,7 +1507,7 @@ function App() {
           
           {/* Shop Message Notification */}
           {showShopMessage && (
-            <div className="shop-message-notification">
+            <div className={`shop-message-notification ${shopMessageType}`}>
               {shopMessage}
             </div>
           )}
@@ -1516,7 +1518,7 @@ function App() {
               <span className="exchange-title">{getTranslation(language).shop?.tradePoints || 'Trade Points for Coins'}</span>
               <span className="exchange-rate">{getTranslation(language).shop?.exchangeRate || 'Rate: 2 Points = 1 Coin'}</span>
             </div>
-            {playerPoints[getMyColor()] > 0 && (
+            {playerPoints[getMyColor()] >= 2 && (
               <button 
                 className="exchange-all-button-inline"
                 onClick={() => {
@@ -1524,10 +1526,7 @@ function App() {
                   const result = exchangePointsForCoins(allPoints);
                   if (result) {
                     const successMessage = getTranslation(language).shop?.exchangeSuccess?.replace('{pointsUsed}', result.pointsUsed).replace('{coinsEarned}', result.coinsEarned) || `Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`;
-                    showShopMessageNotification(successMessage);
-                  } else {
-                    const failMessage = getTranslation(language).shop?.exchangeFailed || 'Exchange failed!';
-                    showShopMessageNotification(failMessage);
+                    showShopMessageNotification(successMessage, 'success');
                   }
                 }}
               >
