@@ -903,13 +903,13 @@ function App() {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           // Time's up - other player wins
-          const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
+            const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
           const roomId = privateGameId ? privateGameId : gameId;
-          socket.emit('gameOver', { 
+            socket.emit('gameOver', { 
             gameId: roomId,
-            winner: otherPlayer, 
-            message: `${players[otherPlayer].username} wins by timeout!` 
-          });
+              winner: otherPlayer, 
+              message: `${players[otherPlayer].username} wins by timeout!` 
+            });
           clearInterval(newTimerId);
           setTimerId(null);
           return 0;
@@ -920,7 +920,7 @@ function App() {
     setTimerId(newTimerId);
   }, [timerId, gameId, privateGameId, players, socket, isMyTurn, gameStarted, winner, getMyColor]);
 
-    // Reset timer on turn change and game start (only for online games)
+  // Reset timer on turn change and game start (only for online games)
   useEffect(() => {
     if (gameStarted && !winner && gameMode === 'online') {
       resetTimer();
@@ -929,7 +929,7 @@ function App() {
       if (timerId) {
         clearInterval(timerId);
         setTimerId(null);
-      }
+    }
     }
   }, [isMyTurn, gameStarted, winner, gameMode, resetTimer]);
 
@@ -2389,7 +2389,7 @@ function App() {
                 </div>
               )}
             </div>
-                          <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
+            <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
                {(() => {
                  if (gameMode === 'local') {
                    // In local games, show whose turn it is
@@ -2401,7 +2401,7 @@ function App() {
                    return isMyTurn ? getTranslation(language).game.selectPiece : getTranslation(language).game.waitingForMove.replace('{opponent}', opponent);
                  }
                })()}
-              </div>
+            </div>
           </div>
         </div>
         

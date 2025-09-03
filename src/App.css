@@ -2076,24 +2076,24 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
+      }
   }
-}
 
 /* Shop Screen Centering */
 .shop-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 0;
+  padding: 20px;
 }
 
 .shop-content {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2102,12 +2102,12 @@ button {
 .shop-title {
   text-align: center;
   color: #333;
-  margin-bottom: 20px;
-  font-size: 2rem;
+  margin-bottom: 15px;
+  font-size: 1.8rem;
   font-weight: bold;
 }
-
-/* Exchange Section */
+  
+  /* Exchange Section */
 .exchange-section {
   background: white;
   border-radius: 20px;
