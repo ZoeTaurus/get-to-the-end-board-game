@@ -69,8 +69,8 @@ function App() {
     };
   });
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number>(30);
-  const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [timerId, setTimerId] = useState(null);
   const isMyTurnRef = useRef(isMyTurn);
   const [language, setLanguage] = useState(() => {
     const savedLanguage = localStorage.getItem('language');
@@ -114,7 +114,7 @@ function App() {
   const [pointsSummary, setPointsSummary] = useState({ gained: 0, lost: 0, winner: '' });
   const [shopMessage, setShopMessage] = useState('');
   const [showShopMessage, setShowShopMessage] = useState(false);
-  const [shopMessageType, setShopMessageType] = useState<'success' | 'error'>('success');
+  const [shopMessageType, setShopMessageType] = useState('success');
 
   // Helper to get local player's color
     const getMyColor = () => {
@@ -191,7 +191,7 @@ function App() {
     return true;
   };
 
-  const showShopMessageNotification = (message: string, type: 'success' | 'error' = 'success') => {
+  const showShopMessageNotification = (message, type = 'success') => {
     setShopMessage(message);
     setShopMessageType(type);
     setShowShopMessage(true);
