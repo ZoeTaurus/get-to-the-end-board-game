@@ -4,6 +4,7 @@ import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import Login from './Login';
 import { GameBot, convertBoardForBot, convertMoveFromBot } from './GameBot.js';
+import { useTimer } from 'react-timer-hook';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
@@ -69,66 +70,27 @@ function App() {
     };
   });
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(30);
-  const [timerId, setTimerId] = useState(null);
-  const isMyTurnRef = useRef(isMyTurn);
-
-  // Add timer reset function
-  const resetTimer = useCallback(() => {
-    // Clear existing timer
-    if (timerId) {
-      clearInterval(timerId);
-      setTimerId(null);
+  
+  // ⏰ SUPER SIMPLE TIMER USING REACT-TIMER-HOOK (5 lines!)
+  const time = new Date(); time.setSeconds(time.getSeconds() + 30);
+  const { seconds, restart, pause, resume, isRunning } = useTimer({ 
+    expiryTimestamp: time, 
+    onExpire: () => {
+      const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
+      const roomId = privateGameId ? privateGameId : gameId;
+      socket.emit('gameOver', { gameId: roomId, winner: otherPlayer, message: `${players[otherPlayer].username} wins by timeout!` });
     }
-    
-    // Only start timer if it's my turn and game is active
-    if (!isMyTurn || !gameStarted || winner) return;
-    
-    setTimeLeft(30);
-    const newTimerId = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          // Time's up - other player wins
-          const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
-          const roomId = privateGameId ? privateGameId : gameId;
-          socket.emit('gameOver', { 
-            gameId: roomId,
-            winner: otherPlayer, 
-            message: `${players[otherPlayer].username} wins by timeout!` 
-          });
-          clearInterval(newTimerId);
-          setTimerId(null);
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-    setTimerId(newTimerId);
-  }, [timerId, gameId, privateGameId, players, socket, isMyTurn, gameStarted, winner, getMyColor]);
+  });
 
-  // Reset timer on turn change and game start (only for online games)
+  // Reset timer when it's my turn in online games
   useEffect(() => {
-    if (gameStarted && !winner && gameMode === 'online') {
-      resetTimer();
-    } else {
-      // Stop timer for non-online games or when game is over
-      if (timerId) {
-        clearInterval(timerId);
-        setTimerId(null);
-      }
+    if (gameStarted && !winner && gameMode === 'online' && isMyTurn) {
+      const newTime = new Date(); newTime.setSeconds(newTime.getSeconds() + 30);
+      restart(newTime);
+    } else if (!gameStarted || winner || gameMode !== 'online') {
+      pause();
     }
-  }, [isMyTurn, gameStarted, winner, gameMode, resetTimer]);
-
-  // Clean up timer on unmount and logout
-  useEffect(() => {
-    return () => {
-      if (timerId) {
-        clearInterval(timerId);
-      }
-    };
-  }, [timerId]);
-
-  useEffect(() => { isMyTurnRef.current = isMyTurn; }, [isMyTurn]);
+  }, [isMyTurn, gameStarted, winner, gameMode, restart, pause]);
 
   const [language, setLanguage] = useState(() => {
     const savedLanguage = localStorage.getItem('language');
@@ -427,11 +389,7 @@ function App() {
       if (data.winner === getMyColor()) {
         setShowConfetti(true);
       }
-      // Stop the timer when game is over
-      if (timerId) {
-        clearInterval(timerId);
-        setTimerId(null);
-      }
+      // Timer will automatically stop when game is over
     });
 
     // Private game socket listeners
@@ -515,9 +473,8 @@ function App() {
       socket.off('playerDisconnected');
       socket.off('gameOver');
     };
-  }, [board, currentPlayer, username, opponent, timerId]);
+  }, [board, currentPlayer, username, opponent]);
 
-  useEffect(() => { isMyTurnRef.current = isMyTurn; }, [isMyTurn]);
 
   // Handle login
   const handleLogin = (username: string) => {
@@ -2153,11 +2110,7 @@ function App() {
                           socket.emit('cancelPrivateGame', { gameId: gameIdToCancel });
                         }
                         
-                        // Clear any existing timers
-                        if (timerId) {
-                          clearInterval(timerId);
-                          setTimerId(null);
-                        }
+                        // Timer will automatically pause when canceling game
                       }}
                       className="cancel-code-button"
                     >
@@ -2389,7 +2342,7 @@ function App() {
               }
               {gameMode === 'online' && (
                 <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-                  {getTranslation(language).game.timeLeft.replace('{seconds}', timeLeft.toString())}
+                  {getTranslation(language).game.timeLeft.replace('{seconds}', seconds.toString())}
                 </div>
               )}
             </div>
