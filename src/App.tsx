@@ -72,6 +72,64 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [timerId, setTimerId] = useState(null);
   const isMyTurnRef = useRef(isMyTurn);
+
+  // Add timer reset function
+  const resetTimer = useCallback(() => {
+    // Clear existing timer
+    if (timerId) {
+      clearInterval(timerId);
+      setTimerId(null);
+    }
+    
+    // Only start timer if it's my turn and game is active
+    if (!isMyTurn || !gameStarted || winner) return;
+    
+    setTimeLeft(30);
+    const newTimerId = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime <= 1) {
+          // Time's up - other player wins
+          const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
+          const roomId = privateGameId ? privateGameId : gameId;
+          socket.emit('gameOver', { 
+            gameId: roomId,
+            winner: otherPlayer, 
+            message: `${players[otherPlayer].username} wins by timeout!` 
+          });
+          clearInterval(newTimerId);
+          setTimerId(null);
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+    setTimerId(newTimerId);
+  }, [timerId, gameId, privateGameId, players, socket, isMyTurn, gameStarted, winner, getMyColor]);
+
+  // Reset timer on turn change and game start (only for online games)
+  useEffect(() => {
+    if (gameStarted && !winner && gameMode === 'online') {
+      resetTimer();
+    } else {
+      // Stop timer for non-online games or when game is over
+      if (timerId) {
+        clearInterval(timerId);
+        setTimerId(null);
+      }
+    }
+  }, [isMyTurn, gameStarted, winner, gameMode, resetTimer]);
+
+  // Clean up timer on unmount and logout
+  useEffect(() => {
+    return () => {
+      if (timerId) {
+        clearInterval(timerId);
+      }
+    };
+  }, [timerId]);
+
+  useEffect(() => { isMyTurnRef.current = isMyTurn; }, [isMyTurn]);
+
   const [language, setLanguage] = useState(() => {
     const savedLanguage = localStorage.getItem('language');
     return savedLanguage || 'English';
@@ -887,60 +945,6 @@ function App() {
     // ... existing move logic ...
   };
 
-  // Add timer reset function
-  const resetTimer = useCallback(() => {
-    // Clear existing timer
-    if (timerId) {
-      clearInterval(timerId);
-      setTimerId(null);
-    }
-    
-    // Only start timer if it's my turn and game is active
-    if (!isMyTurn || !gameStarted || winner) return;
-    
-    setTimeLeft(30);
-    const newTimerId = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          // Time's up - other player wins
-            const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
-          const roomId = privateGameId ? privateGameId : gameId;
-            socket.emit('gameOver', { 
-            gameId: roomId,
-              winner: otherPlayer, 
-              message: `${players[otherPlayer].username} wins by timeout!` 
-            });
-          clearInterval(newTimerId);
-          setTimerId(null);
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-    setTimerId(newTimerId);
-  }, [timerId, gameId, privateGameId, players, socket, isMyTurn, gameStarted, winner, getMyColor]);
-
-  // Reset timer on turn change and game start (only for online games)
-  useEffect(() => {
-    if (gameStarted && !winner && gameMode === 'online') {
-      resetTimer();
-    } else {
-      // Stop timer for non-online games or when game is over
-      if (timerId) {
-        clearInterval(timerId);
-        setTimerId(null);
-    }
-    }
-  }, [isMyTurn, gameStarted, winner, gameMode, resetTimer]);
-
-  // Clean up timer on unmount and logout
-  useEffect(() => {
-    return () => {
-      if (timerId) {
-        clearInterval(timerId);
-      }
-    };
-  }, [timerId]);
 
   // OLD BOT AI FUNCTIONS - DEPRECATED (Now using GameBot class)
   // Smart move evaluation with prediction
