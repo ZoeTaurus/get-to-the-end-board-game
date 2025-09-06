@@ -84,11 +84,16 @@ function App() {
 
   // Reset timer when it's my turn in online games
   useEffect(() => {
+    console.log('⏰ TIMER DEBUG:', { gameStarted, winner, gameMode, isMyTurn, myColor: getMyColor(), username, opponent });
     if (gameStarted && !winner && gameMode === 'online' && isMyTurn) {
       const newTime = new Date(); newTime.setSeconds(newTime.getSeconds() + 30);
       restart(newTime);
+      console.log('⏰ TIMER STARTED for', getMyColor());
     } else if (!gameStarted || winner || gameMode !== 'online') {
       pause();
+      console.log('⏰ TIMER PAUSED - reason:', !gameStarted ? 'not started' : winner ? 'game over' : 'not online');
+    } else {
+      console.log('⏰ TIMER NOT STARTED - not my turn');
     }
   }, [isMyTurn, gameStarted, winner, gameMode, restart, pause]);
 
@@ -2331,7 +2336,7 @@ function App() {
             </div>
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
               {gameMode === 'local'
-                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username} ${getTranslation(language).game.opponentTurn}`
+                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username} ${getTranslation(language).game.yourTurn}`
                 : (isMyTurn
                   ? getTranslation(language).game.yourTurn
                   : (gameMode === 'bot'
