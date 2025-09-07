@@ -71,10 +71,10 @@ function App() {
   });
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
-  // ⏰ SUPER SIMPLE TIMER USING REACT-TIMER-HOOK (5 lines!)
-  const time = new Date(); time.setSeconds(time.getSeconds() + 30);
+  // ⏰ TIMER USING REACT-TIMER-HOOK (Fixed initialization!)
   const { seconds, restart, pause, resume, isRunning } = useTimer({ 
-    expiryTimestamp: time, 
+    expiryTimestamp: new Date(Date.now() + 30000), // Initialize once with 30 seconds
+    autoStart: false, // Don't auto-start, we'll control it manually
     onExpire: () => {
       const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
       const roomId = privateGameId ? privateGameId : gameId;
@@ -2409,9 +2409,9 @@ function App() {
                             borderColor: pieceThemes[pieceTheme][piece.color === 'red' ? 'player1' : 'player2'].border
                           }}
                         >
-                          {piece.type === 'circle' && piece.eatenCount !== undefined && 
-                            <span className="eaten-count">{piece.eatenCount}</span>
-                          }
+                          {piece.type === 'circle' && (
+                            <span className="eaten-count">{piece.eatenCount || 0}</span>
+                          )}
                         </div>
                       )}
                     </div>
