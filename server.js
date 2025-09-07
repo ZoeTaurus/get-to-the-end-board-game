@@ -417,22 +417,25 @@ io.on('connection', (socket) => {
     // Add player to the game
     privateGame.players.push(socket.id);
     privateGame.gameState = 'playing';
+    privateGame.currentTurn = privateGame.hostSocketId; // Host starts first (like regular games)
     
     // Join the player to the game room
     socket.join(gameCode);
     
-    // Notify host that opponent joined
+    // Notify host that opponent joined with turn info
     io.to(privateGame.hostSocketId).emit('opponentJoinedPrivateGame', {
       opponentUsername: username,
       gameCode,
-      gameId: privateGame.gameId
+      gameId: privateGame.gameId,
+      currentTurn: privateGame.currentTurn // ← Add turn info!
     });
     
-    // Notify guest that they joined successfully
+    // Notify guest that they joined successfully with turn info
     socket.emit('privateGameJoined', {
       hostUsername: privateGame.hostUsername,
       gameCode,
-      gameId: privateGame.gameId
+      gameId: privateGame.gameId,
+      currentTurn: privateGame.currentTurn // ← Add turn info!
     });
     
     // Notify all players that the game has started

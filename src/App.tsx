@@ -84,16 +84,11 @@ function App() {
 
   // Reset timer when it's my turn in online games
   useEffect(() => {
-    console.log('⏰ TIMER DEBUG:', { gameStarted, winner, gameMode, isMyTurn, myColor: getMyColor(), username, opponent });
     if (gameStarted && !winner && gameMode === 'online' && isMyTurn) {
       const newTime = new Date(); newTime.setSeconds(newTime.getSeconds() + 30);
       restart(newTime);
-      console.log('⏰ TIMER STARTED for', getMyColor());
     } else if (!gameStarted || winner || gameMode !== 'online') {
       pause();
-      console.log('⏰ TIMER PAUSED - reason:', !gameStarted ? 'not started' : winner ? 'game over' : 'not online');
-    } else {
-      console.log('⏰ TIMER NOT STARTED - not my turn');
     }
   }, [isMyTurn, gameStarted, winner, gameMode, restart, pause]);
 
@@ -421,7 +416,10 @@ function App() {
       setScreen('game');
       setGameStarted(true);
       setCurrentPlayer('red');
-      setIsMyTurn(false); // Host goes first
+      
+      // Use server's turn decision (like regular games)
+      const isMyTurnNow = data.currentTurn === socket.id;
+      setIsMyTurn(isMyTurnNow);
       
       // Show briefing with host info
       showGameBriefing(data.hostUsername, playerPoints.red);
@@ -465,10 +463,13 @@ function App() {
       setScreen('game');
       setGameStarted(true);
       setCurrentPlayer('red');
-      setIsMyTurn(true); // Host goes first
+      
+      // Use server's turn decision (like regular games)
+      const isMyTurnNow = data.currentTurn === socket.id;
+      setIsMyTurn(isMyTurnNow);
       
       // Show briefing with guest info
-      showGameBriefing(data.guestUsername, playerPoints.blue);
+      showGameBriefing(data.opponentUsername, playerPoints.blue);
     });
 
     return () => {
@@ -2336,7 +2337,7 @@ function App() {
             </div>
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
               {gameMode === 'local'
-                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username} ${getTranslation(language).game.yourTurn}`
+                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username} ${getTranslation(language).game.opponentTurn}`
                 : (isMyTurn
                   ? getTranslation(language).game.yourTurn
                   : (gameMode === 'bot'
