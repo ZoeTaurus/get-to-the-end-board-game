@@ -2200,31 +2200,64 @@ button {
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
 }
 
-/* 📱 PHONE RESPONSIVE STYLES */
+/* 📱 PHONE RESPONSIVE - MAKE EVERYTHING SMALLER */
 @media (max-width: 768px) {
+  body {
+    font-size: 12px !important;
+  }
+  
+  .app {
+    padding: 5px !important;
+    overflow-x: auto !important;
+  }
+  
   .board-container {
-    transform: scale(0.8) translate(-50%, -50%);
-    width: 90vw !important;
-    max-width: 400px !important;
+    transform: scale(0.6) translate(-50%, -50%) !important;
+    width: 300px !important;
+    height: 300px !important;
   }
   
   .game-interface {
-    padding: 10px !important;
-    font-size: 0.9rem !important;
+    padding: 5px !important;
+    font-size: 0.7rem !important;
+    margin: 5px !important;
   }
   
   .player-indicator {
-    padding: 8px 15px !important;
-    font-size: 1rem !important;
+    padding: 5px 10px !important;
+    font-size: 0.8rem !important;
+    margin: 5px 0 !important;
   }
   
   .game-message {
-    font-size: 0.9rem !important;
-    padding: 5px !important;
+    font-size: 0.7rem !important;
+    padding: 3px !important;
+    margin: 3px 0 !important;
   }
   
   .points-display {
-    flex-direction: column !important;
-    gap: 5px !important;
+    flex-direction: row !important;
+    gap: 10px !important;
+    font-size: 0.7rem !important;
+  }
+  
+  .shop-screen {
+    padding: 10px !important;
+    font-size: 0.8rem !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .home-screen, .help-screen, .private-screen {
+    padding: 10px !important;
+    font-size: 0.9rem !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+  
+  button {
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+    margin: 3px !important;
   }
 } 

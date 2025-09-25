@@ -128,29 +128,19 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // Timer countdown logic - runs for all players
+  // SIMPLE TIMER - ALWAYS COUNTS DOWN
   React.useEffect(() => {
-    if (gameStarted && !winner && timer > 0) {
-      const countdown = setTimeout(() => {
-        setTimer(timer - 1);
-      }, 1000);
-      return () => clearTimeout(countdown);
-    } else if (gameStarted && !winner && timer === 0) {
-      // Time's up! Current player loses
-      if (isMyTurn) {
-        const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
-        setWinner(otherPlayer);
-        setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
-      }
-    }
-  }, [gameStarted, winner, timer, isMyTurn]);
-
-  // Reset timer when turn changes
-  React.useEffect(() => {
-    if (gameStarted && !winner) {
-      setTimer(30);
-    }
-  }, [gameStarted, isMyTurn, winner]);
+    const countdown = setInterval(() => {
+      setTimer(prev => {
+        if (prev <= 1) {
+          return 30; // Reset to 30 when it reaches 0
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => clearInterval(countdown);
+  }, []);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
