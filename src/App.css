@@ -2200,21 +2200,23 @@ button {
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
 }
 
-/* 📱 PHONE RESPONSIVE - MAKE EVERYTHING SMALLER */
+/* 📱 PHONE RESPONSIVE - EVERYTHING SMALL + SCROLLING */
 @media (max-width: 768px) {
   body {
     font-size: 12px !important;
+    overflow-x: auto !important;
   }
   
   .app {
     padding: 5px !important;
-    overflow-x: auto !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
   }
   
   .board-container {
-    transform: scale(0.6) translate(-50%, -50%) !important;
-    width: 300px !important;
-    height: 300px !important;
+    transform: scale(0.5) translate(-50%, -50%) !important;
+    width: 250px !important;
+    height: 250px !important;
   }
   
   .game-interface {
@@ -2224,40 +2226,48 @@ button {
   }
   
   .player-indicator {
-    padding: 5px 10px !important;
-    font-size: 0.8rem !important;
-    margin: 5px 0 !important;
+    padding: 4px 8px !important;
+    font-size: 0.7rem !important;
+    margin: 3px 0 !important;
   }
   
   .game-message {
-    font-size: 0.7rem !important;
-    padding: 3px !important;
-    margin: 3px 0 !important;
+    font-size: 0.6rem !important;
+    padding: 2px !important;
+    margin: 2px 0 !important;
   }
   
   .points-display {
     flex-direction: row !important;
-    gap: 10px !important;
+    gap: 5px !important;
+    font-size: 0.6rem !important;
+  }
+  
+  /* Timer smaller on phone */
+  .timer-display {
+    font-size: 1rem !important;
+    padding: 5px !important;
+    margin: 5px 0 !important;
+  }
+  
+  /* All screens smaller */
+  .home-screen, .help-screen, .private-screen, .shop-screen {
+    padding: 10px !important;
     font-size: 0.7rem !important;
-  }
-  
-  .shop-screen {
-    padding: 10px !important;
-    font-size: 0.8rem !important;
     max-height: 90vh !important;
     overflow-y: auto !important;
   }
   
-  .home-screen, .help-screen, .private-screen {
-    padding: 10px !important;
-    font-size: 0.9rem !important;
-    max-height: 90vh !important;
-    overflow-y: auto !important;
-  }
-  
+  /* Buttons smaller */
   button {
-    padding: 8px 12px !important;
-    font-size: 0.8rem !important;
-    margin: 3px !important;
+    padding: 6px 10px !important;
+    font-size: 0.7rem !important;
+    margin: 2px !important;
+  }
+  
+  /* Navigation smaller */
+  .navigation-bar {
+    padding: 5px !important;
+    font-size: 0.7rem !important;
   }
 } 

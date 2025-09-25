@@ -128,12 +128,12 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // SIMPLE TIMER - ALWAYS COUNTS DOWN
+  // SIMPLE DUMMY TIMER - JUST COUNTS DOWN ALWAYS
   React.useEffect(() => {
     const countdown = setInterval(() => {
       setTimer(prev => {
         if (prev <= 1) {
-          return 30; // Reset to 30 when it reaches 0
+          return 30; // Reset to 30
         }
         return prev - 1;
       });
