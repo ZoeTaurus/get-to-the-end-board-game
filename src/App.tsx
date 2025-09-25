@@ -76,6 +76,7 @@ function App() {
     expiryTimestamp: new Date(Date.now() + 30000), // Initialize once with 30 seconds
     autoStart: false, // Don't auto-start, we'll control it manually
     onExpire: () => {
+      console.log('⏰ TIMER EXPIRED! Current seconds:', seconds);
       const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
       if (gameMode === 'online') {
         const roomId = privateGameId ? privateGameId : gameId;
@@ -88,12 +89,19 @@ function App() {
     }
   });
 
-  // Reset timer when it's my turn in ALL game modes
+  // Debug: Log timer state changes
+  useEffect(() => {
+    console.log('⏰ Timer state - seconds:', seconds, 'isRunning:', isRunning);
+  }, [seconds, isRunning]);
+
+  // Reset timer when it's my turn (all game modes for now)
   useEffect(() => {
     if (gameStarted && !winner && isMyTurn) {
+      console.log('🔄 Timer restart triggered - gameStarted:', gameStarted, 'winner:', winner, 'isMyTurn:', isMyTurn);
       const newTime = new Date(); newTime.setSeconds(newTime.getSeconds() + 30);
       restart(newTime);
     } else if (!gameStarted || winner) {
+      console.log('⏸️ Timer paused - gameStarted:', gameStarted, 'winner:', winner);
       pause();
     }
   }, [isMyTurn, gameStarted, winner, restart, pause]);
@@ -2352,7 +2360,7 @@ function App() {
                     )
                   )
               }
-              {gameMode === 'online' && (
+              {gameStarted && !winner && (
                 <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
                   {getTranslation(language).game.timeLeft.replace('{seconds}', seconds.toString())}
                 </div>
