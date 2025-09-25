@@ -77,20 +77,26 @@ function App() {
     autoStart: false, // Don't auto-start, we'll control it manually
     onExpire: () => {
       const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
-      const roomId = privateGameId ? privateGameId : gameId;
-      socket.emit('gameOver', { gameId: roomId, winner: otherPlayer, message: `${players[otherPlayer].username} wins by timeout!` });
+      if (gameMode === 'online') {
+        const roomId = privateGameId ? privateGameId : gameId;
+        socket.emit('gameOver', { gameId: roomId, winner: otherPlayer, message: `${players[otherPlayer].username} wins by timeout!` });
+      } else {
+        // For local and bot games, end the game directly
+        setWinner(otherPlayer);
+        setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
+      }
     }
   });
 
-  // Reset timer when it's my turn in online games
+  // Reset timer when it's my turn in ALL game modes
   useEffect(() => {
-    if (gameStarted && !winner && gameMode === 'online' && isMyTurn) {
+    if (gameStarted && !winner && isMyTurn) {
       const newTime = new Date(); newTime.setSeconds(newTime.getSeconds() + 30);
       restart(newTime);
-    } else if (!gameStarted || winner || gameMode !== 'online') {
+    } else if (!gameStarted || winner) {
       pause();
     }
-  }, [isMyTurn, gameStarted, winner, gameMode, restart, pause]);
+  }, [isMyTurn, gameStarted, winner, restart, pause]);
 
   const [language, setLanguage] = useState(() => {
     const savedLanguage = localStorage.getItem('language');
