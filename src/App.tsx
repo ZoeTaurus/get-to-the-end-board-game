@@ -128,27 +128,34 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // Timer countdown logic
+  // Timer countdown logic - counts for whoever's turn it is
   React.useEffect(() => {
-    if (gameStarted && !winner && isMyTurn && timer > 0) {
+    if (gameStarted && !winner && timer > 0) {
       const countdown = setTimeout(() => {
         setTimer(timer - 1);
       }, 1000);
       return () => clearTimeout(countdown);
     } else if (timer === 0) {
-      // Time's up! Other player wins
-      const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
-      setWinner(otherPlayer);
-      setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
+      // Time's up! Current player loses
+      if (gameMode === 'local') {
+        const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+        setWinner(otherPlayer);
+        setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
+      } else {
+        // Online/bot games
+        const otherPlayer = isMyTurn ? (getMyColor() === 'red' ? 'blue' : 'red') : getMyColor();
+        setWinner(otherPlayer);
+        setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
+      }
     }
-  }, [gameStarted, winner, isMyTurn, timer]);
+  }, [gameStarted, winner, timer]);
 
-  // Reset timer when it becomes my turn
+  // Reset timer when turn changes
   React.useEffect(() => {
-    if (gameStarted && isMyTurn) {
+    if (gameStarted) {
       setTimer(30);
     }
-  }, [gameStarted, isMyTurn]);
+  }, [gameStarted, isMyTurn, currentPlayer]);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
