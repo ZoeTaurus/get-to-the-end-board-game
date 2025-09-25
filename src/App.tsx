@@ -2354,18 +2354,21 @@ function App() {
                   )
               }
                 </div>
-            {/* ⏰ Timer Display */}
-            {gameStarted && !winner && (
-              <div className="timer-display" style={{ 
-                fontSize: '1.5rem', 
-                fontWeight: 'bold', 
-                textAlign: 'center', 
-                margin: '10px 0',
-                color: timer <= 10 ? '#ff0000' : '#4444ff'
-              }}>
-                ⏰ {timer}s
+            {/* ⏰ SIMPLE TIMER - ALWAYS VISIBLE */}
+            <div style={{ 
+              fontSize: '2rem', 
+              fontWeight: 'bold', 
+              textAlign: 'center', 
+              margin: '15px 0',
+              padding: '10px',
+              backgroundColor: timer <= 10 ? '#ffeeee' : '#f0f8ff',
+              border: '2px solid',
+              borderColor: timer <= 10 ? '#ff0000' : '#4444ff',
+              borderRadius: '10px',
+              color: timer <= 10 ? '#ff0000' : '#4444ff'
+            }}>
+              ⏰ {timer} seconds
             </div>
-            )}
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
                {(() => {
                  if (gameMode === 'local') {

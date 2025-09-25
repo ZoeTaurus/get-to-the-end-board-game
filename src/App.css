@@ -2198,4 +2198,33 @@ button {
   background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+/* 📱 PHONE RESPONSIVE STYLES */
+@media (max-width: 768px) {
+  .board-container {
+    transform: scale(0.8) translate(-50%, -50%);
+    width: 90vw !important;
+    max-width: 400px !important;
+  }
+  
+  .game-interface {
+    padding: 10px !important;
+    font-size: 0.9rem !important;
+  }
+  
+  .player-indicator {
+    padding: 8px 15px !important;
+    font-size: 1rem !important;
+  }
+  
+  .game-message {
+    font-size: 0.9rem !important;
+    padding: 5px !important;
+  }
+  
+  .points-display {
+    flex-direction: column !important;
+    gap: 5px !important;
+  }
 } 
