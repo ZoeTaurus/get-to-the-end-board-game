@@ -4,7 +4,6 @@ import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import Login from './Login';
 import { GameBot, convertBoardForBot, convertMoveFromBot } from './GameBot.js';
-import { useTimer } from 'react-timer-hook';
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
@@ -71,40 +70,10 @@ function App() {
   });
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   
-  // ⏰ TIMER USING REACT-TIMER-HOOK (Fixed initialization!)
-  const { seconds, restart, pause, resume, isRunning } = useTimer({ 
-    expiryTimestamp: new Date(Date.now() + 30000), // Initialize once with 30 seconds
-    autoStart: false, // Don't auto-start, we'll control it manually
-    onExpire: () => {
-      console.log('⏰ TIMER EXPIRED! Current seconds:', seconds);
-      const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
-      if (gameMode === 'online') {
-        const roomId = privateGameId ? privateGameId : gameId;
-        socket.emit('gameOver', { gameId: roomId, winner: otherPlayer, message: `${players[otherPlayer].username} wins by timeout!` });
-      } else {
-        // For local and bot games, end the game directly
-        setWinner(otherPlayer);
-        setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
-      }
-    }
-  });
-
-  // Debug: Log timer state changes
-  useEffect(() => {
-    console.log('⏰ Timer state - seconds:', seconds, 'isRunning:', isRunning);
-  }, [seconds, isRunning]);
-
-  // Reset timer when it's my turn (all game modes for now)
-  useEffect(() => {
-    if (gameStarted && !winner && isMyTurn) {
-      console.log('🔄 Timer restart triggered - gameStarted:', gameStarted, 'winner:', winner, 'isMyTurn:', isMyTurn);
-      const newTime = new Date(); newTime.setSeconds(newTime.getSeconds() + 30);
-      restart(newTime);
-    } else if (!gameStarted || winner) {
-      console.log('⏸️ Timer paused - gameStarted:', gameStarted, 'winner:', winner);
-      pause();
-    }
-  }, [isMyTurn, gameStarted, winner, restart, pause]);
+  // 🕐 Simple 30-second countdown timer
+  const [timer, setTimer] = useState(30);
+  
+  
 
   const [language, setLanguage] = useState(() => {
     const savedLanguage = localStorage.getItem('language');
@@ -158,6 +127,28 @@ function App() {
     }
     return username === players.red.username ? 'red' : 'blue';
   };
+
+  // Timer countdown logic
+  React.useEffect(() => {
+    if (gameStarted && !winner && isMyTurn && timer > 0) {
+      const countdown = setTimeout(() => {
+        setTimer(timer - 1);
+      }, 1000);
+      return () => clearTimeout(countdown);
+    } else if (timer === 0) {
+      // Time's up! Other player wins
+      const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
+      setWinner(otherPlayer);
+      setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
+    }
+  }, [gameStarted, winner, isMyTurn, timer]);
+
+  // Reset timer when it becomes my turn
+  React.useEffect(() => {
+    if (gameStarted && isMyTurn) {
+      setTimer(30);
+    }
+  }, [gameStarted, isMyTurn]);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
@@ -1507,7 +1498,7 @@ function App() {
                   const allPoints = playerPoints[getMyColor()];
                   const result = exchangePointsForCoins(allPoints);
                   if (result) {
-                    const successMessage = getTranslation(language).shop?.exchangeSuccess?.replace('{pointsUsed}', result.pointsUsed).replace('{coinsEarned}', result.coinsEarned) || `Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`;
+                    const successMessage = getTranslation(language).shop?.exchangeSuccess?.replace('{pointsUsed}', result.pointsUsed.toString()).replace('{coinsEarned}', result.coinsEarned.toString()) || `Exchanged ${result.pointsUsed} points for ${result.coinsEarned} coins!`;
                     showShopMessageNotification(successMessage, 'success');
                   }
                 }
@@ -2360,12 +2351,19 @@ function App() {
                     )
                   )
               }
-              {gameStarted && !winner && (
-                <div className="timer" style={{ fontSize: '1.2rem', marginTop: '5px', color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
-                  {getTranslation(language).game.timeLeft.replace('{seconds}', seconds.toString())}
-                </div>
-              )}
             </div>
+            {/* ⏰ Timer Display */}
+            {gameStarted && !winner && (
+              <div className="timer-display" style={{ 
+                fontSize: '1.5rem', 
+                fontWeight: 'bold', 
+                textAlign: 'center', 
+                margin: '10px 0',
+                color: timer <= 10 ? '#ff0000' : (getMyColor() === 'red' ? '#ff4444' : '#4444ff')
+              }}>
+                ⏰ {timer}s
+              </div>
+            )}
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
                {(() => {
                  if (gameMode === 'local') {
