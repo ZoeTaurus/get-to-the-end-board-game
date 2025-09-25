@@ -128,34 +128,29 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // Timer countdown logic - counts for whoever's turn it is
+  // Timer countdown logic - runs for all players
   React.useEffect(() => {
     if (gameStarted && !winner && timer > 0) {
       const countdown = setTimeout(() => {
         setTimer(timer - 1);
       }, 1000);
       return () => clearTimeout(countdown);
-    } else if (timer === 0) {
+    } else if (gameStarted && !winner && timer === 0) {
       // Time's up! Current player loses
-      if (gameMode === 'local') {
-        const otherPlayer = currentPlayer === 'red' ? 'blue' : 'red';
-        setWinner(otherPlayer);
-        setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
-      } else {
-        // Online/bot games
-        const otherPlayer = isMyTurn ? (getMyColor() === 'red' ? 'blue' : 'red') : getMyColor();
+      if (isMyTurn) {
+        const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
         setWinner(otherPlayer);
         setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
       }
     }
-  }, [gameStarted, winner, timer]);
+  }, [gameStarted, winner, timer, isMyTurn]);
 
   // Reset timer when turn changes
   React.useEffect(() => {
-    if (gameStarted) {
+    if (gameStarted && !winner) {
       setTimer(30);
     }
-  }, [gameStarted, isMyTurn, currentPlayer]);
+  }, [gameStarted, isMyTurn, winner]);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
@@ -2358,7 +2353,7 @@ function App() {
                     )
                   )
               }
-            </div>
+                </div>
             {/* ⏰ Timer Display */}
             {gameStarted && !winner && (
               <div className="timer-display" style={{ 
@@ -2366,10 +2361,10 @@ function App() {
                 fontWeight: 'bold', 
                 textAlign: 'center', 
                 margin: '10px 0',
-                color: timer <= 10 ? '#ff0000' : (getMyColor() === 'red' ? '#ff4444' : '#4444ff')
+                color: timer <= 10 ? '#ff0000' : '#4444ff'
               }}>
                 ⏰ {timer}s
-              </div>
+            </div>
             )}
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
                {(() => {
