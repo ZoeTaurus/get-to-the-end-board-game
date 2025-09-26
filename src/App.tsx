@@ -128,19 +128,23 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // SIMPLE DUMMY TIMER - JUST COUNTS DOWN ALWAYS
+  // TIMER THAT COUNTS DOWN AND ENDS GAME AT 0
   React.useEffect(() => {
     const countdown = setInterval(() => {
       setTimer(prev => {
         if (prev <= 1) {
-          return 30; // Reset to 30
+          // Timer hit 0 - END THE GAME!
+          const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
+          setWinner(otherPlayer);
+          setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
+          return 30; // Reset for next game
         }
         return prev - 1;
       });
     }, 1000);
     
     return () => clearInterval(countdown);
-  }, []);
+  }, [players, getMyColor, setWinner, setGameMessage]);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
