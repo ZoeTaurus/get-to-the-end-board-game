@@ -157,6 +157,14 @@ function App() {
       setTimer(30);
     }
   }, [gameStarted, isMyTurn, winner, timerStopped]);
+
+  // SIMPLE TURN LOGIC - RED STARTS FIRST
+  React.useEffect(() => {
+    if (gameStarted && !winner) {
+      const myColor = getMyColor();
+      setIsMyTurn(myColor === 'red' || currentPlayer === myColor);
+    }
+  }, [gameStarted, currentPlayer, winner]);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
