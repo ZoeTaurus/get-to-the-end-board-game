@@ -72,6 +72,7 @@ function App() {
   
   // 🕐 Simple 30-second countdown timer
   const [timer, setTimer] = useState(30);
+  const [timerStopped, setTimerStopped] = useState(false);
   
   
 
@@ -131,12 +132,13 @@ function App() {
   // TIMER - ONLY RUNS WHEN BOTH PLAYERS CONNECTED AND GAME ACTIVE
   React.useEffect(() => {
     // Only start timer when game is actually started AND we have an opponent
-    if (!gameStarted || winner || !opponent || gameMode === 'searching') return;
+    if (!gameStarted || winner || !opponent || gameMode === 'searching' || timerStopped) return;
     
     const interval = setInterval(() => {
       setTimer(t => {
         if (t === 1) {
           // TIMEOUT! Current player loses
+          setTimerStopped(true); // STOP TIMER FOREVER
           const myColor = getMyColor();
           const opponentColor = myColor === 'red' ? 'blue' : 'red';
           setWinner(opponentColor);
@@ -147,14 +149,14 @@ function App() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameStarted, winner, opponent, gameMode]);
+  }, [gameStarted, winner, opponent, gameMode, timerStopped]);
 
-  // START TIMER AT 30 WHEN GAME STARTS OR TURN CHANGES
+  // START TIMER AT 30 WHEN GAME STARTS OR TURN CHANGES (BUT NOT AFTER TIMEOUT)
   React.useEffect(() => {
-    if (gameStarted && !winner) {
+    if (gameStarted && !winner && !timerStopped) {
       setTimer(30);
     }
-  }, [gameStarted, isMyTurn, winner]);
+  }, [gameStarted, isMyTurn, winner, timerStopped]);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
