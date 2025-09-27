@@ -128,9 +128,10 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // TIMER - ONLY RUNS DURING ACTIVE GAME
+  // TIMER - ONLY RUNS WHEN BOTH PLAYERS CONNECTED AND GAME ACTIVE
   React.useEffect(() => {
-    if (!gameStarted || winner) return; // Stop if no game or already won
+    // Only start timer when game is actually started AND we have an opponent
+    if (!gameStarted || winner || !opponent || gameMode === 'searching') return;
     
     const interval = setInterval(() => {
       setTimer(t => {
@@ -146,7 +147,7 @@ function App() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [gameStarted, winner]);
+  }, [gameStarted, winner, opponent, gameMode]);
 
   // START TIMER AT 30 WHEN GAME STARTS OR TURN CHANGES
   React.useEffect(() => {
