@@ -128,13 +128,26 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // SIMPLE TIMER
+  // TIMER - COUNTS DOWN AND TRIGGERS TIMEOUT
   React.useEffect(() => {
     const interval = setInterval(() => {
-      setTimer(t => t > 0 ? t - 1 : 30);
+      setTimer(t => {
+        if (t === 1) {
+          // TIMEOUT! End game
+          setWinner('blue'); // Simple - blue wins on timeout
+          setGameMessage('Time up! Blue wins!');
+          return 30; // Reset
+        }
+        return t - 1;
+      });
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // RESET TIMER ON TURN CHANGE
+  React.useEffect(() => {
+    setTimer(30);
+  }, [isMyTurn]);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
