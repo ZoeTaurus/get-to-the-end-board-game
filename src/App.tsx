@@ -128,14 +128,14 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // TIMER - COUNTS DOWN AND TRIGGERS TIMEOUT
+  // TIMER - ONLY RUNS DURING ACTIVE GAME
   React.useEffect(() => {
-    if (!gameStarted || winner) return; // Stop if game not started or already won
+    if (!gameStarted || winner) return; // Stop if no game or already won
     
     const interval = setInterval(() => {
       setTimer(t => {
         if (t === 1) {
-          // TIMEOUT! You lose if it's your turn
+          // TIMEOUT! Current player loses
           const myColor = getMyColor();
           const opponentColor = myColor === 'red' ? 'blue' : 'red';
           setWinner(opponentColor);
