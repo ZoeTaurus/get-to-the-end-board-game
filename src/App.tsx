@@ -130,24 +130,30 @@ function App() {
 
   // TIMER - COUNTS DOWN AND TRIGGERS TIMEOUT
   React.useEffect(() => {
+    if (!gameStarted || winner) return; // Stop if game not started or already won
+    
     const interval = setInterval(() => {
       setTimer(t => {
         if (t === 1) {
-          // TIMEOUT! End game
-          setWinner('blue'); // Simple - blue wins on timeout
-          setGameMessage('Time up! Blue wins!');
-          return 30; // Reset
+          // TIMEOUT! You lose if it's your turn
+          const myColor = getMyColor();
+          const opponentColor = myColor === 'red' ? 'blue' : 'red';
+          setWinner(opponentColor);
+          setGameMessage(`${players[opponentColor].username} wins by timeout!`);
+          return 0; // Stop at 0
         }
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [gameStarted, winner]);
 
-  // RESET TIMER ON TURN CHANGE
+  // START TIMER AT 30 WHEN GAME STARTS OR TURN CHANGES
   React.useEffect(() => {
-    setTimer(30);
-  }, [isMyTurn]);
+    if (gameStarted && !winner) {
+      setTimer(30);
+    }
+  }, [gameStarted, isMyTurn, winner]);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
