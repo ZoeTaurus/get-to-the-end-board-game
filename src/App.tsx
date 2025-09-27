@@ -128,23 +128,13 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // TIMER THAT COUNTS DOWN AND ENDS GAME AT 0
+  // SIMPLE TIMER
   React.useEffect(() => {
-    const countdown = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) {
-          // Timer hit 0 - END THE GAME!
-          const otherPlayer = getMyColor() === 'red' ? 'blue' : 'red';
-          setWinner(otherPlayer);
-          setGameMessage(`${players[otherPlayer].username} wins by timeout!`);
-          return 30; // Reset for next game
-        }
-        return prev - 1;
-      });
+    const interval = setInterval(() => {
+      setTimer(t => t > 0 ? t - 1 : 30);
     }, 1000);
-    
-    return () => clearInterval(countdown);
-  }, [players, getMyColor, setWinner, setGameMessage]);
+    return () => clearInterval(interval);
+  }, []);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
