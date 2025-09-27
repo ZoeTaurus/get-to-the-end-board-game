@@ -132,7 +132,7 @@ function App() {
   // TIMER - ONLY RUNS WHEN BOTH PLAYERS CONNECTED AND GAME ACTIVE
   React.useEffect(() => {
     // Only start timer when game is actually started AND we have an opponent
-    if (!gameStarted || winner || !opponent || gameMode === 'searching' || timerStopped) return;
+    if (!gameStarted || winner || !opponent || timerStopped || waitingForOpponent) return;
     
     const interval = setInterval(() => {
       setTimer(t => {
