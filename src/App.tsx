@@ -131,8 +131,8 @@ function App() {
 
   // TIMER - ONLY RUNS WHEN BOTH PLAYERS CONNECTED AND GAME ACTIVE
   React.useEffect(() => {
-    // Only start timer when game is actually started AND we have an opponent
-    if (!gameStarted || winner || !opponent || timerStopped || waitingForOpponent) return;
+    // Only start timer when game is actually started AND we have both players
+    if (!gameStarted || winner || timerStopped || !opponent || isSearching) return;
     
     const interval = setInterval(() => {
       setTimer(t => {
@@ -161,10 +161,14 @@ function App() {
   // SIMPLE TURN LOGIC - RED STARTS FIRST
   React.useEffect(() => {
     if (gameStarted && !winner) {
-      const myColor = getMyColor();
-      setIsMyTurn(myColor === 'red' || currentPlayer === myColor);
+      if (gameMode === 'local') {
+        setIsMyTurn(currentPlayer === getMyColor());
+      } else {
+        // For online/bot games, red player starts first
+        setIsMyTurn(getMyColor() === 'red');
+      }
     }
-  }, [gameStarted, currentPlayer, winner]);
+  }, [gameStarted, currentPlayer, winner, gameMode]);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
