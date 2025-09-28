@@ -5,6 +5,12 @@ import './App.css';
 import Login from './Login';
 import { GameBot, convertBoardForBot, convertMoveFromBot } from './GameBot.js';
 
+// Import Player enum from GameBot for proper bot recognition
+const Player = {
+  PLAYER: 'player',
+  BOT: 'bot'
+};
+
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
 type GameScreen = 'home' | 'game' | 'help' | 'bots' | 'private' | 'shop';
@@ -1266,7 +1272,7 @@ function App() {
     const botBoard = convertBoardForBot(board);
     const gameState = { 
       board: botBoard, 
-      currentPlayer: 'bot' as any // The bot is playing as Player.BOT (blue pieces)
+      currentPlayer: Player.BOT // The bot is playing as Player.BOT (blue pieces)
     };
     
     const botMove = gameBot.makeMove(gameState);
@@ -1279,6 +1285,10 @@ function App() {
     }
     
     console.log('🤖 GameBot AI chose move:', botMove);
+    console.log('🤖 Move has capture?', !!botMove.eatenPiece);
+    if (botMove.eatenPiece) {
+      console.log('🤖 Capturing piece at:', [botMove.eatenPiece.row, botMove.eatenPiece.col]);
+    }
     
     // Convert GameBot move back to our format
     const gameMove = convertMoveFromBot(botMove);
