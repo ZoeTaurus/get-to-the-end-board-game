@@ -27,14 +27,36 @@ const Player = {
 
 export class GameBot {
   constructor(difficulty) {
-    this.difficulty = difficulty;
+    // Validate and sanitize difficulty parameter
+    if (typeof difficulty !== 'number' || difficulty < 1 || difficulty > 5) {
+      console.warn(`Invalid difficulty level: ${difficulty}. Defaulting to level 3.`);
+      this.difficulty = 3;
+    } else {
+      this.difficulty = Math.floor(difficulty); // Ensure integer
+    }
   }
 
-  // --- FIX #1: THE "QUARANTINE ZONE" ---
-  // We now create a deep copy of the game state AT THE VERY BEGINNING.
-  // The 'real' gameState is never touched by the thinking process again.
+  // ====================================================================
+  // MAIN AI DECISION FUNCTIONS
+  // ====================================================================
+
+  /**
+   * MAIN AI DECISION FUNCTION
+   * Analyzes the current game state and returns the best possible move.
+   * Uses deep copying to ensure the original game state remains unmodified.
+   * 
+   * @param {GameState} gameState - Current state of the game
+   * @returns {Move|null} - Best move to make, or null if no moves available
+   */
   makeMove(gameState) {
-    // Create a perfectly safe, deep-copied clone for the bot to think with.
+    // Validate input
+    if (!gameState || !gameState.board || !Array.isArray(gameState.board)) {
+      console.error('Invalid game state provided to GameBot');
+      return null;
+    }
+    
+    // Create a safe, deep-copied clone for AI analysis without side effects
+    // Using JSON for simplicity; could be optimized with custom deep copy for performance
     const safeGameState = JSON.parse(JSON.stringify(gameState));
     
     const allPossibleMoves = this.getAllValidMoves(safeGameState, Player.BOT);
@@ -65,7 +87,10 @@ export class GameBot {
     }
   }
   
-  // PERFECT DEPTH CALCULATION: Deeper thinking for perfect play
+  /**
+   * PERFECT DEPTH CALCULATION: Deeper thinking for perfect play
+   * @returns {number} - Search depth based on difficulty level
+   */
   getDepth() {
     switch(this.difficulty) {
       case 1: return 1;  // Easy: Minimal lookahead
@@ -76,6 +101,10 @@ export class GameBot {
       default: return 2;
     }
   }
+
+  // ====================================================================
+  // DIFFICULTY-SPECIFIC MOVE SELECTION
+  // ====================================================================
 
   // EASY BOT: Simple and beatable, but not completely stupid
   easyMove(moves) {
@@ -181,6 +210,10 @@ export class GameBot {
     return center1 < center2;
   }
   
+  // ====================================================================
+  // CORE AI ALGORITHMS
+  // ====================================================================
+
   /**
    * The core Minimax algorithm with Alpha-Beta Pruning.
    * This allows the bot to "look ahead" several moves.
@@ -191,6 +224,11 @@ export class GameBot {
     }
 
     const possibleMoves = this.getAllValidMoves(state, isMaximizingPlayer ? Player.BOT : Player.PLAYER);
+
+    // Handle edge case: no moves available (stalemate or blocked position)
+    if (possibleMoves.length === 0) {
+      return this.evaluateBoard(state); // Evaluate current position
+    }
 
     if (isMaximizingPlayer) {
       let maxEval = -Infinity;
@@ -262,8 +300,12 @@ export class GameBot {
     const playerCaptures = playerMoves.filter(m => m.eatenPiece);
     
     // DEEP ANTICIPATION: Look at what player will do after ANY bot move
+    // Optimize: Limit analysis for lower difficulties to improve performance
     const anticipatedThreats = [];
-    for (const botMove of botMoves) {
+    const maxMovesToAnalyze = this.difficulty >= 4 ? botMoves.length : Math.min(botMoves.length, 10);
+    
+    for (let i = 0; i < maxMovesToAnalyze; i++) {
+      const botMove = botMoves[i];
       const afterBotMove = this.simulateMove(state, botMove);
       const playerResponseMoves = this.getAllValidMoves(afterBotMove, Player.PLAYER);
       const playerResponseCaptures = playerResponseMoves.filter(m => m.eatenPiece);
@@ -729,7 +771,9 @@ export class GameBot {
     return totalScore;
   }
   
-  // --- Helper Functions ---
+  // ====================================================================
+  // GAME MECHANICS AND VALIDATION
+  // ====================================================================
 
   getAllValidMoves(gameState, player) {
     const moves = [];
@@ -793,10 +837,18 @@ export class GameBot {
   /**
    * Simulates a move on a new board instance to prevent changing the original game state.
    * This is crucial for the recursive AI functions.
+   * Uses efficient shallow copy for pieces since they're small objects.
    */
   simulateMove(state, move) {
-    // This next line is the most important part!
-    // It creates a "deep copy" of the board and all the piece objects in it.
+    // Validate move object
+    if (!move || !move.from || !move.to || 
+        typeof move.from.row !== 'number' || typeof move.from.col !== 'number' ||
+        typeof move.to.row !== 'number' || typeof move.to.col !== 'number') {
+      console.warn('Invalid move object provided to simulateMove');
+      return state;
+    }
+    
+    // Efficient deep copy: map creates new arrays, spread operator copies piece objects
     const newBoard = state.board.map(row => 
       row.map(cell => (cell ? { ...cell } : null))
     );
@@ -829,7 +881,12 @@ export class GameBot {
   }
 
   isValidPosition(row, col, boardRows, boardCols) {
-    return row >= 0 && row < boardRows && col >= 0 && col < boardCols;
+    // Validate that inputs are numbers and within bounds
+    return (
+      typeof row === 'number' && typeof col === 'number' &&
+      typeof boardRows === 'number' && typeof boardCols === 'number' &&
+      row >= 0 && row < boardRows && col >= 0 && col < boardCols
+    );
   }
 
   isGameOver(state) {
@@ -878,6 +935,10 @@ export class GameBot {
       }
       return count;
   }
+
+  // ====================================================================
+  // UTILITY AND HELPER FUNCTIONS
+  // ====================================================================
 
   // Helper function to count friendly pieces near a position
   countNearbyFriendlies(row, col, board) {
@@ -946,11 +1007,16 @@ export class GameBot {
   }
 }
 
-// --------------------- Helper Functions for Your Game ---------------------
+// ====================================================================
+// EXTERNAL INTEGRATION HELPERS
+// ====================================================================
 
 /**
  * Helper function to convert your game's board format to the GameBot's format
  * Note: The new bot uses column-based win conditions (bot wins at right column, player at left column)
+ * 
+ * @param {Array<Array>} board - Your game's board representation
+ * @returns {Array<Array>} - Board format compatible with GameBot
  */
 export function convertBoardForBot(board) {
   const convertedBoard = board.map(row => 
@@ -969,6 +1035,9 @@ export function convertBoardForBot(board) {
 
 /**
  * Helper function to convert a GameBot move back to your game's format
+ * 
+ * @param {Move} move - Move object from GameBot
+ * @returns {Object} - Move format compatible with your game
  */
 export function convertMoveFromBot(move) {
   return {
