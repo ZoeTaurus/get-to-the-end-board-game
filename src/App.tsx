@@ -129,10 +129,10 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // TIMER - ONLY RUNS WHEN BOTH PLAYERS CONNECTED AND GAME ACTIVE
+  // TIMER - ONLY RUNS FOR ONLINE GAMES (NOT BOT GAMES)
   React.useEffect(() => {
-    // Only start timer when game is actually started AND we have both players
-    if (!gameStarted || winner || timerStopped || !opponent || isSearching) return;
+    // Only start timer for online games with both players connected
+    if (!gameStarted || winner || timerStopped || !opponent || isSearching || gameMode === 'bot') return;
     
     const interval = setInterval(() => {
       setTimer(t => {
@@ -151,12 +151,12 @@ function App() {
     return () => clearInterval(interval);
   }, [gameStarted, winner, opponent, gameMode, timerStopped]);
 
-  // START TIMER AT 30 WHEN GAME STARTS OR TURN CHANGES (BUT NOT AFTER TIMEOUT)
+  // START TIMER AT 30 FOR ONLINE GAMES ONLY (NOT BOT GAMES)
   React.useEffect(() => {
-    if (gameStarted && !winner && !timerStopped) {
+    if (gameStarted && !winner && !timerStopped && gameMode !== 'bot') {
       setTimer(30);
     }
-  }, [gameStarted, isMyTurn, winner, timerStopped]);
+  }, [gameStarted, isMyTurn, winner, timerStopped, gameMode]);
 
   // SIMPLE TURN LOGIC - RED STARTS FIRST
   React.useEffect(() => {
@@ -832,16 +832,29 @@ function App() {
             setCurrentPlayer('blue');
             setIsMyTurn(false); // Give turn to bot
             
-                // Bot makes move after a natural delay to feel more human
-    console.log('🤖 Bot turn triggered, thinking...');
+            // Show "Bot's turn" message immediately
+            setGameMessage(`Bot is thinking...`);
+            
+            // Bot makes move after a controlled thinking delay
+            console.log('🤖 Bot turn triggered, thinking...');
+            
+            // Different thinking times based on difficulty for realism
+            const thinkingTime = {
+              'easy': 500 + Math.random() * 300,     // 500-800ms
+              'normal': 800 + Math.random() * 400,   // 800-1200ms  
+              'hard': 1200 + Math.random() * 600,    // 1200-1800ms
+              'pro': 1800 + Math.random() * 700,     // 1800-2500ms
+              'wizard': 2500 + Math.random() * 1000  // 2500-3500ms (thinking deeply!)
+            }[botDifficulty] || 1000;
+            
             const botMoveTimeout = setTimeout(() => {
-      try {
+              try {
               makeBotMove(botDifficulty, 'blue', false);
-      } catch (error) {
-        console.log('🤖 Bot crashed, forcing random move');
-        forceBotRandomMove('blue', false);
-      }
-    }, 800 + Math.random() * 400); // 800-1200ms delay, feels natural
+              } catch (error) {
+                console.log('🤖 Bot crashed, forcing random move');
+                forceBotRandomMove('blue', false);
+              }
+            }, thinkingTime);
     
     // Fallback: if bot doesn't move within 3 seconds, force a move
             const fallbackTimeout = setTimeout(() => {
@@ -1315,9 +1328,10 @@ function App() {
       return updatedBoard;
     });
     
-    // Switch turns like a normal game
+    // Switch turns back to player and update message
     setCurrentPlayer('red');
     setIsMyTurn(true);
+    setGameMessage(getTranslation(language).game.turnMessage.replace('{player}', username || 'Player 1'));
   };
 
   // Force bot to make a random move when it's taking too long
@@ -2370,21 +2384,23 @@ function App() {
                   )
               }
                 </div>
-            {/* ⏰ SIMPLE TIMER - ALWAYS VISIBLE */}
-            <div style={{ 
-              fontSize: '2rem', 
-              fontWeight: 'bold', 
-              textAlign: 'center', 
-              margin: '15px 0',
-              padding: '10px',
-              backgroundColor: timer <= 10 ? '#ffeeee' : '#f0f8ff',
-              border: '2px solid',
-              borderColor: timer <= 10 ? '#ff0000' : '#4444ff',
-              borderRadius: '10px',
-              color: timer <= 10 ? '#ff0000' : '#4444ff'
-            }}>
-              ⏰ {timer} seconds
+            {/* ⏰ TIMER - ONLY FOR ONLINE GAMES */}
+            {gameMode !== 'bot' && (
+              <div style={{ 
+                fontSize: '2rem', 
+                fontWeight: 'bold', 
+                textAlign: 'center', 
+                margin: '15px 0',
+                padding: '10px',
+                backgroundColor: timer <= 10 ? '#ffeeee' : '#f0f8ff',
+                border: '2px solid',
+                borderColor: timer <= 10 ? '#ff0000' : '#4444ff',
+                borderRadius: '10px',
+                color: timer <= 10 ? '#ff0000' : '#4444ff'
+              }}>
+                ⏰ {timer} seconds
             </div>
+            )}
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
                {(() => {
                  if (gameMode === 'local') {
