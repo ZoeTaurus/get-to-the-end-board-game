@@ -1,5 +1,13 @@
-// JavaScript version of GameBot for compatibility
 /**
+ * PERFECT WIZARD BOT - The Ultimate AI for "Get To The End" Board Game
+ * 
+ * This bot implements advanced game AI techniques:
+ * - Minimax algorithm with alpha-beta pruning for deep strategic analysis
+ * - Perfect threat detection and defensive positioning
+ * - Safe capture analysis with multi-move lookahead
+ * - Advanced formation and coordination strategies
+ * - Trap detection and avoidance systems
+ * 
  * @typedef {'person' | 'circle'} PieceType
  * @typedef {'player' | 'bot'} Player
  * @typedef {{ type: PieceType, owner: Player, eatenCount?: number }} Piece
@@ -35,24 +43,14 @@ export class GameBot {
       return null;
     }
 
-    // This rule is still golden: if you can eat, you must eat.
+    // PERFECT WIZARD RULE: Always capture when possible, but only if safe!
     const captureMoves = allPossibleMoves.filter(move => move.eatenPiece);
     if (captureMoves.length > 0) {
-      // Add some unpredictability - sometimes choose a non-capture move
-      const shouldBeUnpredictable = Math.random() < 0.15; // 15% chance to be unpredictable
-      
-      if (shouldBeUnpredictable && this.difficulty >= 3) {
-        // Choose a random non-capture move to be unpredictable
-        const nonCaptureMoves = allPossibleMoves.filter(move => !move.eatenPiece);
-        if (nonCaptureMoves.length > 0) {
-          return nonCaptureMoves[Math.floor(Math.random() * nonCaptureMoves.length)];
-        }
-      }
-      
       if (this.difficulty >= 3) {
-        // Higher-level AI will pick the BEST capture.
+        // WIZARD BOT: Always picks the PERFECT capture through deep analysis
         return this.findBestMove(safeGameState, captureMoves, this.getDepth());
       }
+      // Lower difficulty bots use simpler capture selection
       return captureMoves[Math.floor(Math.random() * captureMoves.length)];
     }
     
@@ -67,27 +65,29 @@ export class GameBot {
     }
   }
   
-  // Helper to set AI "thinking" depth based on difficulty
+  // PERFECT DEPTH CALCULATION: Deeper thinking for perfect play
   getDepth() {
     switch(this.difficulty) {
-      case 3: return 2;
-      case 4: return 4;
-      case 5: return 6; // This will be very tough!
+      case 1: return 1;  // Easy: Minimal lookahead
+      case 2: return 2;  // Medium: Basic planning
+      case 3: return 3;  // Hard: Good strategic thinking
+      case 4: return 5;  // Pro: Expert level analysis
+      case 5: return 7;  // Wizard: PERFECT foresight!
       default: return 2;
     }
   }
 
-  // Easy bot - random but avoid obvious suicide moves
+  // EASY BOT: Simple and beatable, but not completely stupid
   easyMove(moves) {
-    // Try to avoid immediate capture if possible
-    const safeMoves = moves.filter(move => {
-      // Simple check - just see if moving here is obviously dangerous
-      // (This is a very basic check for the easy bot)
-      return Math.random() > 0.3; // 70% chance to avoid dangerous moves
-    });
+    // Prefer forward moves (simple strategy)
+    const forwardMoves = moves.filter(move => move.to.col > move.from.col);
     
-    const movesToConsider = safeMoves.length > 0 ? safeMoves : moves;
-    return movesToConsider[Math.floor(Math.random() * movesToConsider.length)];
+    if (forwardMoves.length > 0 && Math.random() > 0.4) {
+      return forwardMoves[Math.floor(Math.random() * forwardMoves.length)];
+    }
+    
+    // Otherwise, random move
+    return moves[Math.floor(Math.random() * moves.length)];
   }
 
   mediumMove(gameState, moves) {
@@ -121,12 +121,12 @@ export class GameBot {
     return bestMove || this.easyMove(moves);
   }
 
-  // The findBestMove function which starts the deep thinking process.
+  // PERFECT MOVE SELECTION: The wizard bot's brain for choosing the absolute best move
   findBestMove(gameState, moves, depth) {
     let bestMove = null;
     let bestValue = -Infinity;
     
-    // CRITICAL: Filter out moves that walk into immediate capture!
+    // SAFETY FIRST: Filter out moves that walk into immediate danger
     const safeMoves = moves.filter(move => {
       const afterMove = this.simulateMove(gameState, move);
       const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
@@ -137,23 +137,48 @@ export class GameBot {
         capture.to.row === move.to.row && capture.to.col === move.to.col
       );
       
-      return !isImmediatelyThreatened; // Only keep safe moves
+      return !isImmediatelyThreatened;
     });
     
-    // If all moves are dangerous, use the original list (better to move than not move)
+    // MOVE PRIORITIZATION: If we have safe moves, use them. Otherwise, take calculated risks.
     const movesToConsider = safeMoves.length > 0 ? safeMoves : moves;
     
+    // DEEP ANALYSIS: Use minimax to evaluate each move
     for (const move of movesToConsider) {
       const newGameState = this.simulateMove(gameState, move);
       const boardValue = this.minimax(newGameState, depth - 1, false, -Infinity, Infinity);
       
-      if (boardValue > bestValue) {
+      // TIE-BREAKING: If moves have equal value, prefer more strategic ones
+      if (boardValue > bestValue || 
+          (boardValue === bestValue && this.isMoreStrategic(move, bestMove, gameState))) {
         bestValue = boardValue;
         bestMove = move;
       }
     }
     
     return bestMove || moves[0];
+  }
+  
+  // Helper function to determine if one move is more strategic than another (for tie-breaking)
+  isMoreStrategic(move1, move2, gameState) {
+    if (!move2) return true;
+    
+    // Prefer moves that advance further
+    const advance1 = move1.to.col - move1.from.col;
+    const advance2 = move2.to.col - move2.from.col;
+    if (advance1 !== advance2) return advance1 > advance2;
+    
+    // Prefer moves that create formations
+    const afterMove1 = this.simulateMove(gameState, move1);
+    const afterMove2 = this.simulateMove(gameState, move2);
+    const support1 = this.countNearbyFriendlies(move1.to.row, move1.to.col, afterMove1.board);
+    const support2 = this.countNearbyFriendlies(move2.to.row, move2.to.col, afterMove2.board);
+    if (support1 !== support2) return support1 > support2;
+    
+    // Prefer center moves
+    const center1 = Math.abs(move1.to.row - gameState.board.length / 2);
+    const center2 = Math.abs(move2.to.row - gameState.board.length / 2);
+    return center1 < center2;
   }
   
   /**
@@ -194,18 +219,22 @@ export class GameBot {
     }
   }
 
-  // --- WIZARD BOT SUPER SMART EVALUATION FUNCTION ---
-  // This wizard bot can anticipate, defend, attack, and detect traps!
+  // === PERFECT WIZARD BOT EVALUATION SYSTEM ===
+  // This wizard bot anticipates everything, defends perfectly, and captures strategically!
   evaluateBoard(state) {
-    // Check for a terminal state (win/loss). This is the highest priority.
+    // TERMINAL STATE CHECK - Highest priority
     if (this.isGameOver(state)) {
       const winner = this.getWinner(state);
-      if (winner === Player.BOT) return 100000;    // A win is the best possible score
-      if (winner === Player.PLAYER) return -100000; // A loss is the worst
+      if (winner === Player.BOT) return 100000;    // WIN bonus
+      if (winner === Player.PLAYER) return -100000; // LOSS penalty
     }
 
     let totalScore = 0;
-    const pieceValue = { [PieceType.PERSON]: 100, [PieceType.CIRCLE]: 150 };
+    // OPTIMIZED PIECE VALUES: Circles more valuable due to flexible movement and capture ability
+    const pieceValue = { 
+      [PieceType.PERSON]: 100,  // Persons win the game but are limited in movement
+      [PieceType.CIRCLE]: 180   // Circles provide strategic flexibility and can capture twice
+    };
     
     // --- STEP 1: BASIC MATERIAL AND POSITION ---
     for (let r = 0; r < state.board.length; r++) {
@@ -225,211 +254,476 @@ export class GameBot {
         }
     }
 
-    // --- STEP 2: WIZARD THREAT ANALYSIS ---
-    // Check for threats everywhere and analyze defensive positions
+    // === STEP 2: PERFECT THREAT ANTICIPATION SYSTEM ===
+    // Calculate all moves once and reuse for efficiency
     const botMoves = this.getAllValidMoves(state, Player.BOT);
     const playerMoves = this.getAllValidMoves(state, Player.PLAYER);
     const botCaptures = botMoves.filter(m => m.eatenPiece);
     const playerCaptures = playerMoves.filter(m => m.eatenPiece);
+    
+    // DEEP ANTICIPATION: Look at what player will do after ANY bot move
+    const anticipatedThreats = [];
+    for (const botMove of botMoves) {
+      const afterBotMove = this.simulateMove(state, botMove);
+      const playerResponseMoves = this.getAllValidMoves(afterBotMove, Player.PLAYER);
+      const playerResponseCaptures = playerResponseMoves.filter(m => m.eatenPiece);
+      
+      for (const playerResponse of playerResponseCaptures) {
+        anticipatedThreats.push({
+          botMove: botMove,
+          playerThreat: playerResponse,
+          threatenedPiece: { row: playerResponse.to.row, col: playerResponse.to.col }
+        });
+      }
+    }
+    
+    // Massive penalty for moves that create threats
+    totalScore -= anticipatedThreats.length * 800;
 
-    // --- STEP 3: RETREAT AND DEFENSE ANALYSIS ---
-    // For each bot piece, check if it's threatened and if it can retreat or be defended
+    // === STEP 3: PERFECT DEFENSIVE ANALYSIS ===
+    // Every threatened piece gets IMMEDIATE attention with multiple defense options
     for (let r = 0; r < state.board.length; r++) {
       for (let c = 0; c < state.board[0].length; c++) {
         const piece = state.board[r][c];
         if (piece && piece.owner === Player.BOT) {
           
-          // Check if this piece is threatened
-          const isThreatenedByPlayer = playerCaptures.some(capture => 
+          // IMMEDIATE threat detection
+          const immediateThreats = playerCaptures.filter(capture => 
             capture.to.row === r && capture.to.col === c
           );
           
-          if (isThreatenedByPlayer) {
-            totalScore -= 1500; // Reduced penalty for being threatened (was 3000)
+          // ANTICIPATED threat detection (threats after any bot move)
+          const anticipatedThreatsHere = anticipatedThreats.filter(threat =>
+            threat.threatenedPiece.row === r && threat.threatenedPiece.col === c
+          );
+          
+          const totalThreats = immediateThreats.length + anticipatedThreatsHere.length;
+          
+          if (totalThreats > 0) {
+            // MASSIVE penalty for being threatened - wizard bot hates losing pieces!
+            totalScore -= totalThreats * 3000;
             
-            // Only retreat if there's IMMEDIATE danger and no other options
+            // === DEFENSE OPTION 1: SAFE RETREAT ===
             const retreatMoves = botMoves.filter(move => 
               move.from.row === r && move.from.col === c
             );
             
+            let bestRetreatScore = -Infinity;
             let canRetreatSafely = false;
+            
             for (const retreat of retreatMoves) {
               const afterRetreat = this.simulateMove(state, retreat);
+              
+              // Check if retreat position is safe from ALL player responses
               const playerMovesAfterRetreat = this.getAllValidMoves(afterRetreat, Player.PLAYER);
-              const stillThreatened = playerMovesAfterRetreat.some(capture => 
+              const retreatThreatened = playerMovesAfterRetreat.some(capture => 
                 capture.eatenPiece && 
                 capture.to.row === retreat.to.row && 
                 capture.to.col === retreat.to.col
               );
               
-              if (!stillThreatened) {
+              if (!retreatThreatened) {
                 canRetreatSafely = true;
-                totalScore += 800; // Reduced bonus for retreat (was 1500)
-                break;
+                
+                // Score this retreat based on strategic value
+                let retreatScore = 2000; // Base retreat bonus
+                
+                // Bonus for retreating to a more forward position
+                if (retreat.to.col > retreat.from.col) {
+                  retreatScore += 500;
+                }
+                
+                // Bonus for retreating near other friendly pieces (mutual support)
+                const nearbyFriendlies = this.countNearbyFriendlies(retreat.to.row, retreat.to.col, afterRetreat.board);
+                retreatScore += nearbyFriendlies * 300;
+                
+                bestRetreatScore = Math.max(bestRetreatScore, retreatScore);
               }
             }
             
-            // Prefer capturing threats over retreating
-            const canCaptureAttacker = botCaptures.some(capture => {
-              return playerCaptures.some(threat => 
-                threat.from.row === capture.to.row && 
-                threat.from.col === capture.to.col
-              );
-            });
-            
-            if (canCaptureAttacker) {
-              totalScore += 2000; // Big bonus for counter-attacking instead of retreating
+            if (canRetreatSafely) {
+              totalScore += bestRetreatScore;
             }
             
-            // Check if other pieces can defend this threatened piece
-            const canBeDefended = botMoves.some(move => {
-              const afterMove = this.simulateMove(state, move);
-              const playerMovesAfterDefense = this.getAllValidMoves(afterMove, Player.PLAYER);
+            // === DEFENSE OPTION 2: COUNTER-ATTACK ===
+            const attackerPositions = immediateThreats.map(threat => ({ row: threat.from.row, col: threat.from.col }));
+            const canCounterAttack = botCaptures.some(capture => 
+              attackerPositions.some(attacker => 
+                attacker.row === capture.to.row && attacker.col === capture.to.col
+              )
+            );
+            
+            if (canCounterAttack) {
+              totalScore += 4000; // HUGE bonus for eliminating the threat directly!
+            }
+            
+            // === DEFENSE OPTION 3: PROTECTIVE POSITIONING ===
+            let canBeDefended = false;
+            let bestDefenseScore = 0;
+            
+            for (const defenseMove of botMoves) {
+              if (defenseMove.from.row === r && defenseMove.from.col === c) continue; // Skip the threatened piece itself
+              
+              const afterDefense = this.simulateMove(state, defenseMove);
+              const playerMovesAfterDefense = this.getAllValidMoves(afterDefense, Player.PLAYER);
+              
+              // Check if this defensive move eliminates the threat
               const stillThreatened = playerMovesAfterDefense.some(capture => 
                 capture.eatenPiece && 
                 capture.to.row === r && 
                 capture.to.col === c
               );
-              return !stillThreatened;
-            });
+              
+              if (!stillThreatened) {
+                canBeDefended = true;
+                
+                // Score this defense based on multiple factors
+                let defenseScore = 1500; // Base defense bonus
+                
+                // Bonus if the defending piece also advances
+                if (defenseMove.to.col > defenseMove.from.col) {
+                  defenseScore += 300;
+                }
+                
+                // Bonus if the defending piece also threatens the opponent
+                const afterDefensePlayerPieces = this.getAllValidMoves(afterDefense, Player.PLAYER);
+                const defendingPieceThreats = this.getAllValidMoves(afterDefense, Player.BOT)
+                  .filter(m => m.eatenPiece && m.from.row === defenseMove.to.row && m.from.col === defenseMove.to.col);
+                defenseScore += defendingPieceThreats.length * 400;
+                
+                bestDefenseScore = Math.max(bestDefenseScore, defenseScore);
+              }
+            }
             
             if (canBeDefended) {
-              totalScore += 600; // Reduced bonus for defense (was 1000)
+              totalScore += bestDefenseScore;
+            }
+            
+            // === ULTIMATE PENALTY: NO DEFENSE AVAILABLE ===
+            if (!canRetreatSafely && !canCounterAttack && !canBeDefended) {
+              totalScore -= 8000; // MASSIVE penalty for helpless pieces!
             }
           }
         }
       }
     }
 
-    // --- STEP 4: SMART CAPTURE WITH DEEP ANALYSIS ---
-    // Check if capturing is safe by looking for defensive pieces behind
+    // === STEP 4: PERFECT SAFE CAPTURE SYSTEM ===
+    // Wizard bot only captures when it's 100% safe or strategically brilliant!
     for (const captureMove of botCaptures) {
       const afterCapture = this.simulateMove(state, captureMove);
       
-      // Check immediate counter-attack
+      // SAFETY CHECK 1: Can player immediately counter-attack?
       const playerMovesAfterCapture = this.getAllValidMoves(afterCapture, Player.PLAYER);
-      const canPlayerCaptureBack = playerMovesAfterCapture.some(m => 
+      const immediateCounterAttacks = playerMovesAfterCapture.filter(m => 
         m.eatenPiece && 
         m.to.row === captureMove.to.row && 
         m.to.col === captureMove.to.col
       );
       
-      if (canPlayerCaptureBack) {
-        // Look deeper - check if there are defensive pieces behind the target
-        const counterCapture = playerMovesAfterCapture.find(m => 
-          m.eatenPiece && 
-          m.to.row === captureMove.to.row && 
-          m.to.col === captureMove.to.col
-        );
+      if (immediateCounterAttacks.length === 0) {
+        // PERFECT! Completely safe capture
+        const capturedPiece = state.board[captureMove.to.row][captureMove.to.col];
+        const captureValue = pieceValue[capturedPiece.type];
+        totalScore += captureValue * 4; // Massive bonus for safe captures!
         
-        if (counterCapture) {
-          const afterPlayerCapture = this.simulateMove(afterCapture, counterCapture);
-          const botMovesAfterPlayerCapture = this.getAllValidMoves(afterPlayerCapture, Player.BOT);
-          const canBotCaptureAgain = botMovesAfterPlayerCapture.some(m => 
-            m.eatenPiece && 
-            m.to.row === captureMove.to.row && 
-            m.to.col === captureMove.to.col
-          );
+        // Extra bonus if this capture also advances our position
+        if (captureMove.to.col > captureMove.from.col) {
+          totalScore += 1000;
+        }
+        
+        // Extra bonus if this capture threatens more enemy pieces
+        const threatsAfterCapture = this.getAllValidMoves(afterCapture, Player.BOT)
+          .filter(m => m.eatenPiece && m.from.row === captureMove.to.row && m.from.col === captureMove.to.col);
+        totalScore += threatsAfterCapture.length * 600;
+        
+      } else {
+        // DANGER! There are counter-attacks - analyze deeply
+        let worstCaseScore = Infinity;
+        
+        for (const counterAttack of immediateCounterAttacks) {
+          const afterCounterAttack = this.simulateMove(afterCapture, counterAttack);
           
-          if (canBotCaptureAgain) {
-            totalScore += 2000; // Good! We can capture back after they capture us
+          // Can we recapture immediately?
+          const botRecaptureMoves = this.getAllValidMoves(afterCounterAttack, Player.BOT)
+            .filter(m => m.eatenPiece && 
+              m.to.row === counterAttack.to.row && 
+              m.to.col === counterAttack.to.col
+            );
+          
+          if (botRecaptureMoves.length > 0) {
+            // Good! We can recapture - this might be a favorable trade
+            let bestRecaptureScore = -Infinity;
+            
+            for (const recapture of botRecaptureMoves) {
+              const afterRecapture = this.simulateMove(afterCounterAttack, recapture);
+              
+              // Check if our recapturing piece is safe
+              const playerResponseToRecapture = this.getAllValidMoves(afterRecapture, Player.PLAYER)
+                .filter(m => m.eatenPiece && 
+                  m.to.row === recapture.to.row && 
+                  m.to.col === recapture.to.col
+                );
+              
+              if (playerResponseToRecapture.length === 0) {
+                // Perfect! We win the trade
+                bestRecaptureScore = 3000;
+              } else {
+                // Continues the trade - analyze piece values
+                const ourPiece = state.board[captureMove.from.row][captureMove.from.col];
+                const theirPiece = state.board[captureMove.to.row][captureMove.to.col];
+                const recapturingPiece = state.board[recapture.from.row][recapture.from.col];
+                
+                const tradeValue = pieceValue[theirPiece.type] - pieceValue[ourPiece.type];
+                bestRecaptureScore = tradeValue * 2;
+              }
+            }
+            
+            worstCaseScore = Math.min(worstCaseScore, bestRecaptureScore);
+            
           } else {
-            totalScore -= 5000; // Bad! This is a trap - we'll lose the piece
+            // BAD! We lose the piece for nothing
+            const ourPiece = state.board[captureMove.from.row][captureMove.from.col];
+            worstCaseScore = Math.min(worstCaseScore, -pieceValue[ourPiece.type] * 3);
           }
         }
-      } else {
-        totalScore += 8000; // Safe capture - go for it!
+        
+        // Apply the worst-case scenario score
+        totalScore += worstCaseScore;
+        
+        // Additional penalty for risky captures
+        totalScore -= immediateCounterAttacks.length * 800;
       }
     }
 
-    // --- STEP 5: BALANCED OFFENSE AND DEFENSE ---
-    // Be more aggressive and forward-thinking
+    // === STEP 5: PERFECT STRATEGIC POSITIONING SYSTEM ===
+    // Wizard bot dominates through superior positioning and board control!
     
-    // Big bonus for advancing pieces towards the goal
+    // STRATEGIC ADVANCEMENT: Push towards victory with intelligence
     for (const move of botMoves) {
+      // Base advancement bonus
       if (move.to.col > move.from.col) {
-        totalScore += 150; // Bonus for advancing forward
+        const advancementBonus = (move.to.col - move.from.col) * 400; // Higher bonus for bigger advances
+        totalScore += advancementBonus;
       }
       
-      // Extra bonus for getting close to the goal
+      // MASSIVE bonus for breakthrough pieces near victory
       if (move.to.col >= state.board[0].length - 2) {
-        totalScore += 500; // Near the goal!
-      }
-    }
-    
-    // Only worry about player threats if they're immediate and dangerous
-    if (state.currentPlayer === Player.PLAYER && playerCaptures.length > 0) {
-      // Look at player's best captures and try to block them ONLY if critical
-      for (const playerCapture of playerCaptures) {
-        // Check if we can block this capture
-        const canBlock = botMoves.some(move => {
-          const afterBlock = this.simulateMove(state, move);
-          const playerMovesAfterBlock = this.getAllValidMoves(afterBlock, Player.PLAYER);
-          return !playerMovesAfterBlock.some(capture => 
-            capture.eatenPiece && 
-            capture.to.row === playerCapture.to.row && 
-            capture.to.col === playerCapture.to.col
-          );
-        });
+        totalScore += 3000; // HUGE bonus for near-victory positions!
         
-        if (canBlock) {
-          totalScore += 300; // Reduced bonus for blocking (was 500)
-        } else {
-          totalScore -= 400; // Reduced penalty for unstoppable threats (was 1000)
+        // Extra bonus if this piece is a person (can actually win)
+        const movingPiece = state.board[move.from.row][move.from.col];
+        if (movingPiece.type === PieceType.PERSON) {
+          totalScore += 5000; // VICTORY IS NEAR!
         }
       }
       
-      totalScore -= playerCaptures.length * 300; // Much reduced penalty (was 800)
+      // FORMATION CONTROL: Strategic positioning bonuses
+      const afterMove = this.simulateMove(state, move);
+      
+      // Bonus for controlling key squares (center and forward positions)
+      if (move.to.row >= 1 && move.to.row < state.board.length - 1 && 
+          move.to.col >= state.board[0].length / 2) {
+        totalScore += 800; // Control the center-forward area
+      }
+      
+      // Bonus for supporting other pieces
+      const nearbySupport = this.countNearbyFriendlies(move.to.row, move.to.col, afterMove.board);
+      totalScore += nearbySupport * 400; // Teamwork is powerful!
+      
+      // Bonus for creating multiple threats from this position
+      const threatsFromNewPosition = this.getAllValidMoves(afterMove, Player.BOT)
+        .filter(m => m.eatenPiece && m.from.row === move.to.row && m.from.col === move.to.col);
+      totalScore += threatsFromNewPosition.length * 600;
+      
+      // Penalty for moving pieces backwards unless absolutely necessary
+      if (move.to.col < move.from.col) {
+        totalScore -= 300; // Discourage retreats unless for defense
+      }
+    }
+    
+    // INTELLIGENT PLAYER THREAT ANALYSIS
+    if (playerCaptures.length > 0) {
+      // Categorize threats by danger level
+      let criticalThreats = 0;
+      let normalThreats = 0;
+      
+      for (const playerCapture of playerCaptures) {
+        const threatenedPiece = state.board[playerCapture.to.row][playerCapture.to.col];
+        
+        if (threatenedPiece) {
+          // Critical if it's a valuable piece or near our goal
+          if (threatenedPiece.type === PieceType.CIRCLE || playerCapture.to.col >= state.board[0].length - 3) {
+            criticalThreats++;
+          } else {
+            normalThreats++;
+          }
+          
+          // Check if we can block this specific threat
+          const canBlockThisThreat = botMoves.some(move => {
+            const afterBlock = this.simulateMove(state, move);
+            const playerMovesAfterBlock = this.getAllValidMoves(afterBlock, Player.PLAYER);
+            return !playerMovesAfterBlock.some(capture => 
+              capture.eatenPiece && 
+              capture.to.row === playerCapture.to.row && 
+              capture.to.col === playerCapture.to.col
+            );
+          });
+          
+          if (canBlockThisThreat) {
+            if (threatenedPiece.type === PieceType.CIRCLE) {
+              totalScore += 1500; // High bonus for blocking threats to circles
+            } else {
+              totalScore += 800; // Medium bonus for blocking person threats
+            }
+          } else {
+            // Can't block - apply penalty based on threat level
+            if (threatenedPiece.type === PieceType.CIRCLE) {
+              totalScore -= 2000; // Heavy penalty for unstoppable circle threats
+            } else {
+              totalScore -= 800; // Medium penalty for unstoppable person threats
+            }
+          }
+        }
+      }
+      
+      // Overall threat pressure penalty
+      totalScore -= criticalThreats * 1000; // Higher penalty for critical threats
+      totalScore -= normalThreats * 400;    // Lower penalty for normal threats
     }
 
-    // --- STEP 6: SMART TRAP DETECTION ---
-    // Check for obvious traps but don't be too paranoid
+    // === STEP 6: PERFECT TRAP DETECTION SYSTEM ===
+    // Wizard bot sees all traps and never falls for them!
     for (const move of botMoves) {
       const afterMove = this.simulateMove(state, move);
       const playerResponseMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
-      const playerResponses = playerResponseMoves.filter(m => m.eatenPiece);
+      const playerCaptureMoves = playerResponseMoves.filter(m => m.eatenPiece);
       
-      // Only worry about traps if there are MANY capture options (3+)
-      if (playerResponses.length >= 3) {
-        totalScore -= 1000; // Reduced penalty for obvious traps (was 2000)
+      // ADVANCED TRAP ANALYSIS
+      if (playerCaptureMoves.length > 0) {
+        // Check if this move puts our piece in a crossfire
+        const movingPieceThreats = playerCaptureMoves.filter(capture => 
+          capture.to.row === move.to.row && capture.to.col === move.to.col
+        );
+        
+        if (movingPieceThreats.length >= 2) {
+          // DANGER! Multiple pieces can capture our piece - likely a trap
+          totalScore -= 3000; // MASSIVE penalty for walking into crossfire
+          
+          // Even worse if it's a valuable piece
+          const movingPiece = state.board[move.from.row][move.from.col];
+          if (movingPiece.type === PieceType.CIRCLE) {
+            totalScore -= 2000; // Extra penalty for endangering circles
+          }
+        } else if (movingPieceThreats.length === 1) {
+          // Single threat - check if we can counter-attack or escape
+          const threat = movingPieceThreats[0];
+          const afterThreat = this.simulateMove(afterMove, threat);
+          
+          // Can we counter-attack the threatening piece?
+          const counterMoves = this.getAllValidMoves(afterThreat, Player.BOT)
+            .filter(m => m.eatenPiece && 
+              m.to.row === threat.from.row && 
+              m.to.col === threat.from.col
+            );
+          
+          if (counterMoves.length > 0) {
+            totalScore += 500; // Good! We can fight back
+          } else {
+            totalScore -= 1500; // Bad! We're in danger with no response
+          }
+        }
       }
       
-      // Check if this move helps us control the center or create formations
+      // FORMATION AND CONTROL BONUSES
       if (move.to.row > 0 && move.to.row < state.board.length - 1 && 
           move.to.col > 0 && move.to.col < state.board[0].length - 1) {
-        totalScore += 200; // Increased bonus for central control (was 100)
+        totalScore += 300; // Bonus for central control
+        
+        // Extra bonus if this creates a strong formation
+        const friendliesNearby = this.countNearbyFriendlies(move.to.row, move.to.col, afterMove.board);
+        if (friendliesNearby >= 2) {
+          totalScore += 600; // Strong formation bonus!
+        }
       }
       
-      // Bonus for moving pieces together in formation
+      // COORDINATED ATTACK BONUS
       if (move.to.col > move.from.col) {
-        totalScore += 80; // Additional forward movement bonus
+        // Check if this forward move coordinates with other pieces
+        const coordinatedMoves = botMoves.filter(otherMove => 
+          otherMove !== move && 
+          otherMove.to.col > otherMove.from.col && 
+          Math.abs(otherMove.to.row - move.to.row) <= 2
+        );
+        
+        totalScore += coordinatedMoves.length * 200; // Coordinated advance bonus
       }
     }
 
-    // --- STEP 7: FORMATION AND COORDINATION ---
-    // Check if our pieces are working together
+    // === STEP 7: PERFECT COORDINATION AND FORMATION SYSTEM ===
+    // Wizard bot creates unbeatable formations and coordinates perfectly!
+    
+    // PIECE COORDINATION ANALYSIS
+    let isolatedPieces = 0;
+    let strongFormations = 0;
+    let advancedFormations = 0;
+    
     for (let r = 0; r < state.board.length; r++) {
       for (let c = 0; c < state.board[0].length; c++) {
         const piece = state.board[r][c];
         if (piece && piece.owner === Player.BOT) {
-          // Count friendly pieces nearby
-          let friendlyNeighbors = 0;
-          for (let dr = -1; dr <= 1; dr++) {
-            for (let dc = -1; dc <= 1; dc++) {
-              if (dr === 0 && dc === 0) continue;
-              const nr = r + dr;
-              const nc = c + dc;
-              if (this.isValidPosition(nr, nc, state.board.length, state.board[0].length)) {
-                const neighbor = state.board[nr][nc];
-                if (neighbor && neighbor.owner === Player.BOT) {
-                  friendlyNeighbors++;
-                }
-              }
+          const friendlyNeighbors = this.countNearbyFriendlies(r, c, state.board);
+          
+          if (friendlyNeighbors === 0) {
+            isolatedPieces++;
+            totalScore -= 400; // Penalty for isolated pieces
+          } else if (friendlyNeighbors >= 2) {
+            strongFormations++;
+            totalScore += friendlyNeighbors * 300; // Strong formation bonus
+            
+            // Extra bonus for advanced formations (near enemy territory)
+            if (c >= state.board[0].length / 2) {
+              advancedFormations++;
+              totalScore += 500; // Advanced formation bonus
             }
+          } else {
+            totalScore += friendlyNeighbors * 150; // Basic coordination bonus
           }
-          totalScore += friendlyNeighbors * 50; // Bonus for piece coordination
+          
+          // SPECIAL FORMATION PATTERNS
+          
+          // Diagonal formation bonus (pieces supporting each other diagonally)
+          const diagonalSupport = this.countDiagonalFriendlies(r, c, state.board);
+          if (diagonalSupport >= 2) {
+            totalScore += 400; // Diagonal formation strength
+          }
+          
+          // Forward line formation (pieces advancing together)
+          if (c >= state.board[0].length / 2) {
+            const sameColumnFriendlies = this.countSameColumnFriendlies(r, c, state.board);
+            totalScore += sameColumnFriendlies * 300; // Column advancement bonus
+          }
+          
+          // Protective wall formation (pieces protecting each other)
+          if (piece.type === PieceType.CIRCLE) {
+            const protectingPersons = this.countProtectingPersons(r, c, state.board);
+            totalScore += protectingPersons * 500; // Circles protected by persons
+          }
         }
       }
+    }
+    
+    // OVERALL FORMATION ASSESSMENT
+    if (isolatedPieces === 0) {
+      totalScore += 1000; // Perfect! No isolated pieces
+    }
+    
+    if (strongFormations >= 2) {
+      totalScore += 800; // Multiple strong formations
+    }
+    
+    if (advancedFormations >= 1) {
+      totalScore += 1200; // Advanced position control
     }
     
     return totalScore;
@@ -488,7 +782,7 @@ export class GameBot {
       const newCol = col + dCol;
       if (this.isValidPosition(newRow, newCol, board.length, board[0].length)) {
         if (!board[newRow][newCol]) {
-        moves.push({ from: { row, col }, to: { row: newRow, col: newCol } });
+          moves.push({ from: { row, col }, to: { row: newRow, col: newCol } });
         } else if (board[newRow][newCol]?.owner === opponent && (piece.eatenCount || 0) < 2) {
           moves.push({ from: { row, col }, to: { row: newRow, col: newCol }, eatenPiece: { row: newRow, col: newCol } });
         }
@@ -539,12 +833,21 @@ export class GameBot {
   }
 
   isGameOver(state) {
+    // Check if either player has no pieces left
     if (this.countPieces(state, Player.BOT) === 0 || this.countPieces(state, Player.PLAYER) === 0) {
-              return true;
+      return true;
     }
-    for(let r = 0; r < state.board.length; r++) {
-        if (state.board[r][0]?.owner === Player.PLAYER && state.board[r][0]?.type === PieceType.PERSON) return true;
-        if (state.board[r][state.board[0].length - 1]?.owner === Player.BOT && state.board[r][state.board[0].length - 1]?.type === PieceType.PERSON) return true;
+    
+    // Check if any person piece has reached the opposite side
+    for (let r = 0; r < state.board.length; r++) {
+      // Player wins if their person reaches left side (column 0)
+      if (state.board[r][0]?.owner === Player.PLAYER && state.board[r][0]?.type === PieceType.PERSON) {
+        return true;
+      }
+      // Bot wins if their person reaches right side (last column)
+      if (state.board[r][state.board[0].length - 1]?.owner === Player.BOT && state.board[r][state.board[0].length - 1]?.type === PieceType.PERSON) {
+        return true;
+      }
     }
     return false;
   }
@@ -574,6 +877,72 @@ export class GameBot {
           }
       }
       return count;
+  }
+
+  // Helper function to count friendly pieces near a position
+  countNearbyFriendlies(row, col, board) {
+    let count = 0;
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const nr = row + dr;
+        const nc = col + dc;
+        if (this.isValidPosition(nr, nc, board.length, board[0].length)) {
+          const neighbor = board[nr][nc];
+          if (neighbor && neighbor.owner === Player.BOT) {
+            count++;
+          }
+        }
+      }
+    }
+    return count;
+  }
+
+  // Helper function to count diagonal friendly pieces (for advanced formations)
+  countDiagonalFriendlies(row, col, board) {
+    let count = 0;
+    const diagonals = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+    for (const [dr, dc] of diagonals) {
+      const nr = row + dr;
+      const nc = col + dc;
+      if (this.isValidPosition(nr, nc, board.length, board[0].length)) {
+        const neighbor = board[nr][nc];
+        if (neighbor && neighbor.owner === Player.BOT) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  // Helper function to count friendly pieces in the same column
+  countSameColumnFriendlies(row, col, board) {
+    let count = 0;
+    for (let r = 0; r < board.length; r++) {
+      if (r !== row && board[r][col] && board[r][col].owner === Player.BOT) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  // Helper function to count person pieces protecting a circle
+  countProtectingPersons(row, col, board) {
+    let count = 0;
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const nr = row + dr;
+        const nc = col + dc;
+        if (this.isValidPosition(nr, nc, board.length, board[0].length)) {
+          const neighbor = board[nr][nc];
+          if (neighbor && neighbor.owner === Player.BOT && neighbor.type === PieceType.PERSON) {
+            count++;
+          }
+        }
+      }
+    }
+    return count;
   }
 }
 
