@@ -68,8 +68,12 @@ export class GameBot {
     // PERFECT WIZARD RULE: Always capture when possible, but only if safe!
     const captureMoves = allPossibleMoves.filter(move => move.eatenPiece);
     if (captureMoves.length > 0) {
-      // FORCE CAPTURE: Always take the first available capture for testing
-      return captureMoves[0];
+      if (this.difficulty >= 3) {
+        // WIZARD BOT: Always picks the PERFECT capture through deep analysis
+        return this.findBestMove(safeGameState, captureMoves, this.getDepth());
+      }
+      // Lower difficulty bots use simpler capture selection
+      return captureMoves[Math.floor(Math.random() * captureMoves.length)];
     }
     
     // If no captures, proceed with difficulty-specific logic.
@@ -1038,8 +1042,18 @@ export function convertBoardForBot(board) {
  * @returns {Object} - Move format compatible with your game
  */
 export function convertMoveFromBot(move) {
-  return {
+  const convertedMove = {
     from: [move.from.row, move.from.col],
     to: [move.to.row, move.to.col]
   };
+  
+  // CRITICAL: Include capture information if this is a capture move
+  if (move.eatenPiece) {
+    convertedMove.eatenPiece = {
+      row: move.eatenPiece.row,
+      col: move.eatenPiece.col
+    };
+  }
+  
+  return convertedMove;
 }
