@@ -95,9 +95,9 @@ export class GameBot {
     switch(this.difficulty) {
       case 1: return 1;  // Easy: Minimal lookahead
       case 2: return 2;  // Medium: Basic planning
-      case 3: return 3;  // Hard: Good strategic thinking
-      case 4: return 5;  // Pro: Expert level analysis
-      case 5: return 7;  // Wizard: PERFECT foresight!
+      case 3: return 4;  // Hard: Strong strategic thinking (doubled from 2 to 4)
+      case 4: return 7;  // Pro: Master level analysis (increased from 5 to 7)
+      case 5: return 10; // Wizard: SUPERHUMAN foresight! (increased from 7 to 10)
       default: return 2;
     }
   }
@@ -257,8 +257,8 @@ export class GameBot {
     }
   }
 
-  // === PERFECT WIZARD BOT EVALUATION SYSTEM ===
-  // This wizard bot anticipates everything, defends perfectly, and captures strategically!
+  // === ULTRA-SMART WIZARD BOT EVALUATION SYSTEM ===
+  // This wizard bot uses advanced chess-like evaluation with deep positional understanding!
   evaluateBoard(state) {
     // TERMINAL STATE CHECK - Highest priority
     if (this.isGameOver(state)) {
@@ -268,10 +268,13 @@ export class GameBot {
     }
 
     let totalScore = 0;
-    // OPTIMIZED PIECE VALUES: Circles more valuable due to flexible movement and capture ability
+    // DYNAMIC PIECE VALUES: Adjust based on game phase
+    const totalPieces = this.countPieces(state.board);
+    const isEndgame = totalPieces.bot + totalPieces.player <= 6;
+    
     const pieceValue = { 
-      [PieceType.PERSON]: 100,  // Persons win the game but are limited in movement
-      [PieceType.CIRCLE]: 180   // Circles provide strategic flexibility and can capture twice
+      [PieceType.PERSON]: isEndgame ? 150 : 100,  // Persons more valuable in endgame (can win!)
+      [PieceType.CIRCLE]: isEndgame ? 200 : 180   // Circles provide strategic flexibility
     };
     
     // --- STEP 1: BASIC MATERIAL AND POSITION ---
@@ -768,6 +771,190 @@ export class GameBot {
       totalScore += 1200; // Advanced position control
     }
     
+    // === STEP 6: ULTRA-ADVANCED TACTICAL PATTERNS ===
+    
+    // MOBILITY ADVANTAGE: More moves = more control (chess concept)
+    totalScore += botMoves.length * 80;
+    totalScore -= playerMoves.length * 90;
+    
+    // FORK DETECTION: One piece threatening multiple enemy pieces
+    for (const move of botCaptures) {
+      const afterMove = this.simulateMove(state, move);
+      const newCaptures = this.getAllValidMoves(afterMove, Player.BOT).filter(m => m.eatenPiece);
+      const uniqueTargets = new Set(newCaptures.map(m => `${m.to.row},${m.to.col}`));
+      if (uniqueTargets.size >= 2) {
+        totalScore += 2000 * uniqueTargets.size; // MASSIVE bonus for forking multiple pieces!
+      }
+    }
+    
+    // DISCOVERED ATTACK: Moving one piece reveals attack from another
+    for (const move of botMoves) {
+      if (!move.eatenPiece) { // Non-capture moves
+        const afterMove = this.simulateMove(state, move);
+        const newCaptures = this.getAllValidMoves(afterMove, Player.BOT).filter(m => m.eatenPiece);
+        const oldCaptures = botCaptures;
+        
+        // If we gain new captures by moving (not from the moving piece), it's a discovered attack
+        const discoveredCaptures = newCaptures.filter(newCap => 
+          !oldCaptures.some(oldCap => 
+            oldCap.from.row === newCap.from.row && oldCap.from.col === newCap.from.col
+          ) && !(newCap.from.row === move.to.row && newCap.from.col === move.to.col)
+        );
+        
+        if (discoveredCaptures.length > 0) {
+          totalScore += 1500 * discoveredCaptures.length; // Discovered attack bonus!
+        }
+      }
+    }
+    
+    // SKEWER DETECTION: Threatening a piece with more valuable piece behind it
+    for (let r = 0; r < state.board.length; r++) {
+      for (let c = 0; c < state.board[0].length; c++) {
+        const piece = state.board[r][c];
+        if (piece && piece.owner === Player.PLAYER) {
+          // Check horizontal lines (left-right)
+          for (let dc = c + 1; dc < state.board[0].length; dc++) {
+            const behindPiece = state.board[r][dc];
+            if (behindPiece) {
+              if (behindPiece.owner === Player.PLAYER && behindPiece.type === PieceType.PERSON) {
+                // Person behind another piece - potential skewer!
+                const canAttack = botCaptures.some(cap => cap.to.row === r && cap.to.col === c);
+                if (canAttack) {
+                  totalScore += 800; // Skewer opportunity!
+                }
+              }
+              break;
+            }
+          }
+          
+          // Check diagonal lines
+          const diagonalDirections = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
+          for (const [dr, dc] of diagonalDirections) {
+            let nr = r + dr;
+            let nc = c + dc;
+            while (nr >= 0 && nr < state.board.length && nc >= 0 && nc < state.board[0].length) {
+              const diagonalPiece = state.board[nr][nc];
+              if (diagonalPiece) {
+                if (diagonalPiece.owner === Player.PLAYER && diagonalPiece.type === PieceType.PERSON) {
+                  const canAttack = botCaptures.some(cap => cap.to.row === r && cap.to.col === c);
+                  if (canAttack) {
+                    totalScore += 600; // Diagonal skewer!
+                  }
+                }
+                break;
+              }
+              nr += dr;
+              nc += dc;
+            }
+          }
+        }
+      }
+    }
+    
+    // === STEP 7: SUPER-SMART ENDGAME EVALUATION ===
+    if (isEndgame) {
+      // PERSON RACE: In endgame, advancing persons is everything!
+      for (let r = 0; r < state.board.length; r++) {
+        for (let c = 0; c < state.board[0].length; c++) {
+          const piece = state.board[r][c];
+          if (piece && piece.type === PieceType.PERSON) {
+            if (piece.owner === Player.BOT) {
+              // Exponential bonus for advancement
+              const advancementBonus = Math.pow(c + 1, 2) * 150;
+              totalScore += advancementBonus;
+              
+              // Critical: Person about to win
+              if (c >= state.board[0].length - 2) {
+                totalScore += 8000;
+              }
+              if (c === state.board[0].length - 1) {
+                totalScore += 15000; // ONE MOVE FROM VICTORY!
+              }
+              
+              // Path clearance bonus
+              let pathClear = true;
+              for (let checkCol = c + 1; checkCol < state.board[0].length; checkCol++) {
+                if (state.board[r][checkCol]) {
+                  pathClear = false;
+                  break;
+                }
+              }
+              if (pathClear) {
+                totalScore += 3000; // Clear path to victory!
+              }
+              
+              // Support from behind
+              if (c > 0 && state.board[r][c - 1] && state.board[r][c - 1].owner === Player.BOT) {
+                totalScore += 1000; // Protected advance
+              }
+            } else {
+              // STOP ENEMY PERSONS AT ALL COSTS!
+              const distanceToWin = state.board[0].length - 1 - c;
+              const threatLevel = Math.pow(6 - distanceToWin, 2) * 200;
+              totalScore -= threatLevel;
+              
+              // EMERGENCY: Enemy about to win
+              if (distanceToWin <= 1) {
+                totalScore -= 10000;
+              }
+              if (distanceToWin === 0) {
+                totalScore -= 20000; // GAME OVER NEXT TURN!
+              }
+              
+              // Check if we can block/capture this person
+              const canCapture = botCaptures.some(cap => cap.to.row === r && cap.to.col === c);
+              if (canCapture) {
+                totalScore += 4000; // Critical defensive capture!
+              }
+            }
+          }
+        }
+      }
+      
+      // ACTIVITY IS EVERYTHING in endgame
+      totalScore += botMoves.length * 150;
+      totalScore -= playerMoves.length * 200;
+      
+      // CIRCLE POWER in endgame (flexible movement)
+      for (let r = 0; r < state.board.length; r++) {
+        for (let c = 0; c < state.board[0].length; c++) {
+          const piece = state.board[r][c];
+          if (piece && piece.type === PieceType.CIRCLE) {
+            if (piece.owner === Player.BOT) {
+              // Active circles can support person advances
+              totalScore += 400;
+              
+              // Circles ahead of persons can clear paths
+              let personsBelow = 0;
+              for (let checkRow = 0; checkRow < state.board.length; checkRow++) {
+                if (state.board[checkRow][c] && 
+                    state.board[checkRow][c].type === PieceType.PERSON &&
+                    state.board[checkRow][c].owner === Player.BOT &&
+                    c < state.board[0].length - 1) {
+                  personsBelow++;
+                }
+              }
+              totalScore += personsBelow * 500; // Supporting person advances
+            }
+          }
+        }
+      }
+    }
+    
+    // === STEP 8: TEMPO AND INITIATIVE ===
+    // Prefer positions where we force opponent to react
+    const forcingMoves = botCaptures.length + botMoves.filter(m => {
+      const afterMove = this.simulateMove(state, m);
+      const playerResponses = this.getAllValidMoves(afterMove, Player.PLAYER);
+      const forcedDefense = playerResponses.filter(r => {
+        // Check if player is forced to defend
+        return r.from.row === m.to.row && r.from.col === m.to.col;
+      });
+      return forcedDefense.length > 0;
+    }).length;
+    
+    totalScore += forcingMoves * 250; // Initiative bonus
+    
     return totalScore;
   }
   
@@ -953,6 +1140,25 @@ export class GameBot {
         if (this.isValidPosition(nr, nc, board.length, board[0].length)) {
           const neighbor = board[nr][nc];
           if (neighbor && neighbor.owner === Player.BOT) {
+            count++;
+          }
+        }
+      }
+    }
+    return count;
+  }
+
+  // Helper function to count nearby enemy pieces (for threat detection)
+  countNearbyEnemies(row, col, board, owner) {
+    let count = 0;
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const nr = row + dr;
+        const nc = col + dc;
+        if (this.isValidPosition(nr, nc, board.length, board[0].length)) {
+          const neighbor = board[nr][nc];
+          if (neighbor && neighbor.owner !== owner) {
             count++;
           }
         }
