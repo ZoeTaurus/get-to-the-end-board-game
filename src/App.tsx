@@ -749,6 +749,12 @@ function App() {
       return;
     }
     
+    // For bot games, block player when it's bot's turn
+    if (gameMode === 'bot' && !isMyTurn) {
+      console.log('🚫 Bot is thinking - move blocked');
+      return;
+    }
+    
     // For local games, allow pieces to be selected only on their turn
     if (gameMode === 'local') {
       // Allow any piece of the current player's color to be selected
@@ -772,7 +778,7 @@ function App() {
       }
       
       // Clicking another piece of your color selects it instead
-      if (piece && piece.color === currentPlayer) {
+      if (piece && piece.color === myColor) {
         setSelectedPiece([rowIndex, colIndex]);
         const { moves, captures } = calculateValidMoves(board, rowIndex, colIndex);
         setValidMoves(moves);
@@ -930,8 +936,8 @@ function App() {
         }
       }
     } 
-    else if (piece && piece.color === currentPlayer) {
-      // In local games, allow selection of any piece belonging to the current player
+    else if (piece && piece.color === myColor) {
+      // Allow selection of pieces belonging to the player (not bot pieces in bot games)
       setSelectedPiece([rowIndex, colIndex]);
       const { moves, captures } = calculateValidMoves(board, rowIndex, colIndex);
       setValidMoves(moves);
