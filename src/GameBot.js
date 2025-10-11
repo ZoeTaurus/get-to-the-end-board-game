@@ -68,12 +68,8 @@ export class GameBot {
     // PERFECT WIZARD RULE: Always capture when possible, but only if safe!
     const captureMoves = allPossibleMoves.filter(move => move.eatenPiece);
     if (captureMoves.length > 0) {
-      if (this.difficulty >= 3) {
-        // WIZARD BOT: Always picks the PERFECT capture through deep analysis
-        return this.findBestMove(safeGameState, captureMoves, this.getDepth());
-      }
-      // Lower difficulty bots use simpler capture selection
-      return captureMoves[Math.floor(Math.random() * captureMoves.length)];
+      // FORCE CAPTURE: Always take the first available capture for testing
+      return captureMoves[0];
     }
     
     // If no captures, proceed with difficulty-specific logic.
