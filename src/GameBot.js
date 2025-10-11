@@ -56,7 +56,6 @@ export class GameBot {
     }
     
     // Create a safe, deep-copied clone for AI analysis without side effects
-    // Using JSON for simplicity; could be optimized with custom deep copy for performance
     const safeGameState = JSON.parse(JSON.stringify(gameState));
     
     const allPossibleMoves = this.getAllValidMoves(safeGameState, Player.BOT);
@@ -497,7 +496,7 @@ export class GameBot {
             );
           
           if (botRecaptureMoves.length > 0) {
-            // Good! We can recapture - this might be a favorable trade
+            // Evaluate recapture to determine if trade is favorable
             let bestRecaptureScore = -Infinity;
             
             for (const recapture of botRecaptureMoves) {
@@ -556,7 +555,7 @@ export class GameBot {
       if (move.to.col >= state.board[0].length - 2) {
         totalScore += 3000; // HUGE bonus for near-victory positions!
         
-        // Extra bonus if this piece is a person (can actually win)
+        // Extra bonus if this piece is a person (can win)
         const movingPiece = state.board[move.from.row][move.from.col];
         if (movingPiece.type === PieceType.PERSON) {
           totalScore += 5000; // VICTORY IS NEAR!
