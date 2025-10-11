@@ -60,7 +60,6 @@ export class GameBot {
     const safeGameState = JSON.parse(JSON.stringify(gameState));
     
     const allPossibleMoves = this.getAllValidMoves(safeGameState, Player.BOT);
-    console.log('🤖 DEBUG: Total possible moves:', allPossibleMoves.length);
 
     if (allPossibleMoves.length === 0) {
       return null;
@@ -68,9 +67,7 @@ export class GameBot {
 
     // PERFECT WIZARD RULE: Always capture when possible, but only if safe!
     const captureMoves = allPossibleMoves.filter(move => move.eatenPiece);
-    console.log('🤖 DEBUG: Capture moves found:', captureMoves.length);
     if (captureMoves.length > 0) {
-      console.log('🤖 DEBUG: Available captures:', captureMoves);
       if (this.difficulty >= 3) {
         // WIZARD BOT: Always picks the PERFECT capture through deep analysis
         return this.findBestMove(safeGameState, captureMoves, this.getDepth());
@@ -781,14 +778,11 @@ export class GameBot {
   getAllValidMoves(gameState, player) {
     const moves = [];
     const board = gameState.board;
-    console.log('🤖 DEBUG: Getting moves for player:', player);
-    console.log('🤖 DEBUG: Board state:', JSON.stringify(board));
     
     for (let row = 0; row < board.length; row++) {
       for (let col = 0; col < board[0].length; col++) {
         const piece = board[row][col];
         if (piece && piece.owner === player) {
-          console.log(`🤖 DEBUG: Found ${player} piece at [${row},${col}]:`, piece);
           if (piece.type === PieceType.PERSON) {
             this.getPersonMoves(gameState, row, col, moves);
           } else if (piece.type === PieceType.CIRCLE) {
@@ -827,9 +821,6 @@ export class GameBot {
     const opponent = board[row][col].owner === Player.PLAYER ? Player.BOT : Player.PLAYER;
     const piece = board[row][col];
     const allDirections = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]];
-    
-    console.log(`🤖 DEBUG: Circle at [${row},${col}] looking for opponent:`, opponent);
-    console.log(`🤖 DEBUG: Circle piece:`, piece);
 
     for (const [dRow, dCol] of allDirections) {
       const newRow = row + dRow;
@@ -839,10 +830,7 @@ export class GameBot {
         if (!targetPiece) {
           moves.push({ from: { row, col }, to: { row: newRow, col: newCol } });
         } else if (targetPiece?.owner === opponent && (piece.eatenCount || 0) < 2) {
-          console.log(`🤖 DEBUG: CAPTURE FOUND! Target at [${newRow},${newCol}]:`, targetPiece);
           moves.push({ from: { row, col }, to: { row: newRow, col: newCol }, eatenPiece: { row: newRow, col: newCol } });
-        } else if (targetPiece) {
-          console.log(`🤖 DEBUG: Piece at [${newRow},${newCol}] not capturable:`, targetPiece, 'Expected opponent:', opponent);
         }
       }
     }
