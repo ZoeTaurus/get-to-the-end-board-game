@@ -79,6 +79,7 @@ function App() {
   // 🕐 Simple 30-second countdown timer
   const [timer, setTimer] = useState(30);
   const [timerStopped, setTimerStopped] = useState(false);
+  const timerIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   
   
 
@@ -135,34 +136,51 @@ function App() {
     return username === players.red.username ? 'red' : 'blue';
   };
 
-  // TIMER - ONLY RUNS FOR ONLINE GAMES (NOT BOT GAMES)
+  // 🕐 Simple 30-second countdown timer (only for online games)
   React.useEffect(() => {
-    // Only start timer for online games with both players connected
-    if (!gameStarted || winner || timerStopped || !opponent || isSearching || gameMode === 'bot') return;
+    // Don't run timer for bot games, when game hasn't started, or when stopped
+    if (!gameStarted || winner || timerStopped || !opponent || isSearching || gameMode === 'bot') {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      return;
+    }
     
-    const interval = setInterval(() => {
-      setTimer(t => {
-        if (t === 1) {
-          // TIMEOUT! Current player loses
-          setTimerStopped(true); // STOP TIMER FOREVER
+    // Reset timer to 30 when turn changes
+    setTimer(30);
+    
+    // Start countdown
+    timerIntervalRef.current = setInterval(() => {
+      setTimer(timeLeft => {
+        const newTime = timeLeft - 1;
+        
+        if (newTime <= 0) {
+          // Time's up! Current player loses
+          if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+          }
+          setTimerStopped(true);
           const myColor = getMyColor();
           const opponentColor = myColor === 'red' ? 'blue' : 'red';
           setWinner(opponentColor);
           setGameMessage(`${players[opponentColor].username} wins by timeout!`);
-          return 0; // Stop at 0
+          return 0;
         }
-        return t - 1;
+        
+        return newTime;
       });
     }, 1000);
-    return () => clearInterval(interval);
-  }, [gameStarted, winner, opponent, gameMode, timerStopped]);
-
-  // START TIMER AT 30 FOR ONLINE GAMES ONLY (NOT BOT GAMES)
-  React.useEffect(() => {
-    if (gameStarted && !winner && !timerStopped && gameMode !== 'bot') {
-      setTimer(30);
-    }
-  }, [gameStarted, isMyTurn, winner, timerStopped, gameMode]);
+    
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [gameStarted, isMyTurn, winner, opponent, gameMode, timerStopped, isSearching, getMyColor, players]);
 
   // SIMPLE TURN LOGIC - RED STARTS FIRST
   React.useEffect(() => {
@@ -2402,7 +2420,7 @@ function App() {
                 </div>
             {/* ⏰ TIMER - ONLY FOR ONLINE GAMES */}
             {gameMode !== 'bot' && (
-              <div style={{ 
+              <div id="timer" style={{ 
                 fontSize: '2rem', 
                 fontWeight: 'bold', 
                 textAlign: 'center', 
@@ -2414,7 +2432,7 @@ function App() {
                 borderRadius: '10px',
                 color: timer <= 10 ? '#ff0000' : '#4444ff'
               }}>
-                ⏰ {timer} seconds
+                {timer <= 0 ? 'Game Over!' : `Time Left: ${timer}s`}
             </div>
             )}
             <div className="game-message" style={{ color: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
