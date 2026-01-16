@@ -348,8 +348,8 @@ button {
   }
 }
 
-/* iPad / tablet orientation: rotate board 90deg */
-@media (min-width: 768px) and (max-width: 1024px) {
+/* iPad / tablet layout: full-width header, centered rotated board */
+@media (min-width: 768px) and (max-width: 1366px) {
   .game-content {
     padding-top: 0;
     align-items: stretch;
@@ -357,7 +357,7 @@ button {
   }
 
   .game-info-container {
-    position: static;
+    position: static !important;
     width: 100%;
     max-width: 100%;
     border-radius: 0;
@@ -378,7 +378,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    transform: none;
+    transform: none !important;
   }
 
   .board {
