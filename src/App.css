@@ -379,6 +379,8 @@ button {
     align-items: center;
     justify-content: center;
     transform: none !important;
+    padding-top: 1in;
+    padding-left: 1in;
   }
 
   .board {
