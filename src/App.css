@@ -305,12 +305,16 @@ button {
   .board {
     width: min(96vw, 92vh);
     height: min(72vw, 72vh);
+    transform: scale(2);
+    transform-origin: top left;
   }
 
   .board-container {
     min-height: calc(100vh - var(--game-header-height));
     align-items: flex-start;
-    padding-top: 12px;
+    justify-content: flex-start;
+    padding-top: 3in;
+    padding-left: 1in;
   }
 }
 
