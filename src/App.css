@@ -231,17 +231,14 @@ button {
 }
 
 .board-container {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;
   width: 100%;
-  height: 100%;
+  height: calc(100vh - 140px);
+  margin-top: 140px;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1;
-  padding-top: 0;
 }
 
 .board {
@@ -261,10 +258,6 @@ button {
 
 /* Desktop orientation: rotate board 90deg and center it */
 @media (min-width: 1024px) and (hover: hover) {
-  .board-container {
-    transform: translate(-50%, -50%);
-  }
-
   .board {
     transform: rotate(90deg);
   }
