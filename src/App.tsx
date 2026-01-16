@@ -682,12 +682,15 @@ function App() {
 
   // Calculate valid moves for a selected piece
   const calculateValidMoves = (board: (Piece | null)[][], row: number, col: number) => {
-    // Safety check: ensure row and col are valid
-    if (row < 0 || row >= board.length || col < 0 || col >= (board[0]?.length || 0)) {
+    // Ensure board structure is correct before calculating moves
+    const safeBoard = ensureBoardStructure(board);
+    
+    // Safety check: ensure row and col are valid (board is always 4x6)
+    if (row < 0 || row >= 4 || col < 0 || col >= 6) {
       return { moves: [], captures: [] };
     }
     
-    const piece = board[row][col];
+    const piece = safeBoard[row]?.[col];
     if (!piece) return { moves: [], captures: [] };
 
     const moves: [number, number][] = [];
@@ -714,9 +717,9 @@ function App() {
         
         // Check if the move is within board boundaries and the target cell is empty
         if (
-          newRow >= 0 && newRow < board.length &&
-          newCol >= 0 && newCol < (board[0]?.length || 0) &&
-          !board[newRow]?.[newCol]
+          newRow >= 0 && newRow < 4 &&
+          newCol >= 0 && newCol < 6 &&
+          !safeBoard[newRow]?.[newCol]
         ) {
           moves.push([newRow, newCol]);
         }
@@ -730,10 +733,10 @@ function App() {
         
         // Check if the capture is within board boundaries and there's an opponent's piece
         if (
-          newRow >= 0 && newRow < board.length &&
-          newCol >= 0 && newCol < (board[0]?.length || 0) &&
-          board[newRow]?.[newCol] &&
-          board[newRow][newCol]?.color !== piece.color
+          newRow >= 0 && newRow < 4 &&
+          newCol >= 0 && newCol < 6 &&
+          safeBoard[newRow]?.[newCol] &&
+          safeBoard[newRow][newCol]?.color !== piece.color
         ) {
           captures.push([newRow, newCol]);
         }
@@ -746,10 +749,10 @@ function App() {
         
         // Check if the move/capture is within board boundaries
         if (
-          newRow >= 0 && newRow < board.length &&
-          newCol >= 0 && newCol < board[0].length
+          newRow >= 0 && newRow < 4 &&
+          newCol >= 0 && newCol < 6
         ) {
-          const targetCell = board[newRow][newCol];
+          const targetCell = safeBoard[newRow]?.[newCol];
           if (!targetCell) {
             moves.push([newRow, newCol]);
           } else if (
