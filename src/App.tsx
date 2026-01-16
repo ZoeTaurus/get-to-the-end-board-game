@@ -249,8 +249,8 @@ function App() {
     if (gameStarted && !winner) {
       if (gameMode === 'local') {
         setIsMyTurn(currentPlayer === getMyColor());
-      } else {
-        // For online/bot games, red player starts first
+      } else if (gameMode === 'bot') {
+        // For bot games, red (player) starts first
         setIsMyTurn(getMyColor() === 'red');
       }
     }
