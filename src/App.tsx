@@ -2682,7 +2682,7 @@ function App() {
             </div>
             <div className="player-indicator" style={{ backgroundColor: getMyColor() === 'red' ? '#ff4444' : '#4444ff' }}>
               {gameMode === 'local'
-                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username} ${getTranslation(language).game.opponentTurn}`
+                ? `${currentPlayer === 'red' ? players.red.username : players.blue.username}'s turn`
                 : (isMyTurn
                   ? getTranslation(language).game.yourTurn
                   : (gameMode === 'bot'
