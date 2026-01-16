@@ -1,4 +1,7 @@
 /* CSS RESET */
+:root {
+  --game-header-height: 140px;
+}
 * {
   box-sizing: border-box;
 }
@@ -27,7 +30,7 @@ button {
   align-items: center;
   width: 100vw;
   height: 100vh;
-  padding-top: 140px;
+  padding-top: var(--game-header-height);
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
@@ -40,8 +43,10 @@ button {
   right: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 40px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  padding: 16px 20px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   z-index: 10;
@@ -50,7 +55,9 @@ button {
 .game-status {
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .points-display {
@@ -89,23 +96,23 @@ button {
 }
 
 .player-indicator {
-  font-size: 2.2rem;
-  padding: 22px 44px;
+  font-size: clamp(1rem, 2.2vw, 2rem);
+  padding: 14px 28px;
   border-radius: 16px;
   color: white;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-  min-width: 280px;
+  min-width: 0;
   text-align: center;
 }
 
 .game-message {
-  font-size: 2rem;
+  font-size: clamp(0.95rem, 2vw, 1.8rem);
   color: #333;
   background: rgba(255, 255, 255, 0.9);
-  padding: 22px 44px;
+  padding: 14px 28px;
   border-radius: 16px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-  min-width: 400px;
+  min-width: 0;
   text-align: center;
 }
 
@@ -233,7 +240,7 @@ button {
 .board-container {
   position: relative;
   width: 100%;
-  height: calc(100vh - 140px);
+  height: calc(100vh - var(--game-header-height));
   margin-top: 0;
   display: flex;
   justify-content: center;
@@ -254,6 +261,51 @@ button {
   aspect-ratio: 1.5;
   position: relative;
   margin: 0 auto;
+}
+
+/* Responsive game layout */
+@media (max-width: 1024px) {
+  :root {
+    --game-header-height: 120px;
+  }
+
+  .game-info-container {
+    padding: 12px 14px;
+    gap: 10px 12px;
+  }
+
+  .game-status {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --game-header-height: 110px;
+  }
+
+  .points-display {
+    gap: 10px;
+  }
+
+  .points-label {
+    font-size: 1rem;
+  }
+
+  .points-value {
+    font-size: 1.2rem;
+  }
+
+  .player-indicator,
+  .game-message {
+    width: 100%;
+    max-width: 92vw;
+  }
+
+  .board {
+    width: min(90vh, 92vw);
+    height: min(60vh, 62vw);
+  }
 }
 
 /* Desktop orientation: rotate board 90deg and center it */
