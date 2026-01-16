@@ -313,8 +313,8 @@ button {
     min-height: calc(100vh - var(--game-header-height));
     align-items: flex-start;
     justify-content: flex-start;
-    padding-top: 3in;
-    padding-left: 0;
+    padding-top: 6in;
+    padding-left: 1in;
   }
 }
 
