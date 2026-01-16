@@ -129,6 +129,39 @@ function App() {
   const [showShopMessage, setShowShopMessage] = useState(false);
   const [shopMessageType, setShopMessageType] = useState('success');
 
+  // Guest play helpers (3-game limit)
+  const getGuestGamesCount = (): number => {
+    const count = localStorage.getItem('guestGamesCount');
+    return count ? parseInt(count, 10) : 0;
+  };
+
+  const incrementGuestGames = () => {
+    const currentCount = getGuestGamesCount();
+    localStorage.setItem('guestGamesCount', (currentCount + 1).toString());
+  };
+
+  const canGuestPlay = (): boolean => {
+    return getGuestGamesCount() < 3;
+  };
+
+  const handleGuestLogin = () => {
+    setIsGuest(true);
+    setIsLoggedIn(true);
+    setUsername('Guest');
+    setPlayers({
+      red: { color: 'red', username: 'Guest' },
+      blue: { color: 'blue', username: 'Player 2' }
+    });
+  };
+
+  const checkGuestLimit = (): boolean => {
+    if (isGuest && !canGuestPlay()) {
+      setShowGuestLimitPopup(true);
+      return false;
+    }
+    return true;
+  };
+
   // Helper to get local player's color
     const getMyColor = () => {
     if (gameMode === 'local') {
