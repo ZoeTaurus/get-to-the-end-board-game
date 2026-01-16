@@ -2311,9 +2311,9 @@ button {
   }
   
   .board-container {
-    transform: scale(0.5) translate(-50%, -50%) !important;
-    width: 250px !important;
-    height: 250px !important;
+    transform: none !important;
+    width: 100% !important;
+    height: auto !important;
   }
   
   .game-interface {
