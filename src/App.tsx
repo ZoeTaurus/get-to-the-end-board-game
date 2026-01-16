@@ -1005,12 +1005,12 @@ function App() {
             
             // Different thinking times based on difficulty for realism
             const thinkingTime = {
-              'easy': 500 + Math.random() * 300,     // 500-800ms
-              'normal': 800 + Math.random() * 400,   // 800-1200ms  
-              'hard': 1200 + Math.random() * 600,    // 1200-1800ms
-              'pro': 1800 + Math.random() * 700,     // 1800-2500ms
-              'wizard': 2500 + Math.random() * 1000  // 2500-3500ms (thinking deeply!)
-            }[botDifficulty] || 1000;
+              'easy': 250 + Math.random() * 200,     // 250-450ms
+              'normal': 350 + Math.random() * 250,   // 350-600ms
+              'hard': 500 + Math.random() * 300,     // 500-800ms
+              'pro': 700 + Math.random() * 400,      // 700-1100ms
+              'wizard': 900 + Math.random() * 500    // 900-1400ms
+            }[botDifficulty] || 600;
             
             const botMoveTimeout = setTimeout(() => {
               try {
