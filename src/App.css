@@ -284,6 +284,16 @@ button {
     --game-header-height: 150px;
   }
 
+  .game-content {
+    padding-top: 0;
+    height: 100vh;
+  }
+
+  .game-info-container {
+    position: static;
+    box-shadow: none;
+  }
+
   .points-display {
     gap: 10px;
   }
@@ -310,7 +320,8 @@ button {
   }
 
   .board-container {
-    min-height: calc(100vh - var(--game-header-height));
+    flex: 1;
+    min-height: 0;
     align-items: center;
     justify-content: center;
     padding-top: 0;
