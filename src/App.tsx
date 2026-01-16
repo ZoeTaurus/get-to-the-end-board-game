@@ -38,6 +38,9 @@ function App() {
   const [board, setBoard] = useState<(Piece | null)[][]>(
     Array(4).fill(null).map(() => Array(6).fill(null))
   );
+  const boardRef = useRef<(Piece | null)[][]>(
+    Array(4).fill(null).map(() => Array(6).fill(null))
+  );
   const [currentPlayer, setCurrentPlayer] = useState<PlayerColor>('red');
   const [gameStarted, setGameStarted] = useState(false);
   const [gameMode, setGameMode] = useState<'online' | 'bot' | 'local'>('online');
@@ -86,6 +89,10 @@ function App() {
   const timerIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const playersRef = useRef(players);
   const myColorRef = useRef<'red' | 'blue'>('red');
+
+  useEffect(() => {
+    boardRef.current = board;
+  }, [board]);
   
   
 
@@ -1427,7 +1434,8 @@ function App() {
     const botLevel = difficultyMap[difficulty] || 4;
     // Use GameBot AI to choose the best move
     const gameBot = new GameBot(botLevel);
-    const botBoard = convertBoardForBot(board);
+    const latestBoard = boardRef.current;
+    const botBoard = convertBoardForBot(latestBoard);
     const gameState = { 
       board: botBoard, 
       currentPlayer: Player.BOT // The bot is playing as Player.BOT (blue pieces)
@@ -1447,15 +1455,14 @@ function App() {
     const [toRow, toCol] = gameMove.to;
     
     // Get the piece being moved
-    const piece = board[fromRow][fromCol];
-    if (!piece) {
-      return;
-    }
-    
     // Execute the move with proper capture handling
       setBoard(prevBoard => {
         const updatedBoard = prevBoard.map(row => [...row]);
-        const movingPiece = {...piece};
+        const pieceAtSource = updatedBoard[fromRow]?.[fromCol];
+        if (!pieceAtSource) {
+          return prevBoard;
+        }
+        const movingPiece = { ...pieceAtSource };
         
       // Handle captures using the GameBot's eatenPiece information (more reliable)
       if (botMove.eatenPiece) {
@@ -1483,7 +1490,7 @@ function App() {
           }
         }
       
-      return updatedBoard;
+      return ensureBoardStructure(updatedBoard);
     });
     
     // Switch turns back to player and update message
@@ -1508,7 +1515,8 @@ function App() {
     const gameBot = new GameBot(1); // Easy mode = random moves
     
     // Convert your board format to the GameBot's format
-    const botBoard = convertBoardForBot(board);
+    const latestBoard = boardRef.current;
+    const botBoard = convertBoardForBot(latestBoard);
     const gameState = {
       board: botBoard,
       currentPlayer: Player.BOT
@@ -1518,7 +1526,6 @@ function App() {
     const botMove = gameBot.makeMove(gameState);
     
     if (!botMove) {
-      console.log('🤖 GameBot found no valid moves for forced move');
       setCurrentPlayer('red');
       setIsMyTurn(true);
       return;
@@ -1530,22 +1537,18 @@ function App() {
     const [toRow, toCol] = gameMove.to;
     
     // Get the piece being moved
-    const piece = board[fromRow][fromCol];
-    if (!piece) {
-      console.log('🤖 Error: No piece found at source position for forced move');
-      return;
-    }
-    
     // Execute the move
     setBoard(prevBoard => {
       const updatedBoard = ensureBoardStructure(prevBoard.map(row => [...row]));
-      const movingPiece = {...piece};
+      const pieceAtSource = updatedBoard[fromRow]?.[fromCol];
+      if (!pieceAtSource) {
+        return prevBoard;
+      }
+      const movingPiece = { ...pieceAtSource };
         
       // Check if this is a capture using the GameBot's eatenPiece information
       if (botMove.eatenPiece) {
         const [eatenRow, eatenCol] = [botMove.eatenPiece.row, botMove.eatenPiece.col];
-        console.log('🤖 FORCED BOT CAPTURE: Removing piece at', [eatenRow, eatenCol], 'Piece was:', updatedBoard[eatenRow][eatenCol]);
-        
         // Remove the captured piece from the board
         updatedBoard[eatenRow][eatenCol] = null;
         
