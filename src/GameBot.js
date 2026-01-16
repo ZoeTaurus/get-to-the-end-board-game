@@ -229,9 +229,11 @@ export class GameBot {
       return this.evaluateBoard(state); // Evaluate current position
     }
 
+    const orderedMoves = this.orderMovesByHeuristic(state, possibleMoves, isMaximizingPlayer ? Player.BOT : Player.PLAYER);
+
     if (isMaximizingPlayer) {
       let maxEval = -Infinity;
-      for (const move of possibleMoves) {
+      for (const move of orderedMoves) {
         const newState = this.simulateMove(state, move);
         const evaluation = this.minimax(newState, depth - 1, false, alpha, beta);
         maxEval = Math.max(maxEval, evaluation);
@@ -243,7 +245,7 @@ export class GameBot {
       return maxEval;
     } else { // Minimizing Player
       let minEval = Infinity;
-      for (const move of possibleMoves) {
+      for (const move of orderedMoves) {
         const newState = this.simulateMove(state, move);
         const evaluation = this.minimax(newState, depth - 1, true, alpha, beta);
         minEval = Math.min(minEval, evaluation);
@@ -953,6 +955,72 @@ export class GameBot {
     }).length;
     
     totalScore += forcingMoves * 250; // Initiative bonus
+
+    // === STEP 9: THREAT MAP AND PIECE SAFETY ===
+    const threatMaps = this.buildThreatMaps(state);
+    totalScore += this.evaluateThreatSafety(state, threatMaps, pieceValue);
+
+    // === STEP 10: RISK VS REWARD ANALYSIS ===
+    totalScore += this.evaluateRiskReward(state, botMoves, playerMoves, pieceValue);
+
+    // === STEP 11: MOBILITY BALANCE ===
+    totalScore += this.evaluateMobilityBalance(botMoves, playerMoves);
+
+    // === STEP 12: LANE CONTROL AND BLOCKADES ===
+    totalScore += this.evaluateLaneControl(state);
+
+    // === STEP 13: PROTECTION CHAINS AND FORMATIONS ===
+    totalScore += this.evaluateProtectionChains(state);
+
+    // === STEP 14: MOVE ANTICIPATION ===
+    if (this.difficulty >= 4) {
+      totalScore += this.evaluateMoveAnticipation(state);
+    }
+
+    // === STEP 15: CENTER AND EDGE CONTROL ===
+    totalScore += this.evaluateCenterAndEdgeControl(state);
+
+    // === STEP 16: ADVANCE PATHS AND GOAL PRESSURE ===
+    totalScore += this.evaluateAdvancePaths(state);
+
+    // === STEP 17: DEFENSIVE NETS ===
+    totalScore += this.evaluateDefensiveNet(state, threatMaps);
+
+    // === STEP 18: OFFENSIVE PRESSURE ===
+    totalScore += this.evaluateOffensivePressure(state, threatMaps);
+
+    // === STEP 19: PIECE ACTIVITY ===
+    totalScore += this.evaluatePieceActivity(state);
+
+    // === STEP 20: STALEMATE AVOIDANCE ===
+    totalScore += this.evaluateStalemateAvoidance(state, botMoves, playerMoves);
+
+    // === STEP 21: CAPTURE NETS ===
+    totalScore += this.evaluateCaptureNet(state, botMoves);
+
+    // === STEP 22: BLOCKADE POTENTIAL ===
+    totalScore += this.evaluateBlockadePotential(state);
+
+    // === STEP 23: ESCAPE SQUARES ===
+    totalScore += this.evaluateEscapeSquares(state, threatMaps);
+
+    // === STEP 24: DIAGONAL CONTROL ===
+    totalScore += this.evaluateDiagonalControl(state);
+
+    // === STEP 25: COLUMN PRESSURE ===
+    totalScore += this.evaluateColumnPressure(state);
+
+    // === STEP 26: COUNTER-ATTACK POTENTIAL ===
+    totalScore += this.evaluateCounterAttackPotential(state, botMoves);
+
+    // === STEP 27: SACRIFICE VALUE (RISK VS REWARD) ===
+    totalScore += this.evaluateSacrificePotential(state, botMoves, pieceValue);
+
+    // === STEP 28: PIECE PAIRING COHESION ===
+    totalScore += this.evaluatePiecePairing(state);
+
+    // === STEP 29: SPACING DISCIPLINE ===
+    totalScore += this.evaluateSpacingDiscipline(state);
     
     return totalScore;
   }
@@ -960,6 +1028,696 @@ export class GameBot {
   // ====================================================================
   // GAME MECHANICS AND VALIDATION
   // ====================================================================
+
+  // ====================================================================
+  // ADVANCED MOVE ORDERING AND EVALUATION (WIZARD EXTENSIONS)
+  // These methods add deeper strategic thinking, safer captures, and
+  // stronger defensive/offensive awareness.
+  // ====================================================================
+
+  orderMovesByHeuristic(state, moves, player) {
+    // Stable sort by heuristic score: captures, advancement, safety, center
+    const scoredMoves = moves.map(move => {
+      const isCapture = !!move.eatenPiece;
+      const advance = move.to.col - move.from.col;
+      const advancementScore = player === Player.BOT ? advance : -advance;
+      const centerScore = -Math.abs(move.to.row - Math.floor(state.board.length / 2));
+      const safe = this.isMoveImmediatelySafe(state, move, player) ? 1 : 0;
+
+      const score =
+        (isCapture ? 1000 : 0) +
+        advancementScore * 20 +
+        centerScore * 5 +
+        safe * 150;
+
+      return { move, score };
+    });
+
+    scoredMoves.sort((a, b) => b.score - a.score);
+    return scoredMoves.map(s => s.move);
+  }
+
+  isMoveImmediatelySafe(state, move, player) {
+    const afterMove = this.simulateMove(state, move);
+    const opponent = player === Player.BOT ? Player.PLAYER : Player.BOT;
+    const opponentMoves = this.getAllValidMoves(afterMove, opponent);
+    const opponentCaptures = opponentMoves.filter(m => m.eatenPiece);
+    return !opponentCaptures.some(cap => cap.to.row === move.to.row && cap.to.col === move.to.col);
+  }
+
+  buildThreatMaps(state) {
+    return {
+      bot: this.buildThreatMapForPlayer(state.board, Player.BOT),
+      player: this.buildThreatMapForPlayer(state.board, Player.PLAYER)
+    };
+  }
+
+  buildThreatMapForPlayer(board, player) {
+    const rows = board.length;
+    const cols = board[0].length;
+    const map = Array.from({ length: rows }, () => Array(cols).fill(0));
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const piece = board[r][c];
+        if (!piece || piece.owner !== player) continue;
+        const attacks = this.getAttackSquares(board, r, c, piece);
+        for (const pos of attacks) {
+          map[pos.row][pos.col] += 1;
+        }
+      }
+    }
+
+    return map;
+  }
+
+  getAttackSquares(board, row, col, piece) {
+    const positions = [];
+    const rows = board.length;
+    const cols = board[0].length;
+
+    if (piece.type === PieceType.PERSON) {
+      const diagonals = [
+        { dr: -1, dc: -1 },
+        { dr: -1, dc: 1 },
+        { dr: 1, dc: -1 },
+        { dr: 1, dc: 1 }
+      ];
+      for (const d of diagonals) {
+        const r = row + d.dr;
+        const c = col + d.dc;
+        if (r >= 0 && r < rows && c >= 0 && c < cols) {
+          positions.push({ row: r, col: c });
+        }
+      }
+    } else {
+      // Circle attacks all adjacent squares
+      const directions = [
+        { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
+        { dr: 0, dc: -1 }, { dr: 0, dc: 1 },
+        { dr: -1, dc: -1 }, { dr: -1, dc: 1 },
+        { dr: 1, dc: -1 }, { dr: 1, dc: 1 }
+      ];
+      for (const d of directions) {
+        const r = row + d.dr;
+        const c = col + d.dc;
+        if (r >= 0 && r < rows && c >= 0 && c < cols) {
+          positions.push({ row: r, col: c });
+        }
+      }
+    }
+
+    return positions;
+  }
+
+  evaluateThreatSafety(state, threatMaps, pieceValue) {
+    let score = 0;
+    const board = state.board;
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece) continue;
+
+        const value = pieceValue[piece.type] || 100;
+        const attackedByPlayer = threatMaps.player[r][c] > 0;
+        const attackedByBot = threatMaps.bot[r][c] > 0;
+
+        if (piece.owner === Player.BOT) {
+          if (attackedByPlayer && !attackedByBot) {
+            score -= value * 0.6; // hanging piece
+          } else if (attackedByPlayer && attackedByBot) {
+            score -= value * 0.2; // contested
+          } else if (!attackedByPlayer && attackedByBot) {
+            score += value * 0.05; // defended and safe
+          }
+        } else {
+          if (attackedByBot && !attackedByPlayer) {
+            score += value * 0.5; // opponent piece is hanging
+          } else if (attackedByBot && attackedByPlayer) {
+            score += value * 0.1;
+          }
+        }
+      }
+    }
+
+    return score;
+  }
+
+  evaluateRiskReward(state, botMoves, playerMoves, pieceValue) {
+    let score = 0;
+
+    const botCaptures = botMoves.filter(m => m.eatenPiece);
+    const playerCaptures = playerMoves.filter(m => m.eatenPiece);
+
+    for (const move of botCaptures) {
+      const afterMove = this.simulateMove(state, move);
+      const opponentReplies = this.getAllValidMoves(afterMove, Player.PLAYER);
+      const recaptures = opponentReplies.filter(r => r.eatenPiece);
+
+      const capturedPiece = state.board[move.to.row][move.to.col];
+      const movingPiece = state.board[move.from.row][move.from.col];
+
+      const gain = capturedPiece ? pieceValue[capturedPiece.type] : 0;
+      const risk = movingPiece ? pieceValue[movingPiece.type] : 0;
+
+      const isRecaptured = recaptures.some(r => r.to.row === move.to.row && r.to.col === move.to.col);
+      if (isRecaptured) {
+        score += gain * 0.5 - risk * 0.7;
+      } else {
+        score += gain * 0.9;
+      }
+    }
+
+    for (const move of playerCaptures) {
+      const capturedPiece = state.board[move.to.row][move.to.col];
+      const movingPiece = state.board[move.from.row][move.from.col];
+      const loss = capturedPiece ? pieceValue[capturedPiece.type] : 0;
+      const risk = movingPiece ? pieceValue[movingPiece.type] : 0;
+      score -= loss * 0.6;
+      score += risk * 0.1; // if their capture exposes risk, small relief
+    }
+
+    return score;
+  }
+
+  evaluateMobilityBalance(botMoves, playerMoves) {
+    const botMobility = botMoves.length;
+    const playerMobility = playerMoves.length;
+    const mobilityEdge = botMobility - playerMobility;
+
+    // Favor positions where the bot can maneuver more than the player
+    return mobilityEdge * 20;
+  }
+
+  evaluateLaneControl(state) {
+    let score = 0;
+    const board = state.board;
+    const cols = board[0].length;
+
+    for (let c = 0; c < cols; c++) {
+      let botCount = 0;
+      let playerCount = 0;
+      for (let r = 0; r < board.length; r++) {
+        const piece = board[r][c];
+        if (!piece) continue;
+        if (piece.owner === Player.BOT) botCount++;
+        if (piece.owner === Player.PLAYER) playerCount++;
+      }
+
+      // Bot wants control closer to the goal column
+      const columnWeight = c + 1;
+      score += (botCount - playerCount) * columnWeight * 15;
+    }
+
+    return score;
+  }
+
+  evaluateProtectionChains(state) {
+    let score = 0;
+    const board = state.board;
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece || piece.owner !== Player.BOT) continue;
+
+        const nearby = this.countNearbyFriendlies(r, c, board);
+        const diagonal = this.countDiagonalFriendlies(r, c, board);
+
+        if (nearby >= 2) score += 120;
+        if (diagonal >= 1) score += 80;
+        if (nearby === 0 && diagonal === 0) score -= 120; // isolated
+      }
+    }
+
+    return score;
+  }
+
+  evaluateMoveAnticipation(state) {
+    let score = 0;
+    const botMoves = this.getAllValidMoves(state, Player.BOT);
+    const sampleSize = Math.min(botMoves.length, 8);
+
+    for (let i = 0; i < sampleSize; i++) {
+      const move = botMoves[i];
+      const afterMove = this.simulateMove(state, move);
+      const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
+      const playerCaptures = playerMoves.filter(m => m.eatenPiece);
+
+      // If player has strong capture response, penalize this move
+      if (playerCaptures.length >= 2) {
+        score -= 80;
+      } else if (playerCaptures.length === 0) {
+        score += 40; // quiet move that limits reply
+      }
+    }
+
+    return score;
+  }
+
+  evaluateCenterAndEdgeControl(state) {
+    let score = 0;
+    const board = state.board;
+    const centerRow = Math.floor(board.length / 2);
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece) continue;
+
+        const centerDistance = Math.abs(r - centerRow);
+        const centerBonus = Math.max(0, 3 - centerDistance) * 20;
+        const edgePenalty = (r === 0 || r === board.length - 1) ? 15 : 0;
+
+        if (piece.owner === Player.BOT) {
+          score += centerBonus;
+          score -= edgePenalty;
+        } else {
+          score -= centerBonus * 0.8;
+          score += edgePenalty * 0.6;
+        }
+      }
+    }
+
+    return score;
+  }
+
+  evaluateAdvancePaths(state) {
+    let score = 0;
+    const board = state.board;
+    const lastCol = board[0].length - 1;
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece || piece.type !== PieceType.PERSON) continue;
+
+        if (piece.owner === Player.BOT) {
+          const forwardTargets = this.getForwardDiagonalTargets(board, r, c, true);
+          const pathBonus = forwardTargets.filter(t => !board[t.row][t.col]).length * 80;
+          const goalPressure = (lastCol - c) <= 1 ? 500 : 0;
+          score += pathBonus + goalPressure;
+        } else {
+          const forwardTargets = this.getForwardDiagonalTargets(board, r, c, false);
+          const pathBonus = forwardTargets.filter(t => !board[t.row][t.col]).length * 70;
+          const goalPressure = c <= 1 ? 450 : 0;
+          score -= pathBonus + goalPressure;
+        }
+      }
+    }
+
+    return score;
+  }
+
+  getForwardDiagonalTargets(board, row, col, isBot) {
+    const targets = [];
+    const rows = board.length;
+    const direction = isBot ? 1 : -1;
+    const deltas = [
+      { dr: -1, dc: direction },
+      { dr: 1, dc: direction }
+    ];
+
+    for (const d of deltas) {
+      const r = row + d.dr;
+      const c = col + d.dc;
+      if (r >= 0 && r < rows && c >= 0 && c < board[0].length) {
+        targets.push({ row: r, col: c });
+      }
+    }
+
+    return targets;
+  }
+
+  evaluateDefensiveNet(state, threatMaps) {
+    let score = 0;
+    const board = state.board;
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece || piece.owner !== Player.BOT) continue;
+
+        const adjacent = this.getAdjacentSquares(board, r, c);
+        let defendedSquares = 0;
+        let threatenedSquares = 0;
+
+        for (const pos of adjacent) {
+          if (threatMaps.bot[pos.row][pos.col] > 0) defendedSquares++;
+          if (threatMaps.player[pos.row][pos.col] > 0) threatenedSquares++;
+        }
+
+        score += defendedSquares * 18;
+        score -= threatenedSquares * 10;
+      }
+    }
+
+    return score;
+  }
+
+  evaluateOffensivePressure(state, threatMaps) {
+    let score = 0;
+    const board = state.board;
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece || piece.owner !== Player.PLAYER) continue;
+
+        const attacked = threatMaps.bot[r][c] > 0;
+        const defended = threatMaps.player[r][c] > 0;
+
+        if (attacked && !defended) {
+          score += 160;
+        } else if (attacked && defended) {
+          score += 60;
+        }
+      }
+    }
+
+    return score;
+  }
+
+  evaluatePieceActivity(state) {
+    let score = 0;
+    const board = state.board;
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece) continue;
+
+        const activity = this.countPieceMoves(state, r, c, piece);
+        if (piece.owner === Player.BOT) {
+          score += activity * 25;
+        } else {
+          score -= activity * 20;
+        }
+      }
+    }
+
+    return score;
+  }
+
+  countPieceMoves(state, row, col, piece) {
+    const moves = [];
+    if (piece.type === PieceType.PERSON) {
+      this.getPersonMoves(state, row, col, moves);
+    } else if (piece.type === PieceType.CIRCLE) {
+      this.getCircleMoves(state, row, col, moves);
+    }
+    return moves.length;
+  }
+
+  evaluateStalemateAvoidance(state, botMoves, playerMoves) {
+    let score = 0;
+
+    if (botMoves.length <= 1) {
+      score -= 300; // near-stuck
+    }
+
+    if (playerMoves.length <= 1) {
+      score += 220; // we can limit their movement
+    }
+
+    return score;
+  }
+
+  getAdjacentSquares(board, row, col) {
+    const positions = [];
+    const rows = board.length;
+    const cols = board[0].length;
+
+    const directions = [
+      { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
+      { dr: 0, dc: -1 }, { dr: 0, dc: 1 },
+      { dr: -1, dc: -1 }, { dr: -1, dc: 1 },
+      { dr: 1, dc: -1 }, { dr: 1, dc: 1 }
+    ];
+
+    for (const d of directions) {
+      const r = row + d.dr;
+      const c = col + d.dc;
+      if (r >= 0 && r < rows && c >= 0 && c < cols) {
+        positions.push({ row: r, col: c });
+      }
+    }
+
+    return positions;
+  }
+
+  evaluateCaptureNet(state, botMoves) {
+    let score = 0;
+    const captures = botMoves.filter(m => m.eatenPiece);
+
+    // Reward positions where the bot can capture multiple different targets
+    const targets = new Set(captures.map(m => `${m.to.row},${m.to.col}`));
+    if (targets.size >= 2) {
+      score += targets.size * 120;
+    }
+
+    // Encourage capture options that create follow-up capture chains
+    for (const move of captures) {
+      const afterMove = this.simulateMove(state, move);
+      const followUps = this.getAllValidMoves(afterMove, Player.BOT).filter(m => m.eatenPiece);
+      if (followUps.length >= 2) {
+        score += 180;
+      }
+    }
+
+    return score;
+  }
+
+  evaluateBlockadePotential(state) {
+    let score = 0;
+    const board = state.board;
+    const rows = board.length;
+    const cols = board[0].length;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const piece = board[r][c];
+        if (!piece || piece.owner !== Player.BOT) continue;
+
+        // Check if this piece blocks a player path in the same column
+        let playerBehind = false;
+        for (let br = 0; br < rows; br++) {
+          const behindPiece = board[br][c];
+          if (behindPiece && behindPiece.owner === Player.PLAYER) {
+            playerBehind = true;
+            break;
+          }
+        }
+
+        if (playerBehind) {
+          score += 70;
+        }
+      }
+    }
+
+    return score;
+  }
+
+  evaluateEscapeSquares(state, threatMaps) {
+    let score = 0;
+    const board = state.board;
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece || piece.owner !== Player.BOT) continue;
+
+        const adjacent = this.getAdjacentSquares(board, r, c);
+        const safeSquares = adjacent.filter(pos => this.isSquareSafe(threatMaps, pos.row, pos.col, Player.BOT));
+        score += safeSquares.length * 20;
+      }
+    }
+
+    return score;
+  }
+
+  isSquareSafe(threatMaps, row, col, player) {
+    if (player === Player.BOT) {
+      return threatMaps.player[row][col] === 0;
+    }
+    return threatMaps.bot[row][col] === 0;
+  }
+
+  evaluateDiagonalControl(state) {
+    let score = 0;
+    const board = state.board;
+    const rows = board.length;
+    const cols = board[0].length;
+
+    // Count bot vs player pieces along main diagonals to estimate control
+    for (let startCol = 0; startCol < cols; startCol++) {
+      let botCount = 0;
+      let playerCount = 0;
+      let r = 0;
+      let c = startCol;
+      while (r < rows && c < cols) {
+        const piece = board[r][c];
+        if (piece) {
+          if (piece.owner === Player.BOT) botCount++;
+          if (piece.owner === Player.PLAYER) playerCount++;
+        }
+        r++;
+        c++;
+      }
+      score += (botCount - playerCount) * 25;
+    }
+
+    for (let startRow = 1; startRow < rows; startRow++) {
+      let botCount = 0;
+      let playerCount = 0;
+      let r = startRow;
+      let c = 0;
+      while (r < rows && c < cols) {
+        const piece = board[r][c];
+        if (piece) {
+          if (piece.owner === Player.BOT) botCount++;
+          if (piece.owner === Player.PLAYER) playerCount++;
+        }
+        r++;
+        c++;
+      }
+      score += (botCount - playerCount) * 20;
+    }
+
+    return score;
+  }
+
+  evaluateColumnPressure(state) {
+    let score = 0;
+    const board = state.board;
+    const cols = board[0].length;
+
+    for (let c = 0; c < cols; c++) {
+      let botAdvance = 0;
+      let playerAdvance = 0;
+      for (let r = 0; r < board.length; r++) {
+        const piece = board[r][c];
+        if (!piece) continue;
+        if (piece.owner === Player.BOT) {
+          botAdvance += c;
+        } else {
+          playerAdvance += (cols - 1 - c);
+        }
+      }
+      score += (botAdvance - playerAdvance) * 6;
+    }
+
+    return score;
+  }
+
+  evaluateCounterAttackPotential(state, botMoves) {
+    let score = 0;
+    const sampleSize = Math.min(botMoves.length, 10);
+
+    for (let i = 0; i < sampleSize; i++) {
+      const move = botMoves[i];
+      const afterMove = this.simulateMove(state, move);
+      const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
+      const playerCaptures = playerMoves.filter(m => m.eatenPiece);
+
+      // If player captures, see if bot has immediate recapture
+      for (const cap of playerCaptures) {
+        const afterCapture = this.simulateMove(afterMove, cap);
+        const botRecaptures = this.getAllValidMoves(afterCapture, Player.BOT).filter(m => m.eatenPiece);
+        if (botRecaptures.length > 0) {
+          score += 40;
+        }
+      }
+    }
+
+    return score;
+  }
+
+  evaluateSacrificePotential(state, botMoves, pieceValue) {
+    let score = 0;
+    const captures = botMoves.filter(m => m.eatenPiece);
+
+    for (const move of captures) {
+      const captured = state.board[move.to.row][move.to.col];
+      const mover = state.board[move.from.row][move.from.col];
+      if (!captured || !mover) continue;
+
+      const gain = pieceValue[captured.type] || 100;
+      const cost = pieceValue[mover.type] || 100;
+
+      // Favor trades that win material even if recaptured
+      if (gain > cost) {
+        score += (gain - cost) * 0.6;
+      }
+    }
+
+    return score;
+  }
+
+  evaluatePiecePairing(state) {
+    let score = 0;
+    const board = state.board;
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece) continue;
+
+        const neighbors = this.getAdjacentSquares(board, r, c);
+        let sameTypeAllies = 0;
+        let mixedAllies = 0;
+
+        for (const pos of neighbors) {
+          const other = board[pos.row][pos.col];
+          if (!other || other.owner !== piece.owner) continue;
+          if (other.type === piece.type) {
+            sameTypeAllies++;
+          } else {
+            mixedAllies++;
+          }
+        }
+
+        if (piece.owner === Player.BOT) {
+          score += sameTypeAllies * 18;
+          score += mixedAllies * 10;
+        } else {
+          score -= sameTypeAllies * 14;
+          score -= mixedAllies * 8;
+        }
+      }
+    }
+
+    return score;
+  }
+
+  evaluateSpacingDiscipline(state) {
+    let score = 0;
+    const board = state.board;
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece) continue;
+
+        const neighbors = this.getAdjacentSquares(board, r, c);
+        const friendlyNeighbors = neighbors.filter(pos => {
+          const other = board[pos.row][pos.col];
+          return other && other.owner === piece.owner;
+        });
+
+        if (piece.owner === Player.BOT) {
+          if (friendlyNeighbors.length >= 4) score -= 60; // too clumped
+          if (friendlyNeighbors.length === 1) score += 25; // balanced spacing
+        } else {
+          if (friendlyNeighbors.length >= 4) score += 40;
+          if (friendlyNeighbors.length === 1) score -= 20;
+        }
+      }
+    }
+
+    return score;
+  }
 
   getAllValidMoves(gameState, player) {
     const moves = [];
