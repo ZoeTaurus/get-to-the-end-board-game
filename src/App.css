@@ -314,7 +314,7 @@ button {
     align-items: flex-start;
     justify-content: flex-start;
     padding-top: 3in;
-    padding-left: 1in;
+    padding-left: 0;
   }
 }
 
