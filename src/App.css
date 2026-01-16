@@ -348,6 +348,13 @@ button {
   }
 }
 
+/* iPad / tablet orientation: rotate board 90deg */
+@media (min-width: 768px) and (max-width: 1024px) and (hover: none) {
+  .board {
+    transform: rotate(90deg);
+  }
+}
+
 /* Remove 3D effect bars */
 .board::after {
   display: none;
