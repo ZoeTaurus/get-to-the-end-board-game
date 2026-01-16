@@ -349,7 +349,7 @@ button {
 }
 
 /* iPad / tablet orientation: rotate board 90deg */
-@media (min-width: 768px) and (max-width: 1024px) and (hover: none) {
+@media (min-width: 768px) and (max-width: 1024px) {
   .game-content {
     padding-top: 0;
     align-items: stretch;
