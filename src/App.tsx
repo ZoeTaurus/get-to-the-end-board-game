@@ -2222,16 +2222,17 @@ function App() {
   const [isJoiningGame, setIsJoiningGame] = useState(false);
 
     const joinGameWithCode = useCallback(() => {
-      if (gameCode.length === 4) {
+      const normalizedCode = gameCode.trim().toUpperCase();
+      if (normalizedCode.length === 4) {
         setIsJoiningGame(true);
         
         // Emit socket event to join private game
         socket.emit('joinPrivateGame', {
-          gameCode: gameCode.toUpperCase(),
+          gameCode: normalizedCode,
           username: username || 'Player 2'
         });
         
-        console.log('Joining private game with code:', gameCode.toUpperCase());
+        console.log('Joining private game with code:', normalizedCode);
       }
     }, [gameCode, username]);
 

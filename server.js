@@ -385,28 +385,39 @@ io.on('connection', (socket) => {
 
   // Private game handlers
   socket.on('createPrivateGame', ({ gameCode, gameId, hostUsername }) => {
-    console.log(`🎮 Private game created: ${gameCode} by ${hostUsername} (${socket.id})`);
+    const normalizedCode = (gameCode || '').trim().toUpperCase();
+    if (!normalizedCode || normalizedCode.length !== 4) {
+      socket.emit('privateGameError', { message: 'Invalid game code' });
+      return;
+    }
+    if (privateGames.has(normalizedCode)) {
+      socket.emit('privateGameError', { message: 'Game code already in use' });
+      return;
+    }
+
+    console.log(`🎮 Private game created: ${normalizedCode} by ${hostUsername} (${socket.id})`);
     
     // Store the private game
-    privateGames.set(gameCode, {
+    privateGames.set(normalizedCode, {
       gameId,
       hostSocketId: socket.id,
       hostUsername,
-      gameCode,
+      gameCode: normalizedCode,
       createdAt: Date.now(),
       players: [socket.id],
       gameState: 'waiting'
     });
     
     // Join the player to the game room
-    socket.join(gameCode);
-    socket.emit('privateGameCreated', { gameCode, gameId });
+    socket.join(normalizedCode);
+    socket.emit('privateGameCreated', { gameCode: normalizedCode, gameId });
   });
 
   socket.on('joinPrivateGame', ({ gameCode, username }) => {
-    console.log(`🎮 Player ${username} (${socket.id}) trying to join private game: ${gameCode}`);
+    const normalizedCode = (gameCode || '').trim().toUpperCase();
+    console.log(`🎮 Player ${username} (${socket.id}) trying to join private game: ${normalizedCode}`);
     
-    const privateGame = privateGames.get(gameCode);
+    const privateGame = privateGames.get(normalizedCode);
     if (!privateGame) {
       socket.emit('privateGameError', { message: 'Game code not found or expired' });
       return;
@@ -424,7 +435,7 @@ io.on('connection', (socket) => {
     privateGame.currentTurn = privateGame.hostSocketId; // Host starts first (like regular games)
     
     // Join the player to the game room
-    socket.join(gameCode);
+    socket.join(normalizedCode);
     
     // Notify host that opponent joined with turn info
     io.to(privateGame.hostSocketId).emit('opponentJoinedPrivateGame', {
@@ -443,9 +454,9 @@ io.on('connection', (socket) => {
     });
     
     // Notify all players that the game has started
-    io.to(gameCode).emit('gameStarted', privateGame.players);
+    io.to(normalizedCode).emit('gameStarted', privateGame.players);
     
-    console.log(`🎯 Private game ${gameCode} started: ${privateGame.hostUsername} vs ${username}`);
+    console.log(`🎯 Private game ${normalizedCode} started: ${privateGame.hostUsername} vs ${username}`);
   });
 
   socket.on('cancelPrivateGame', ({ gameId }) => {
