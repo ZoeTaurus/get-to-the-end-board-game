@@ -1481,13 +1481,19 @@ button {
 /* MOBILE */
 @media (max-width: 768px) {
   .game-content {
-    padding-top: 120px;
+    padding-top: 0;
+    align-items: stretch;
   }
 
   .game-info-container {
+    position: static;
     flex-direction: column;
-    padding: 10px;
+    padding: 10px 12px;
     gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .game-status {
@@ -1511,14 +1517,19 @@ button {
   }
 
   .board-container {
-    transform: translate(-50%, -50%);
+    flex: 1;
+    min-height: 0;
+    transform: none;
     padding-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .board {
-    transform: rotate(0deg);
-    width: 90vw;
-    height: 60vw;
+    transform: none;
+    width: min(90vw, 90vh);
+    height: min(60vw, 60vh);
   }
 
   .piece {
