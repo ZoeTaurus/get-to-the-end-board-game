@@ -322,6 +322,9 @@ button {
     height: min(72vw, 72vh);
     transform: none;
     transform-origin: center;
+    position: relative;
+    top: -1in;
+    left: 1in;
   }
 
   .board-container {
