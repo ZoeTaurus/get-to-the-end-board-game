@@ -4,6 +4,7 @@ import { getTranslation } from './translations';
 
 interface LoginProps {
   onLogin: (username: string) => void;
+  onGuestLogin?: () => void;
   language?: string;
 }
 
@@ -13,7 +14,7 @@ interface User {
   email: string;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, language = 'English' }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, onGuestLogin, language = 'English' }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
@@ -370,6 +371,29 @@ const Login: React.FC<LoginProps> = ({ onLogin, language = 'English' }) => {
                 Want to change password?
               </span>
             </form>
+            {onGuestLogin && (
+              <div style={{ marginTop: '20px', textAlign: 'center' }}>
+                <button 
+                  type="button"
+                  onClick={onGuestLogin}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '16px',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    width: '100%'
+                  }}
+                >
+                  Play as Guest
+                </button>
+                <p style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+                  Play 3 games without logging in
+                </p>
+              </div>
+            )}
           </>
         ) : (
           <>

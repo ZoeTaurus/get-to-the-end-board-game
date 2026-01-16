@@ -59,6 +59,8 @@ function App() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
+  const [isGuest, setIsGuest] = useState(false);
+  const [showGuestLimitPopup, setShowGuestLimitPopup] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [opponent, setOpponent] = useState('');
   const [gameId, setGameId] = useState('');
@@ -367,6 +369,10 @@ function App() {
     });
 
     socket.on('gameStart', (data) => {
+      // Increment guest games if guest (online game started)
+      if (isGuest) {
+        incrementGuestGames();
+      }
       setIsSearching(false);
       setGameStarted(true);
       setScreen('game');
@@ -533,6 +539,7 @@ function App() {
 
   // Handle login
   const handleLogin = (username: string) => {
+    setIsGuest(false);
     setUsername(username);
     setIsLoggedIn(true);
     // Remove automatic game search
@@ -1818,6 +1825,10 @@ function App() {
       
       <div className="home-buttons">
         <button type="button" onClick={() => {
+          // Check guest limit before starting game
+          if (!checkGuestLimit()) {
+            return;
+          }
           socket.emit('joinQueue', username);
           setIsSearching(true);
         }}>
@@ -1889,6 +1900,14 @@ function App() {
         
         <div className="bot-options">
           <div className="bot-option" onClick={() => {
+            // Check guest limit before starting game
+            if (!checkGuestLimit()) {
+              return;
+            }
+            // Increment guest games if guest
+            if (isGuest) {
+              incrementGuestGames();
+            }
             // Set up players for bot game
             setPlayers({
               red: { color: 'red', username: username || 'Player 1' },
@@ -1926,6 +1945,14 @@ function App() {
           </div>
           
           <div className="bot-option" onClick={() => {
+            // Check guest limit before starting game
+            if (!checkGuestLimit()) {
+              return;
+            }
+            // Increment guest games if guest
+            if (isGuest) {
+              incrementGuestGames();
+            }
             // Set up players for bot game
             setPlayers({
               red: { color: 'red', username: username || 'Player 1' },
@@ -1963,6 +1990,14 @@ function App() {
           </div>
           
           <div className="bot-option" onClick={() => {
+            // Check guest limit before starting game
+            if (!checkGuestLimit()) {
+              return;
+            }
+            // Increment guest games if guest
+            if (isGuest) {
+              incrementGuestGames();
+            }
             // Set up players for bot game
             setPlayers({
               red: { color: 'red', username: username || 'Player 1' },
@@ -2000,6 +2035,14 @@ function App() {
           </div>
           
           <div className="bot-option" onClick={() => {
+            // Check guest limit before starting game
+            if (!checkGuestLimit()) {
+              return;
+            }
+            // Increment guest games if guest
+            if (isGuest) {
+              incrementGuestGames();
+            }
             // Set up players for bot game
             setPlayers({
               red: { color: 'red', username: username || 'Player 1' },
@@ -2037,6 +2080,14 @@ function App() {
         </div>
         
           <div className="bot-option" onClick={() => {
+            // Check guest limit before starting game
+            if (!checkGuestLimit()) {
+              return;
+            }
+            // Increment guest games if guest
+            if (isGuest) {
+              incrementGuestGames();
+            }
             // Set up players for bot game
             setPlayers({
               red: { color: 'red', username: username || 'Player 1' },
@@ -2126,6 +2177,14 @@ function App() {
 
     const confirmSameDeviceGame = useCallback(() => {
       if (opponentNickname.trim()) {
+        // Check guest limit before starting local game
+        if (!checkGuestLimit()) {
+          return;
+        }
+        // Increment guest games if guest
+        if (isGuest) {
+          incrementGuestGames();
+        }
         // Set up players for same device game
         const playerSetup = {
           red: { color: 'red' as const, username: username || 'Player 1' },
@@ -2381,7 +2440,7 @@ function App() {
 
   // If not logged in, show login screen
   if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} language={language} />;
+    return <Login onLogin={handleLogin} onGuestLogin={handleGuestLogin} language={language} />;
   }
 
   // Show different screens based on state
@@ -2402,7 +2461,10 @@ function App() {
   }
 
   if (screen === 'private') {
-            return <PrivateScreen 
+    return (
+      <>
+        {showGuestLimitPopup && <GuestLimitPopup />}
+        <PrivateScreen
           socket={socket} 
           username={username} 
           generateGameCode={generateGameCode}
@@ -2413,12 +2475,16 @@ function App() {
           isHost={isHost}
           codeExpiryTime={codeExpiryTime}
           timeRemaining={timeRemaining}
-        />;
+        />
+      </>
+    );
   }
 
   // Game screen (existing game content)
   return (
-    <div className="app">
+    <>
+      {showGuestLimitPopup && <GuestLimitPopup />}
+      <div className="app">
       <div className="game-content">
         {showPreGameBriefing && (
           <div className="points-briefing">
@@ -2602,7 +2668,8 @@ function App() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
