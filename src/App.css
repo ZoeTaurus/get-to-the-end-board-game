@@ -261,6 +261,10 @@ button {
   .board {
     transform: rotate(90deg);
   }
+
+  .board-container {
+    transform: translate(2in, 2in);
+  }
 }
 
 /* Remove 3D effect bars */
