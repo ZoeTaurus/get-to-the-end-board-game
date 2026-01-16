@@ -1670,6 +1670,9 @@ function App() {
           <div className="nav-option" onClick={() => setScreen('home')}>
             <span>{getTranslation(language).navigation.home}</span>
           </div>
+          <div className="nav-option" onClick={() => setScreen('bots')}>
+            <span>{getTranslation(language).navigation.bots}</span>
+          </div>
           <div className="nav-option" onClick={() => setScreen('private')}>
             <span>{getTranslation(language).navigation.private}</span>
           </div>
@@ -2296,11 +2299,9 @@ function App() {
           <div className="nav-option" onClick={() => setScreen('home')}>
             <span>{getTranslation(language).navigation.home}</span>
           </div>
-          {/* Bot functionality temporarily hidden for future update
           <div className="nav-option" onClick={() => setScreen('bots')}>
             <span>{getTranslation(language).navigation.bots}</span>
           </div>
-          */}
           <div className="nav-option active">
             <span>{getTranslation(language).navigation.private}</span>
           </div>
