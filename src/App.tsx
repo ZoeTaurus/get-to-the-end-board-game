@@ -165,13 +165,13 @@ function App() {
   };
 
   // Helper to get local player's color
-    const getMyColor = () => {
+  const getMyColor = useCallback(() => {
     if (gameMode === 'local') {
       // In local mode, red always goes first, so the current player is the one whose turn it is
       return currentPlayer;
     }
     return username === players.red.username ? 'red' : 'blue';
-  };
+  }, [gameMode, currentPlayer, username, players]);
 
   // 🕐 Simple 30-second countdown timer (only for online games)
   React.useEffect(() => {
@@ -694,6 +694,8 @@ function App() {
     setValidCaptures([]);
     setGameStarted(false);
     setIsMyTurn(false);
+    setTimer(30);
+    setTimerStopped(false);
     setShowConfetti(false);
     setShowPostGameSummary(false);
     setShowPreGameBriefing(false);
