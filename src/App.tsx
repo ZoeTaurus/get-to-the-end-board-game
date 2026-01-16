@@ -2433,6 +2433,34 @@ function App() {
     </div>
   );
 
+  const GuestLimitPopup = () => (
+    <div className="logout-confirm-overlay" style={{ zIndex: 2000 }}>
+      <div className="logout-confirm-dialog">
+        <h2>Guest Game Limit Reached</h2>
+        <p>You've played 3 games as a guest. Please log in to continue playing!</p>
+        <div className="logout-confirm-buttons">
+          <button
+            onClick={() => {
+              setShowGuestLimitPopup(false);
+              setIsLoggedIn(false);
+              setIsGuest(false);
+              setScreen('home');
+            }}
+            className="confirm-yes"
+          >
+            Go to Login
+          </button>
+          <button
+            onClick={() => setShowGuestLimitPopup(false)}
+            className="confirm-no"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   // Show loading screen when searching for opponent
   if (isSearching) {
     return <LoadingScreen language={language} />;
@@ -2445,19 +2473,39 @@ function App() {
 
   // Show different screens based on state
   if (screen === 'home') {
-    return <HomeScreen />;
+    return (
+      <>
+        {showGuestLimitPopup && <GuestLimitPopup />}
+        <HomeScreen />
+      </>
+    );
   }
 
   if (screen === 'help') {
-    return <HelpScreen />;
+    return (
+      <>
+        {showGuestLimitPopup && <GuestLimitPopup />}
+        <HelpScreen />
+      </>
+    );
   }
 
   if (screen === 'shop') {
-    return <ShopScreen />;
+    return (
+      <>
+        {showGuestLimitPopup && <GuestLimitPopup />}
+        <ShopScreen />
+      </>
+    );
   }
 
   if (screen === 'bots') {
-    return <BotsScreen />;
+    return (
+      <>
+        {showGuestLimitPopup && <GuestLimitPopup />}
+        <BotsScreen />
+      </>
+    );
   }
 
   if (screen === 'private') {
