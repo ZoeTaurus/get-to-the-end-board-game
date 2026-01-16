@@ -198,7 +198,7 @@ function App() {
       !timerStopped &&
       !isSearching &&
       gameMode !== 'bot' &&
-      (gameMode === 'local' || opponent);
+      (gameMode === 'local' || opponent || privateGameId);
 
     // Don't run timer when game isn't active
     if (!shouldRun) {
