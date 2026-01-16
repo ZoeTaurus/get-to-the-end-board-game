@@ -286,12 +286,17 @@ button {
 
   .game-content {
     padding-top: 0;
+    align-items: stretch;
     height: 100vh;
   }
 
   .game-info-container {
     position: static;
     box-shadow: none;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    padding: 12px 14px;
   }
 
   .points-display {
