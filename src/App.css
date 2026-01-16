@@ -281,7 +281,7 @@ button {
 
 @media (max-width: 768px) {
   :root {
-    --game-header-height: 180px;
+    --game-header-height: 150px;
   }
 
   .points-display {
@@ -303,12 +303,14 @@ button {
   }
 
   .board {
-    width: min(90vh, 92vw);
-    height: min(60vh, 62vw);
+    width: min(96vw, 92vh);
+    height: min(72vw, 72vh);
   }
 
   .board-container {
     min-height: calc(100vh - var(--game-header-height));
+    align-items: flex-start;
+    padding-top: 12px;
   }
 }
 
