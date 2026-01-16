@@ -378,7 +378,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    transform: translate(-1cm, 1cm) !important;
+    transform: translate(2cm, 1cm) !important;
     padding-top: 0;
     padding-left: 0;
   }
