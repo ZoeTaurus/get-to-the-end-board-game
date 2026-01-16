@@ -334,7 +334,7 @@ button {
     justify-content: center;
     padding-top: 0;
     padding-left: 0;
-    transform: translateX(1cm);
+    transform: translateX(0.5cm);
   }
 }
 
