@@ -519,10 +519,7 @@ function App() {
         blue: { color: 'blue', username: username || 'Player 2' }
       });
       
-      // Don't override gameMode for local games
-      if (gameMode !== 'local') {
-        setGameMode('online');
-      }
+      setGameMode('online');
       setPrivateGameId(data.gameId); // Set the private game ID
       
       // Initialize the game board with pieces
@@ -566,10 +563,7 @@ function App() {
         blue: { color: 'blue', username: data.opponentUsername }
       });
       
-      // Don't override gameMode for local games
-      if (gameMode !== 'local') {
-        setGameMode('online');
-      }
+      setGameMode('online');
       setPrivateGameId(data.gameId); // Set the private game ID
       
       // Initialize the game board with pieces
