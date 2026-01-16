@@ -259,6 +259,17 @@ button {
   margin: 0 auto;
 }
 
+/* Desktop orientation: rotate board 90deg and center it */
+@media (min-width: 1024px) and (hover: hover) {
+  .board-container {
+    transform: translate(-50%, -50%);
+  }
+
+  .board {
+    transform: rotate(90deg);
+  }
+}
+
 /* Remove 3D effect bars */
 .board::after {
   display: none;
