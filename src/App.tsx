@@ -512,6 +512,8 @@ function App() {
       console.log('Joined private game:', data);
       setWaitingForOpponent(false);
       setIsJoiningGame(false);
+      setGeneratedCode('');
+      setIsCreatingGame(false);
       
       // Set up the game
       setPlayers({
@@ -556,6 +558,8 @@ function App() {
     socket.on('opponentJoinedPrivateGame', (data) => {
       console.log('Opponent joined private game:', data);
       setWaitingForOpponent(false);
+      setGeneratedCode('');
+      setIsCreatingGame(false);
       
       // Start the game
       setPlayers({
