@@ -89,10 +89,21 @@ function App() {
   const timerIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const playersRef = useRef(players);
   const myColorRef = useRef<'red' | 'blue'>('red');
+  const botMovePendingRef = useRef(false);
 
   useEffect(() => {
     boardRef.current = board;
   }, [board]);
+
+  const getBotThinkingDelay = (difficulty: 'easy' | 'normal' | 'hard' | 'pro' | 'wizard') => {
+    return {
+      'easy': 250 + Math.random() * 200,     // 250-450ms
+      'normal': 350 + Math.random() * 250,   // 350-600ms
+      'hard': 500 + Math.random() * 300,     // 500-800ms
+      'pro': 700 + Math.random() * 400,      // 700-1100ms
+      'wizard': 900 + Math.random() * 500    // 900-1400ms
+    }[difficulty] || 600;
+  };
   
   
 
@@ -262,6 +273,36 @@ function App() {
       }
     }
   }, [gameStarted, currentPlayer, winner, gameMode]);
+
+  useEffect(() => {
+    if (gameMode !== 'bot' || !gameStarted || winner) return;
+    if (currentPlayer !== 'blue' || isMyTurn) return;
+    if (botMovePendingRef.current) return;
+
+    botMovePendingRef.current = true;
+    const thinkingTime = getBotThinkingDelay(botDifficulty);
+
+    const botMoveTimeout = setTimeout(() => {
+      try {
+        makeBotMove(botDifficulty, 'blue', false);
+      } finally {
+        botMovePendingRef.current = false;
+      }
+    }, thinkingTime);
+
+    const fallbackTimeout = setTimeout(() => {
+      forceBotRandomMove('blue', false);
+      botMovePendingRef.current = false;
+    }, 3000);
+
+    setBotTimeouts({ move: botMoveTimeout, fallback: fallbackTimeout });
+
+    return () => {
+      clearTimeout(botMoveTimeout);
+      clearTimeout(fallbackTimeout);
+      botMovePendingRef.current = false;
+    };
+  }, [gameMode, gameStarted, winner, currentPlayer, isMyTurn, botDifficulty]);
  
   // Coin exchange function: 1 point = 0.5 coins (only full coins)
   const exchangePointsForCoins = (pointsToExchange: number) => {
@@ -1001,32 +1042,7 @@ function App() {
             // Show "Bot's turn" message immediately
             setGameMessage(`Bot is thinking...`);
             
-            // Bot makes move after a controlled thinking delay
-            
-            // Different thinking times based on difficulty for realism
-            const thinkingTime = {
-              'easy': 250 + Math.random() * 200,     // 250-450ms
-              'normal': 350 + Math.random() * 250,   // 350-600ms
-              'hard': 500 + Math.random() * 300,     // 500-800ms
-              'pro': 700 + Math.random() * 400,      // 700-1100ms
-              'wizard': 900 + Math.random() * 500    // 900-1400ms
-            }[botDifficulty] || 600;
-            
-            const botMoveTimeout = setTimeout(() => {
-              try {
-              makeBotMove(botDifficulty, 'blue', false);
-              } catch (error) {
-                forceBotRandomMove('blue', false);
-              }
-            }, thinkingTime);
-            
-    // Fallback: if bot doesn't move within 3 seconds, force a move
-            const fallbackTimeout = setTimeout(() => {
-              forceBotRandomMove('blue', false);
-    }, 3000);
-            
-    // Store timeouts to clear if game ends
-            setBotTimeouts({ move: botMoveTimeout, fallback: fallbackTimeout });
+            // Bot move is triggered by the bot-turn effect
           }
         } else if (gameMode === 'local') {
           // Local same-device play - handle locally
