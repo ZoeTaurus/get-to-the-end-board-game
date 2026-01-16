@@ -336,6 +336,10 @@ io.on('connection', (socket) => {
       console.log(`⏳ Player ${username} waiting for opponent...`);
     }
   });
+
+  socket.on('leaveQueue', () => {
+    waitingPlayers.delete(socket.id);
+  });
   
   socket.on('makeMove', ({ gameId, move }) => {
     // Check if it's a regular active game

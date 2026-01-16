@@ -2497,7 +2497,16 @@ function App() {
 
   // Show loading screen when searching for opponent
   if (isSearching) {
-    return <LoadingScreen language={language} />;
+    return (
+      <LoadingScreen
+        language={language}
+        onBack={() => {
+          socket.emit('leaveQueue');
+          setIsSearching(false);
+          setScreen('home');
+        }}
+      />
+    );
   }
 
   // If not logged in, show login screen
