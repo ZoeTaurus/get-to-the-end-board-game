@@ -1019,7 +1019,7 @@ function App() {
                 forceBotRandomMove('blue', false);
               }
             }, thinkingTime);
-    
+            
     // Fallback: if bot doesn't move within 3 seconds, force a move
             const fallbackTimeout = setTimeout(() => {
               forceBotRandomMove('blue', false);
@@ -1414,6 +1414,29 @@ function App() {
     return coordinationScore;
   };
 
+  const getRandomBotMove = (currentBoard: (Piece | null)[][]) => {
+    const possibleMoves: { from: [number, number]; to: [number, number]; eatenPiece?: [number, number] }[] = [];
+    const captureMoves: { from: [number, number]; to: [number, number]; eatenPiece: [number, number] }[] = [];
+
+    for (let r = 0; r < currentBoard.length; r++) {
+      for (let c = 0; c < currentBoard[0].length; c++) {
+        const piece = currentBoard[r][c];
+        if (!piece || piece.color !== 'blue') continue;
+        const { moves, captures } = calculateValidMoves(currentBoard, r, c);
+        for (const [mr, mc] of moves) {
+          possibleMoves.push({ from: [r, c], to: [mr, mc] });
+        }
+        for (const [cr, cc] of captures) {
+          captureMoves.push({ from: [r, c], to: [cr, cc], eatenPiece: [cr, cc] });
+        }
+      }
+    }
+
+    const pool = captureMoves.length > 0 ? captureMoves : possibleMoves;
+    if (pool.length === 0) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
   // COMPLETELY NEW BOT SYSTEM - 5 DIFFICULTY LEVELS
     // SUPER SMART BOT USING GAMEBOT AI
   const makeBotMove = (difficulty: 'easy' | 'normal' | 'hard' | 'pro' | 'wizard', playerColor: 'blue', isPlayerTurn: boolean) => {
@@ -1434,7 +1457,7 @@ function App() {
     const botLevel = difficultyMap[difficulty] || 4;
     // Use GameBot AI to choose the best move
     const gameBot = new GameBot(botLevel);
-    const latestBoard = boardRef.current;
+    const latestBoard = ensureBoardStructure(boardRef.current);
     const botBoard = convertBoardForBot(latestBoard);
     const gameState = { 
       board: botBoard, 
@@ -1444,8 +1467,7 @@ function App() {
     const botMove = gameBot.makeMove(gameState);
     
     if (!botMove) {
-      setCurrentPlayer('red');
-      setIsMyTurn(true);
+      forceBotRandomMove('blue', false);
       return;
     }
     
@@ -1454,15 +1476,15 @@ function App() {
     const [fromRow, fromCol] = gameMove.from;
     const [toRow, toCol] = gameMove.to;
     
-    // Get the piece being moved
+    const pieceAtSource = latestBoard[fromRow]?.[fromCol];
+    if (!pieceAtSource || pieceAtSource.color !== 'blue') {
+      forceBotRandomMove('blue', false);
+      return;
+    }
+
     // Execute the move with proper capture handling
-      setBoard(prevBoard => {
-        const updatedBoard = prevBoard.map(row => [...row]);
-        const pieceAtSource = updatedBoard[fromRow]?.[fromCol];
-        if (!pieceAtSource) {
-          return prevBoard;
-        }
-        const movingPiece = { ...pieceAtSource };
+      const updatedBoard = latestBoard.map(row => [...row]);
+      const movingPiece = { ...pieceAtSource };
         
       // Handle captures using the GameBot's eatenPiece information (more reliable)
       if (botMove.eatenPiece) {
@@ -1490,8 +1512,7 @@ function App() {
           }
         }
       
-      return ensureBoardStructure(updatedBoard);
-    });
+    setBoard(ensureBoardStructure(updatedBoard));
     
     // Switch turns back to player and update message
     setCurrentPlayer('red');
@@ -1511,69 +1532,49 @@ function App() {
       return;
     }
     
-    // Use the GameBot in easy mode for forced moves
-    const gameBot = new GameBot(1); // Easy mode = random moves
-    
-    // Convert your board format to the GameBot's format
-    const latestBoard = boardRef.current;
-    const botBoard = convertBoardForBot(latestBoard);
-    const gameState = {
-      board: botBoard,
-      currentPlayer: Player.BOT
-    };
-    
-    // Get the bot's move
-    const botMove = gameBot.makeMove(gameState);
-    
-    if (!botMove) {
+    const latestBoard = ensureBoardStructure(boardRef.current);
+    const randomMove = getRandomBotMove(latestBoard);
+    if (!randomMove) {
       setCurrentPlayer('red');
       setIsMyTurn(true);
       return;
     }
-    
-    // Convert the bot's move back to your game's format
-    const gameMove = convertMoveFromBot(botMove);
-    const [fromRow, fromCol] = gameMove.from;
-    const [toRow, toCol] = gameMove.to;
-    
-    // Get the piece being moved
-    // Execute the move
-    setBoard(prevBoard => {
-      const updatedBoard = ensureBoardStructure(prevBoard.map(row => [...row]));
-      const pieceAtSource = updatedBoard[fromRow]?.[fromCol];
-      if (!pieceAtSource) {
-        return prevBoard;
-      }
-      const movingPiece = { ...pieceAtSource };
-        
-      // Check if this is a capture using the GameBot's eatenPiece information
-      if (botMove.eatenPiece) {
-        const [eatenRow, eatenCol] = [botMove.eatenPiece.row, botMove.eatenPiece.col];
-        // Remove the captured piece from the board
-        updatedBoard[eatenRow][eatenCol] = null;
-        
-        if (movingPiece.type === 'circle') {
-          movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
-        }
-      }
-      
-      // Place the moving piece in the new position
-      updatedBoard[toRow][toCol] = movingPiece;
-      updatedBoard[fromRow][fromCol] = null;
-      
-      // Check for win condition INSIDE the callback using the updated board
-      const winnerColor = checkWinCondition(updatedBoard, 0);
-      
-      if (winnerColor) {
-        setWinner(winnerColor);
-        setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
-        if (winnerColor === 'red') {
-          setShowConfetti(true);
-        }
-      }
 
-      return updatedBoard;
-    });
+    const [fromRow, fromCol] = randomMove.from;
+    const [toRow, toCol] = randomMove.to;
+    const pieceAtSource = latestBoard[fromRow]?.[fromCol];
+    if (!pieceAtSource) {
+      setCurrentPlayer('red');
+      setIsMyTurn(true);
+      return;
+    }
+
+    const updatedBoard = latestBoard.map(row => [...row]);
+    const movingPiece = { ...pieceAtSource };
+        
+    if (randomMove.eatenPiece) {
+      const [eatenRow, eatenCol] = randomMove.eatenPiece;
+      updatedBoard[eatenRow][eatenCol] = null;
+      
+      if (movingPiece.type === 'circle') {
+        movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+      }
+    }
+      
+    updatedBoard[toRow][toCol] = movingPiece;
+    updatedBoard[fromRow][fromCol] = null;
+      
+    const winnerColor = checkWinCondition(updatedBoard, 0);
+      
+    if (winnerColor) {
+      setWinner(winnerColor);
+      setGameMessage(winnerColor === 'red' ? 'You won!' : 'Bot won!');
+      if (winnerColor === 'red') {
+        setShowConfetti(true);
+      }
+    }
+
+    setBoard(ensureBoardStructure(updatedBoard));
       
       // Switch back to player's turn
       setCurrentPlayer('red');
