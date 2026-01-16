@@ -2485,12 +2485,6 @@ function App() {
           >
             Go to Login
           </button>
-          <button
-            onClick={() => setShowGuestLimitPopup(false)}
-            className="confirm-no"
-          >
-            Cancel
-          </button>
         </div>
       </div>
     </div>
