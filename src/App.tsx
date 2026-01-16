@@ -9,7 +9,9 @@ import { GameBot, convertBoardForBot, convertMoveFromBot } from './GameBot.js';
 const Player = {
   PLAYER: 'player',
   BOT: 'bot'
-};
+} as const;
+
+type GameBotPlayer = typeof Player[keyof typeof Player];
 
 type PieceType = 'person' | 'circle';
 type PlayerColor = 'red' | 'blue';
@@ -684,7 +686,7 @@ function App() {
     newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
     
     // Complete state reset to prevent issues
-    setBoard(newBoard);
+    setBoard(ensureBoardStructure(newBoard));
     setCurrentPlayer('red');
     setWinner(null);
     setSelectedPiece(null);
@@ -1017,7 +1019,7 @@ function App() {
         } else if (gameMode === 'local') {
           console.log('Executing local game logic');
           // Local same-device play - handle locally
-          setBoard(newBoard);
+          setBoard(ensureBoardStructure(newBoard));
           setSelectedPiece(null);
           setValidMoves([]);
           setValidCaptures([]);
@@ -1056,7 +1058,7 @@ function App() {
             }
           });
           
-          setBoard(newBoard);
+          setBoard(ensureBoardStructure(newBoard));
           setSelectedPiece(null);
           setValidMoves([]);
           setValidCaptures([]);
@@ -1462,10 +1464,10 @@ function App() {
     }
     
     // Execute the move with proper capture handling
-    setBoard(prevBoard => {
-      const updatedBoard = prevBoard.map(row => [...row]);
-      const movingPiece = {...piece};
-      
+      setBoard(prevBoard => {
+        const updatedBoard = prevBoard.map(row => [...row]);
+        const movingPiece = {...piece};
+        
       // Handle captures using the GameBot's eatenPiece information (more reliable)
       if (botMove.eatenPiece) {
         const [eatenRow, eatenCol] = [botMove.eatenPiece.row, botMove.eatenPiece.col];
@@ -1475,7 +1477,7 @@ function App() {
         updatedBoard[eatenRow][eatenCol] = null;
         
           if (movingPiece.type === 'circle') {
-            movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+          movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
           console.log('🤖 BOT CAPTURE: Updated circle eaten count to:', movingPiece.eatenCount);
         }
       }
@@ -1526,7 +1528,7 @@ function App() {
     const botBoard = convertBoardForBot(board);
     const gameState = {
       board: botBoard,
-      currentPlayer: 'blue' as any // GameBot expects 'blue' for bot
+      currentPlayer: Player.BOT
     };
     
     // Get the bot's move
@@ -1552,9 +1554,9 @@ function App() {
     }
     
     // Execute the move
-      setBoard(prevBoard => {
-        const updatedBoard = ensureBoardStructure(prevBoard.map(row => [...row]));
-        const movingPiece = {...piece};
+    setBoard(prevBoard => {
+      const updatedBoard = ensureBoardStructure(prevBoard.map(row => [...row]));
+      const movingPiece = {...piece};
         
       // Check if this is a capture using the GameBot's eatenPiece information
       if (botMove.eatenPiece) {
@@ -1583,9 +1585,9 @@ function App() {
           setShowConfetti(true);
         }
       }
-        
-        return updatedBoard;
-      });
+
+      return updatedBoard;
+    });
       
       // Switch back to player's turn
       setCurrentPlayer('red');
@@ -1596,7 +1598,6 @@ function App() {
       if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
       setBotTimeouts({ move: null, fallback: null });
       
-    console.log('🤖 Forced random move completed using GameBot');
   };
 
 
@@ -1961,7 +1962,7 @@ function App() {
             newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
             newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
             
-            setBoard(newBoard);
+            setBoard(ensureBoardStructure(newBoard));
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -2006,7 +2007,7 @@ function App() {
             newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
             newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
             
-            setBoard(newBoard);
+            setBoard(ensureBoardStructure(newBoard));
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -2051,7 +2052,7 @@ function App() {
             newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
             newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
             
-            setBoard(newBoard);
+            setBoard(ensureBoardStructure(newBoard));
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -2096,7 +2097,7 @@ function App() {
             newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
             newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
             
-            setBoard(newBoard);
+            setBoard(ensureBoardStructure(newBoard));
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -2141,7 +2142,7 @@ function App() {
             newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
             newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
             
-            setBoard(newBoard);
+            setBoard(ensureBoardStructure(newBoard));
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -2241,7 +2242,7 @@ function App() {
         newBoard[2][5] = { type: 'circle', color: 'red', eatenCount: 0 };
         newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
         
-        setBoard(newBoard);
+        setBoard(ensureBoardStructure(newBoard));
         setGameStarted(true);
         setCurrentPlayer('red');
         setIsMyTurn(true);
@@ -2565,7 +2566,7 @@ function App() {
   return (
     <>
       {showGuestLimitPopup && <GuestLimitPopup />}
-      <div className="app">
+    <div className="app">
       <div className="game-content">
         {showPreGameBriefing && (
           <div className="points-briefing">
@@ -2749,7 +2750,7 @@ function App() {
           </div>
         </div>
       </div>
-      </div>
+    </div>
     </>
   );
 }
