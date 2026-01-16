@@ -621,7 +621,15 @@ function App() {
   // Initialize the game
   const initializeGame = () => {
     // Force complete board reset to prevent ghost pieces
-    const newBoard = Array(4).fill(null).map(() => Array(6).fill(null));
+    // Ensure every cell is explicitly null, not undefined
+    const newBoard: (Piece | null)[][] = [];
+    for (let i = 0; i < 4; i++) {
+      const row: (Piece | null)[] = [];
+      for (let j = 0; j < 6; j++) {
+        row.push(null);
+      }
+      newBoard.push(row);
+    }
     
     // Set up blue pieces on the left side
     newBoard[0][0] = { type: 'person', color: 'blue', eatenCount: 0 };
@@ -660,6 +668,11 @@ function App() {
 
   // Calculate valid moves for a selected piece
   const calculateValidMoves = (board: (Piece | null)[][], row: number, col: number) => {
+    // Safety check: ensure row and col are valid
+    if (row < 0 || row >= board.length || col < 0 || col >= (board[0]?.length || 0)) {
+      return { moves: [], captures: [] };
+    }
+    
     const piece = board[row][col];
     if (!piece) return { moves: [], captures: [] };
 
@@ -688,8 +701,8 @@ function App() {
         // Check if the move is within board boundaries and the target cell is empty
         if (
           newRow >= 0 && newRow < board.length &&
-          newCol >= 0 && newCol < board[0].length &&
-          !board[newRow][newCol]
+          newCol >= 0 && newCol < (board[0]?.length || 0) &&
+          !board[newRow]?.[newCol]
         ) {
           moves.push([newRow, newCol]);
         }
@@ -704,8 +717,8 @@ function App() {
         // Check if the capture is within board boundaries and there's an opponent's piece
         if (
           newRow >= 0 && newRow < board.length &&
-          newCol >= 0 && newCol < board[0].length &&
-          board[newRow][newCol] &&
+          newCol >= 0 && newCol < (board[0]?.length || 0) &&
+          board[newRow]?.[newCol] &&
           board[newRow][newCol]?.color !== piece.color
         ) {
           captures.push([newRow, newCol]);
@@ -761,6 +774,13 @@ function App() {
     // Don't allow moves if game is over or not player's turn
     if (!gameStarted || winner) return;
     
+    // Validate board bounds - CRITICAL FIX for restricted zones
+    if (!board || rowIndex < 0 || rowIndex >= board.length || 
+        !board[rowIndex] || colIndex < 0 || colIndex >= board[rowIndex].length) {
+      console.log(`⚠️ Invalid cell clicked: [${rowIndex}, ${colIndex}] - Board size: ${board?.length} x ${board?.[0]?.length}`);
+      return;
+    }
+    
     // For online games, strict turn checking
     if (gameMode === 'online' && !isMyTurn) {
       console.log('🚫 Not your turn - move blocked');
@@ -780,11 +800,21 @@ function App() {
       // We'll handle this in the piece selection logic below
     }
     
-    const piece = board[rowIndex][colIndex];
+    const piece = board[rowIndex]?.[colIndex] ?? null;
     const myColor = getMyColor();
     
     if (selectedPiece) {
       const [selectedRow, selectedCol] = selectedPiece;
+      
+      // Validate selected piece position exists
+      if (!board[selectedRow] || board[selectedRow][selectedCol] === undefined) {
+        console.log(`⚠️ Selected piece position invalid: [${selectedRow}, ${selectedCol}]`);
+        setSelectedPiece(null);
+        setValidMoves([]);
+        setValidCaptures([]);
+        return;
+      }
+      
       const selectedPieceData = board[selectedRow][selectedCol];
       
       // Clicking the same piece deselects it
@@ -798,17 +828,49 @@ function App() {
       // Clicking another piece of your color selects it instead
       if (piece && piece.color === myColor) {
         setSelectedPiece([rowIndex, colIndex]);
+        // Always recalculate moves to ensure they're up to date
         const { moves, captures } = calculateValidMoves(board, rowIndex, colIndex);
         setValidMoves(moves);
         setValidCaptures(captures);
+        // Debug: log moves for troubleshooting
+        console.log(`🎯 Selected ${piece.color} ${piece.type} at [${rowIndex}, ${colIndex}]`);
+        console.log(`   Board size: ${board.length} rows x ${board[0]?.length} cols`);
+        console.log(`   Valid moves:`, moves);
+        console.log(`   Valid captures:`, captures);
+        if (moves.length === 0 && captures.length === 0) {
+          console.log(`⚠️ Piece at [${rowIndex}, ${colIndex}] has no valid moves`);
+        }
         return;
       }
       
       const isValidMove = validMoves.some(([r, c]) => r === rowIndex && c === colIndex);
       const isValidCapture = validCaptures.some(([r, c]) => r === rowIndex && c === colIndex);
       
+      // Debug logging
+      if (selectedPiece) {
+        console.log(`🎯 Attempting move from [${selectedRow}, ${selectedCol}] to [${rowIndex}, ${colIndex}]`);
+        console.log(`   Valid moves:`, validMoves);
+        console.log(`   Valid captures:`, validCaptures);
+        console.log(`   Is valid move:`, isValidMove);
+        console.log(`   Is valid capture:`, isValidCapture);
+      }
+      
       if (isValidMove || isValidCapture) {
-        const newBoard = board.map(r => [...r]);
+        // Safety check: ensure selected piece exists
+        if (!board[selectedRow] || !board[selectedRow][selectedCol]) {
+          console.error('❌ Selected piece not found at', [selectedRow, selectedCol]);
+          return;
+        }
+        
+        // Ensure board copy maintains full structure - fix for restricted zones
+        const newBoard: (Piece | null)[][] = [];
+        for (let i = 0; i < board.length; i++) {
+          const row: (Piece | null)[] = [];
+          for (let j = 0; j < (board[i]?.length || 6); j++) {
+            row.push(board[i]?.[j] ?? null);
+          }
+          newBoard.push(row);
+        }
         const movingPiece = {...board[selectedRow][selectedCol]!};
         
         if (isValidCapture) {
@@ -988,7 +1050,15 @@ function App() {
       const isCapture = captures.some(([r, c]) => r === toRow && c === toCol);
       
       // Simulate the move
-      const newBoard = board.map(row => [...row]);
+      // Ensure board copy maintains full structure
+      const newBoard: (Piece | null)[][] = [];
+      for (let i = 0; i < board.length; i++) {
+        const row: (Piece | null)[] = [];
+        for (let j = 0; j < (board[i]?.length || 6); j++) {
+          row.push(board[i]?.[j] ?? null);
+        }
+        newBoard.push(row);
+      }
       const movingPiece = {...piece};
       
       if (isCapture && movingPiece.type === 'circle') {
@@ -1189,7 +1259,15 @@ function App() {
   
   // Helper function to simulate a move
   const simulateMove = (board: (Piece | null)[][], fromRow: number, fromCol: number, toRow: number, toCol: number, piece: Piece, isCapture: boolean): (Piece | null)[][] => {
-    const newBoard = board.map(row => [...row]);
+    // Ensure board copy maintains full structure
+    const newBoard: (Piece | null)[][] = [];
+    for (let i = 0; i < board.length; i++) {
+      const row: (Piece | null)[] = [];
+      for (let j = 0; j < (board[i]?.length || 6); j++) {
+        row.push(board[i]?.[j] ?? null);
+      }
+      newBoard.push(row);
+    }
     const movingPiece = {...piece};
     
     if (isCapture && movingPiece.type === 'circle') {

@@ -1520,9 +1520,9 @@ button {
     padding-top: 100px;
   }
 
-      .board-container {
+  .board-container {
       transform: translate(-50%, -50%) scale(0.95);
-    }
+  }
 
   .board {
     width: 90vw;

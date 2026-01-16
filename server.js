@@ -508,7 +508,7 @@ io.on('connection', (socket) => {
           io.to(gameCode).emit('playerDisconnected');
           
           // Remove the entire private game when someone disconnects
-          privateGames.delete(gameCode);
+            privateGames.delete(gameCode);
         }
       }
       
