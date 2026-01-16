@@ -402,7 +402,7 @@ function App() {
       
       // Update the board state
       if (newBoardState) {
-        setBoard(newBoardState);
+        setBoard(ensureBoardStructure(newBoardState));
       }
       
       // Clear selection states
@@ -666,6 +666,20 @@ function App() {
 
 
 
+  // Ensure board has correct structure (4 rows x 6 columns)
+  const ensureBoardStructure = (board: (Piece | null)[][]): (Piece | null)[][] => {
+    const fixedBoard: (Piece | null)[][] = [];
+    for (let i = 0; i < 4; i++) {
+      const row: (Piece | null)[] = [];
+      for (let j = 0; j < 6; j++) {
+        // Preserve existing pieces, fill missing cells with null
+        row.push(board[i]?.[j] ?? null);
+      }
+      fixedBoard.push(row);
+    }
+    return fixedBoard;
+  };
+
   // Calculate valid moves for a selected piece
   const calculateValidMoves = (board: (Piece | null)[][], row: number, col: number) => {
     // Safety check: ensure row and col are valid
@@ -902,7 +916,7 @@ function App() {
           if (botTimeouts.move) clearTimeout(botTimeouts.move);
           if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
           
-          setBoard(newBoard);
+          setBoard(ensureBoardStructure(newBoard));
           setSelectedPiece(null);
           setValidMoves([]);
           setValidCaptures([]);
@@ -1496,7 +1510,7 @@ function App() {
     
     // Execute the move
       setBoard(prevBoard => {
-        const updatedBoard = prevBoard.map(row => [...row]);
+        const updatedBoard = ensureBoardStructure(prevBoard.map(row => [...row]));
         const movingPiece = {...piece};
         
       // Check if this is a capture using the GameBot's eatenPiece information
@@ -2531,9 +2545,11 @@ function App() {
         
         <div className="board-container">
           <div className="board">
-            {board.map((row, rowIndex) => (
+            {/* Ensure we always render a full 4x6 grid, even if board array is incomplete */}
+            {Array.from({ length: 4 }, (_, rowIndex) => (
               <div key={rowIndex} className="row">
-                {row.map((piece, colIndex) => {
+                {Array.from({ length: 6 }, (_, colIndex) => {
+                  const piece = board[rowIndex]?.[colIndex] ?? null;
                   const isSelected = selectedPiece && 
                     selectedPiece[0] === rowIndex && 
                     selectedPiece[1] === colIndex;
