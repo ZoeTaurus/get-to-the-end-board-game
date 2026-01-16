@@ -250,8 +250,8 @@ function App() {
       if (gameMode === 'local') {
         setIsMyTurn(currentPlayer === getMyColor());
       } else if (gameMode === 'bot') {
-        // For bot games, red (player) starts first
-        setIsMyTurn(getMyColor() === 'red');
+        // For bot games, player's turn is always red
+        setIsMyTurn(currentPlayer === 'red');
       }
     }
   }, [gameStarted, currentPlayer, winner, gameMode]);
@@ -930,19 +930,9 @@ function App() {
       const isValidMove = validMoves.some(([r, c]) => r === rowIndex && c === colIndex);
       const isValidCapture = validCaptures.some(([r, c]) => r === rowIndex && c === colIndex);
       
-      // Debug logging
-      if (selectedPiece) {
-        console.log(`🎯 Attempting move from [${selectedRow}, ${selectedCol}] to [${rowIndex}, ${colIndex}]`);
-        console.log(`   Valid moves:`, validMoves);
-        console.log(`   Valid captures:`, validCaptures);
-        console.log(`   Is valid move:`, isValidMove);
-        console.log(`   Is valid capture:`, isValidCapture);
-      }
-      
       if (isValidMove || isValidCapture) {
         // Safety check: ensure selected piece exists
         if (!board[selectedRow] || !board[selectedRow][selectedCol]) {
-          console.error('❌ Selected piece not found at', [selectedRow, selectedCol]);
           return;
         }
         
@@ -958,14 +948,11 @@ function App() {
         const movingPiece = {...board[selectedRow][selectedCol]!};
         
         if (isValidCapture) {
-          console.log('🎯 CAPTURE: Removing piece at', [rowIndex, colIndex], 'Piece was:', newBoard[rowIndex][colIndex]);
           // Remove the captured piece from the board
           newBoard[rowIndex][colIndex] = null;
-          console.log('🎯 CAPTURE: Board after removal:', JSON.stringify(newBoard));
           
           if (movingPiece.type === 'circle') {
             movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
-            console.log('🎯 CAPTURE: Updated circle eaten count to:', movingPiece.eatenCount);
           }
         }
         
@@ -976,12 +963,8 @@ function App() {
         // Check for win condition
         const winnerColor = checkWinCondition(newBoard, colIndex);
         
-        console.log('Game mode when checking win condition:', gameMode);
-        console.log('Winner color detected:', winnerColor);
-        
         // If playing against bot, handle locally
         if (gameMode === 'bot') {
-          console.log('Executing bot game logic');
           // Clear any existing bot timeouts
           if (botTimeouts.move) clearTimeout(botTimeouts.move);
           if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
@@ -1012,7 +995,6 @@ function App() {
             setGameMessage(`Bot is thinking...`);
             
             // Bot makes move after a controlled thinking delay
-            console.log('🤖 Bot turn triggered, thinking...');
             
             // Different thinking times based on difficulty for realism
             const thinkingTime = {
@@ -1027,14 +1009,12 @@ function App() {
               try {
               makeBotMove(botDifficulty, 'blue', false);
               } catch (error) {
-                console.log('🤖 Bot crashed, forcing random move');
                 forceBotRandomMove('blue', false);
               }
             }, thinkingTime);
     
     // Fallback: if bot doesn't move within 3 seconds, force a move
             const fallbackTimeout = setTimeout(() => {
-      console.log('🤖 Bot taking too long, forcing move');
               forceBotRandomMove('blue', false);
     }, 3000);
             
@@ -1042,7 +1022,6 @@ function App() {
             setBotTimeouts({ move: botMoveTimeout, fallback: fallbackTimeout });
           }
         } else if (gameMode === 'local') {
-          console.log('Executing local game logic');
           // Local same-device play - handle locally
           setBoard(ensureBoardStructure(newBoard));
           setSelectedPiece(null);
@@ -1050,9 +1029,6 @@ function App() {
           setValidCaptures([]);
           
           if (winnerColor) {
-            console.log('Local game winner detected:', winnerColor);
-            console.log('Players state:', players);
-            console.log('Setting game message to:', `${players[winnerColor].username} wins!`);
             setWinner(winnerColor);
             setGameMessage(`${players[winnerColor].username} wins!`);
             // No points awarded for local same-device games
@@ -1434,8 +1410,6 @@ function App() {
   // COMPLETELY NEW BOT SYSTEM - 5 DIFFICULTY LEVELS
     // SUPER SMART BOT USING GAMEBOT AI
   const makeBotMove = (difficulty: 'easy' | 'normal' | 'hard' | 'pro' | 'wizard', playerColor: 'blue', isPlayerTurn: boolean) => {
-    console.log('🤖 SUPER SMART BOT: Using GameBot AI with difficulty:', difficulty);
-    
     // Simple safety check
     if (playerColor !== 'blue' || isPlayerTurn) {
       return;
@@ -1451,8 +1425,6 @@ function App() {
     };
     
     const botLevel = difficultyMap[difficulty] || 4;
-    console.log('🤖 GameBot AI Level:', botLevel);
-    
     // Use GameBot AI to choose the best move
     const gameBot = new GameBot(botLevel);
     const botBoard = convertBoardForBot(board);
@@ -1464,16 +1436,9 @@ function App() {
     const botMove = gameBot.makeMove(gameState);
     
     if (!botMove) {
-      console.log('🤖 GameBot found no valid moves');
       setCurrentPlayer('red');
       setIsMyTurn(true);
       return;
-    }
-    
-    console.log('🤖 GameBot AI chose move:', botMove);
-    console.log('🤖 Move has capture?', !!botMove.eatenPiece);
-    if (botMove.eatenPiece) {
-      console.log('🤖 Capturing piece at:', [botMove.eatenPiece.row, botMove.eatenPiece.col]);
     }
     
     // Convert GameBot move back to our format
@@ -1484,7 +1449,6 @@ function App() {
     // Get the piece being moved
     const piece = board[fromRow][fromCol];
     if (!piece) {
-      console.log('🤖 Error: No piece found at source position');
       return;
     }
     
@@ -1496,14 +1460,12 @@ function App() {
       // Handle captures using the GameBot's eatenPiece information (more reliable)
       if (botMove.eatenPiece) {
         const [eatenRow, eatenCol] = [botMove.eatenPiece.row, botMove.eatenPiece.col];
-        console.log('🤖 BOT CAPTURE: Removing piece at', [eatenRow, eatenCol], 'Piece was:', updatedBoard[eatenRow][eatenCol]);
         
         // Remove the captured piece from the board
         updatedBoard[eatenRow][eatenCol] = null;
         
           if (movingPiece.type === 'circle') {
           movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
-          console.log('🤖 BOT CAPTURE: Updated circle eaten count to:', movingPiece.eatenCount);
         }
       }
       
@@ -1534,17 +1496,13 @@ function App() {
   const forceBotRandomMove = (playerColor: 'blue', isPlayerTurn: boolean) => {
     // Safety check: only move if it's actually the bot's turn
     if (playerColor !== 'blue' || isPlayerTurn) {
-      console.log('🤖 Bot tried to force move but it\'s not the bot\'s turn');
       return;
     }
     
     // Additional safety check: prevent multiple bot moves
     if (isMyTurn) {
-      console.log('🤖 Force move safety check failed - bot already moved or not bot\'s turn');
       return;
     }
-    
-    console.log('🤖 Forcing random bot move using GameBot Easy mode');
     
     // Use the GameBot in easy mode for forced moves
     const gameBot = new GameBot(1); // Easy mode = random moves
