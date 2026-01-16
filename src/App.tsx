@@ -183,10 +183,25 @@ function App() {
     myColorRef.current = getMyColor();
   }, [getMyColor]);
 
+  const getActiveTurnColor = useCallback((): 'red' | 'blue' => {
+    if (gameMode === 'local') {
+      return currentPlayer;
+    }
+    return isMyTurn ? myColorRef.current : (myColorRef.current === 'red' ? 'blue' : 'red');
+  }, [gameMode, currentPlayer, isMyTurn]);
+
   // 🕐 Simple 30-second countdown timer (only for online games)
   React.useEffect(() => {
-    // Don't run timer for bot games, when game hasn't started, or when stopped
-    if (!gameStarted || winner || timerStopped || !opponent || isSearching || gameMode === 'bot') {
+    const shouldRun =
+      gameStarted &&
+      !winner &&
+      !timerStopped &&
+      !isSearching &&
+      gameMode !== 'bot' &&
+      (gameMode === 'local' || opponent);
+
+    // Don't run timer when game isn't active
+    if (!shouldRun) {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
@@ -209,10 +224,10 @@ function App() {
             timerIntervalRef.current = null;
           }
           setTimerStopped(true);
-          const myColor = myColorRef.current;
-          const opponentColor = myColor === 'red' ? 'blue' : 'red';
-          setWinner(opponentColor);
-          setGameMessage(`${playersRef.current[opponentColor].username} wins by timeout!`);
+          const activeTurnColor = getActiveTurnColor();
+          const winnerColor = activeTurnColor === 'red' ? 'blue' : 'red';
+          setWinner(winnerColor);
+          setGameMessage(`${playersRef.current[winnerColor].username} wins by timeout!`);
           return 0;
         }
         
@@ -227,7 +242,7 @@ function App() {
         timerIntervalRef.current = null;
       }
     };
-  }, [gameStarted, isMyTurn, winner, opponent, gameMode, timerStopped, isSearching]);
+  }, [gameStarted, isMyTurn, currentPlayer, winner, opponent, gameMode, timerStopped, isSearching, getActiveTurnColor]);
 
   // SIMPLE TURN LOGIC - RED STARTS FIRST
   React.useEffect(() => {
