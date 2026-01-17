@@ -209,8 +209,17 @@ export class GameBot {
     const riskyCaptures = safetyFocusedSet.filter(move =>
       move.eatenPiece && this.evaluateImmediateCaptureRisk(gameState, move) > 0
     );
+    const supportedAttacks = safetyFocusedSet.filter(move => {
+      const afterMove = this.simulateMove(gameState, move);
+      return this.isSquareProtected(afterMove, move.to.row, move.to.col, Player.BOT);
+    });
+
     const movesForSearch =
-      safeQuietMoves.length > 0 && riskyCaptures.length > 0 ? safeQuietMoves : safetyFocusedSet;
+      safeQuietMoves.length > 0 && riskyCaptures.length > 0
+        ? safeQuietMoves
+        : supportedAttacks.length > 0
+          ? supportedAttacks
+          : safetyFocusedSet;
     
     // DEEP ANALYSIS: Use minimax to evaluate each move
     for (const move of movesForSearch) {
@@ -1698,14 +1707,19 @@ export class GameBot {
         const isUnderThreat = threatMaps.player[r][c] > 0;
 
         if (isAttackingEnemy && !isProtected && isUnderThreat) {
-          score -= 200;
+          score -= 380;
         } else if (isAttackingEnemy && !isProtected) {
-          score -= 120;
+          score -= 220;
         }
       }
     }
 
     return score;
+  }
+
+  isSquareProtected(state, row, col, owner) {
+    const threatMaps = this.buildThreatMaps(state);
+    return owner === Player.BOT ? threatMaps.bot[row][col] > 0 : threatMaps.player[row][col] > 0;
   }
 
   evaluatePieceActivity(state) {
