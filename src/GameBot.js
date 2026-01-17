@@ -64,12 +64,18 @@ export class GameBot {
       return null;
     }
 
-    // PERFECT WIZARD RULE: Always capture when possible, but only if safe!
+    // PRIORITY: If there is a direct winning move, take it.
+    const winningMoves = allPossibleMoves.filter(move => this.isImmediateBotWin(safeGameState, move));
+    if (winningMoves.length > 0) {
+      return winningMoves[0];
+    }
+
+    // CAPTURES: Consider them, but don't force them if a safer win path exists.
     const captureMoves = allPossibleMoves.filter(move => move.eatenPiece);
     if (captureMoves.length > 0) {
       if (this.difficulty >= 3) {
-        // WIZARD BOT: Always picks the PERFECT capture through deep analysis
-        return this.findBestMove(safeGameState, captureMoves, this.getDepth());
+        // WIZARD BOT: Evaluate all moves, not just captures
+        return this.findBestMove(safeGameState, allPossibleMoves, this.getDepth());
       }
       // Lower difficulty bots use simpler capture selection
       return captureMoves[Math.floor(Math.random() * captureMoves.length)];
@@ -153,15 +159,6 @@ export class GameBot {
   findBestMove(gameState, moves, depth) {
     let bestMove = null;
     let bestValue = -Infinity;
-
-    // WIN IMMEDIATELY: if a winning move exists, take it.
-    const winningMoves = moves.filter(move => this.isImmediateBotWin(gameState, move));
-    if (winningMoves.length > 0) {
-      const safeWinning = winningMoves.filter(move =>
-        this.isMoveImmediatelySafe(gameState, move, Player.BOT)
-      );
-      return (safeWinning.length > 0 ? safeWinning : winningMoves)[0];
-    }
     
     // SAFETY FIRST: Filter out moves that walk into immediate danger
     const safeMoves = moves.filter(move => {
@@ -1144,10 +1141,10 @@ export class GameBot {
       const centerScore = -Math.abs(move.to.row - Math.floor(state.board.length / 2));
       const safe = this.isMoveImmediatelySafe(state, move, player) ? 1 : 0;
       const learnedScore = this.getLearnedMoveScore(state, move);
-      const quietSafetyBonus = !isCapture && safe ? 200 : 0;
+      const quietSafetyBonus = !isCapture && safe ? 120 : 0;
 
       const score =
-        (isCapture ? 200 : 0) +
+        (isCapture ? 450 : 0) +
         advancementScore * 20 +
         centerScore * 5 +
         safe * 150 +
@@ -1478,9 +1475,9 @@ export class GameBot {
 
       const isRecaptured = recaptures.some(r => r.to.row === move.to.row && r.to.col === move.to.col);
       if (isRecaptured) {
-        score += gain * 0.1 - risk * 1.6 - sacrificePenalty;
+        score += gain * 0.2 - risk * 1.4 - sacrificePenalty;
       } else {
-        score += gain * 0.5;
+        score += gain * 0.7;
       }
     }
 
