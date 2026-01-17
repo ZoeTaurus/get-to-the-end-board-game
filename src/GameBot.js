@@ -197,19 +197,26 @@ export class GameBot {
     const nonHangingMoves = safeSet.filter(move => !this.isImmediatelyHanging(gameState, move));
     const safetyFocusedSet = nonHangingMoves.length > 0 ? nonHangingMoves : safeSet;
 
+    // HARD RULE: avoid unsupported attack moves when other safe options exist
+    const supportedAttackMoves = safetyFocusedSet.filter(
+      move => !this.isUnsupportedAttackMove(gameState, move)
+    );
+    const supportFocusedSet =
+      supportedAttackMoves.length > 0 ? supportedAttackMoves : safetyFocusedSet;
+
     // ANTI-BLUNDER: Avoid moves that lose material immediately with no recapture,
     // unless it is a direct winning move.
-    const nonBlunders = safeSet.filter(move => !this.isBlunderMove(gameState, move));
-    const finalMoves = nonBlunders.length > 0 ? nonBlunders : safeSet;
+    const nonBlunders = supportFocusedSet.filter(move => !this.isBlunderMove(gameState, move));
+    const finalMoves = nonBlunders.length > 0 ? nonBlunders : supportFocusedSet;
 
     // RISK CONTROL: prefer safe non-captures when captures are risky
-    const safeQuietMoves = safetyFocusedSet.filter(move =>
+    const safeQuietMoves = supportFocusedSet.filter(move =>
       !move.eatenPiece && this.isMoveImmediatelySafe(gameState, move, Player.BOT)
     );
-    const riskyCaptures = safetyFocusedSet.filter(move =>
+    const riskyCaptures = supportFocusedSet.filter(move =>
       move.eatenPiece && this.evaluateImmediateCaptureRisk(gameState, move) > 0
     );
-    const supportedAttacks = safetyFocusedSet.filter(move => {
+    const supportedAttacks = supportFocusedSet.filter(move => {
       const afterMove = this.simulateMove(gameState, move);
       return this.isSquareProtected(afterMove, move.to.row, move.to.col, Player.BOT);
     });
@@ -219,7 +226,7 @@ export class GameBot {
         ? safeQuietMoves
         : supportedAttacks.length > 0
           ? supportedAttacks
-          : safetyFocusedSet;
+          : supportFocusedSet;
     
     // DEEP ANALYSIS: Use minimax to evaluate each move
     for (const move of movesForSearch) {
@@ -1167,6 +1174,22 @@ export class GameBot {
     return playerCaptures.some(capture =>
       capture.to.row === move.to.row && capture.to.col === move.to.col
     );
+  }
+
+  isUnsupportedAttackMove(state, move) {
+    const afterMove = this.simulateMove(state, move);
+    const movedPiece = afterMove.board[move.to.row]?.[move.to.col];
+    if (!movedPiece || movedPiece.owner !== Player.BOT) {
+      return false;
+    }
+    const attackSquares = this.getAttackSquares(afterMove.board, move.to.row, move.to.col, movedPiece);
+    const isAttackingEnemy = attackSquares.some(pos =>
+      afterMove.board[pos.row][pos.col]?.owner === Player.PLAYER
+    );
+    if (!isAttackingEnemy) {
+      return false;
+    }
+    return !this.isSquareProtected(afterMove, move.to.row, move.to.col, Player.BOT);
   }
 
   isBlunderMove(state, move) {
