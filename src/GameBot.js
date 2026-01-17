@@ -1035,6 +1035,9 @@ export class GameBot {
     totalScore += this.evaluateOffensivePressure(state, threatMaps);
     totalScore += this.evaluateOffensivePressure(state, threatMaps) * 0.5;
 
+    // === STEP 18B: AVOID UNSUPPORTED ATTACKS ===
+    totalScore += this.evaluateUnsupportedAttacks(state, threatMaps);
+
     // === STEP 19: PIECE ACTIVITY ===
     totalScore += this.evaluatePieceActivity(state);
 
@@ -1669,6 +1672,35 @@ export class GameBot {
           score += 260;
         } else if (attacked && defended) {
           score += 120;
+        }
+      }
+    }
+
+    return score;
+  }
+
+  evaluateUnsupportedAttacks(state, threatMaps) {
+    let score = 0;
+    const board = state.board;
+
+    for (let r = 0; r < board.length; r++) {
+      for (let c = 0; c < board[0].length; c++) {
+        const piece = board[r][c];
+        if (!piece || piece.owner !== Player.BOT) continue;
+
+        // If this piece is attacking an enemy but is itself not protected, penalize
+        const attackSquares = this.getAttackSquares(board, r, c, piece);
+        const isAttackingEnemy = attackSquares.some(pos =>
+          board[pos.row][pos.col]?.owner === Player.PLAYER
+        );
+
+        const isProtected = threatMaps.bot[r][c] > 0;
+        const isUnderThreat = threatMaps.player[r][c] > 0;
+
+        if (isAttackingEnemy && !isProtected && isUnderThreat) {
+          score -= 200;
+        } else if (isAttackingEnemy && !isProtected) {
+          score -= 120;
         }
       }
     }
