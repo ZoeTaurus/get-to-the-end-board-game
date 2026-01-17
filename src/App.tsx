@@ -90,6 +90,7 @@ function App() {
   const playersRef = useRef(players);
   const myColorRef = useRef<'red' | 'blue'>('red');
   const botMovePendingRef = useRef(false);
+  const lastBotMoveRef = useRef<{ from: [number, number]; to: [number, number]; pieceType: PieceType } | null>(null);
 
   useEffect(() => {
     boardRef.current = board;
@@ -103,6 +104,23 @@ function App() {
       'pro': 700 + Math.random() * 400,      // 700-1100ms
       'wizard': 900 + Math.random() * 500    // 900-1400ms
     }[difficulty] || 600;
+  };
+
+  const getBotMoveKey = (move: { from: [number, number]; to: [number, number]; pieceType: PieceType }) => {
+    const [fromRow, fromCol] = move.from;
+    const [toRow, toCol] = move.to;
+    return `${move.pieceType}:${fromRow},${fromCol}->${toRow},${toCol}`;
+  };
+
+  const addLearnedMove = (key: string, outcome: 'good' | 'bad') => {
+    const storageKey = outcome === 'good' ? 'botGoodMoves' : 'botBadMoves';
+    const raw = localStorage.getItem(storageKey);
+    const list: string[] = raw ? JSON.parse(raw) : [];
+    if (!list.includes(key)) {
+      list.unshift(key);
+      if (list.length > 200) list.length = 200;
+      localStorage.setItem(storageKey, JSON.stringify(list));
+    }
   };
   
   
@@ -273,6 +291,17 @@ function App() {
       }
     }
   }, [gameStarted, currentPlayer, winner, gameMode]);
+
+  useEffect(() => {
+    if (gameMode !== 'bot' || !winner) return;
+    if (!lastBotMoveRef.current) return;
+    const key = getBotMoveKey(lastBotMoveRef.current);
+    if (winner === 'blue') {
+      addLearnedMove(key, 'good');
+    } else if (winner === 'red') {
+      addLearnedMove(key, 'bad');
+    }
+  }, [winner, gameMode]);
 
   useEffect(() => {
     if (gameMode !== 'bot' || !gameStarted || winner) return;
@@ -1497,6 +1526,11 @@ function App() {
       forceBotRandomMove('blue', false);
       return;
     }
+    lastBotMoveRef.current = {
+      from: [fromRow, fromCol],
+      to: [toRow, toCol],
+      pieceType: pieceAtSource.type
+    };
 
     // Execute the move with proper capture handling
       const updatedBoard = latestBoard.map(row => [...row]);
@@ -1564,6 +1598,11 @@ function App() {
       setIsMyTurn(true);
       return;
     }
+    lastBotMoveRef.current = {
+      from: [fromRow, fromCol],
+      to: [toRow, toCol],
+      pieceType: pieceAtSource.type
+    };
 
     const updatedBoard = latestBoard.map(row => [...row]);
     const movingPiece = { ...pieceAtSource };

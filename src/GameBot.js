@@ -1066,12 +1066,14 @@ export class GameBot {
       const advancementScore = player === Player.BOT ? advance : -advance;
       const centerScore = -Math.abs(move.to.row - Math.floor(state.board.length / 2));
       const safe = this.isMoveImmediatelySafe(state, move, player) ? 1 : 0;
+      const learnedScore = this.getLearnedMoveScore(state, move);
 
       const score =
         (isCapture ? 1000 : 0) +
         advancementScore * 20 +
         centerScore * 5 +
-        safe * 150;
+        safe * 150 +
+        learnedScore;
 
       return { move, score };
     });
@@ -1147,6 +1149,29 @@ export class GameBot {
       bot: this.buildThreatMapForPlayer(state.board, Player.BOT),
       player: this.buildThreatMapForPlayer(state.board, Player.PLAYER)
     };
+  }
+
+  getLearnedMoveScore(state, move) {
+    if (typeof localStorage === 'undefined') return 0;
+    const piece = state.board[move.from.row]?.[move.from.col];
+    if (!piece) return 0;
+    const key = `${piece.type}:${move.from.row},${move.from.col}->${move.to.row},${move.to.col}`;
+    const goodMoves = this.readLearnedList('botGoodMoves');
+    const badMoves = this.readLearnedList('botBadMoves');
+
+    if (badMoves.includes(key)) return -800;
+    if (goodMoves.includes(key)) return 250;
+    return 0;
+  }
+
+  readLearnedList(storageKey) {
+    if (typeof localStorage === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem(storageKey);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
   }
 
   buildThreatMapForPlayer(board, player) {
