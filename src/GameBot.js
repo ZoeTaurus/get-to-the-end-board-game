@@ -298,8 +298,8 @@ export class GameBot {
     const isEndgame = totalPieces.bot + totalPieces.player <= 6;
     
     const pieceValue = { 
-      [PieceType.PERSON]: isEndgame ? 150 : 100,  // Persons more valuable in endgame (can win!)
-      [PieceType.CIRCLE]: isEndgame ? 200 : 180   // Circles provide strategic flexibility
+      [PieceType.PERSON]: isEndgame ? 160 : 120,  // Persons still valuable
+      [PieceType.CIRCLE]: isEndgame ? 320 : 280   // Circles are more valuable
     };
     
     // --- STEP 1: BASIC MATERIAL AND POSITION ---
@@ -1144,8 +1144,8 @@ export class GameBot {
 
   getBasePieceValue(piece) {
     if (!piece) return 0;
-    if (piece.type === PieceType.CIRCLE) return 180;
-    return 100; // person
+    if (piece.type === PieceType.CIRCLE) return 260;
+    return 120; // person
   }
 
   evaluateImmediateCaptureRisk(state, move) {
@@ -1181,7 +1181,9 @@ export class GameBot {
       }
     }
 
-    return worstNetLoss * 3; // strong penalty for immediate tactical loss
+    const movedPiece = state.board[move.from.row]?.[move.from.col];
+    const circleRiskPenalty = movedPiece?.type === PieceType.CIRCLE ? 180 : 0;
+    return worstNetLoss * 3 + circleRiskPenalty; // extra penalty for risking circles
   }
 
   countImmediatePlayerWins(state) {
@@ -1335,10 +1337,11 @@ export class GameBot {
 
       const gain = capturedPiece ? pieceValue[capturedPiece.type] : 0;
       const risk = movingPiece ? pieceValue[movingPiece.type] : 0;
+      const sacrificePenalty = movingPiece?.type === PieceType.CIRCLE ? 140 : 0;
 
       const isRecaptured = recaptures.some(r => r.to.row === move.to.row && r.to.col === move.to.col);
       if (isRecaptured) {
-        score += gain * 0.3 - risk * 1.1;
+        score += gain * 0.3 - risk * 1.1 - sacrificePenalty;
       } else {
         score += gain * 0.9;
       }
