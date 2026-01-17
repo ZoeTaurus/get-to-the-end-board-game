@@ -197,7 +197,7 @@ export class GameBot {
     for (const move of finalMoves) {
       const newGameState = this.simulateMove(gameState, move);
       const boardValue = this.minimax(newGameState, depth - 1, false, -Infinity, Infinity);
-      const tacticalPenalty = this.evaluateImmediateCaptureRisk(gameState, move);
+      const tacticalPenalty = this.evaluateImmediateCaptureRisk(gameState, move) * 1.6;
       const adjustedValue = boardValue - tacticalPenalty;
       
       // TIE-BREAKING: If moves have equal value, prefer more strategic ones
@@ -1142,6 +1142,10 @@ export class GameBot {
   evaluateImmediateCaptureRisk(state, move) {
     const afterMove = this.simulateMove(state, move);
     const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
+    const immediateWins = playerMoves.filter(m => m.to.col === 0).length;
+    if (immediateWins > 0) {
+      return 10000 * immediateWins;
+    }
     const playerCaptures = playerMoves.filter(m => m.eatenPiece);
     if (playerCaptures.length === 0) return 0;
 
@@ -1160,8 +1164,11 @@ export class GameBot {
       if (!canRecapture) {
         worstNetLoss = Math.max(worstNetLoss, capturedValue);
       } else {
-        // If we can recapture, estimate reduced loss
-        worstNetLoss = Math.max(worstNetLoss, capturedValue * 0.4);
+        // If we can recapture, estimate material swing
+        const recapturedPiece = afterCapture.board[capture.from.row]?.[capture.from.col];
+        const recaptureValue = this.getBasePieceValue(recapturedPiece);
+        const netLoss = Math.max(0, capturedValue - recaptureValue * 0.8);
+        worstNetLoss = Math.max(worstNetLoss, netLoss);
       }
     }
 
