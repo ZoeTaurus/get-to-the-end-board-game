@@ -186,7 +186,12 @@ export class GameBot {
 
     // STRONGER DEFENSE: Avoid hanging pieces unless there is a recapture plan.
     const saferMoves = threatFocusedMoves.filter(move => this.isMoveSafeWithCounterplay(gameState, move));
-    const finalMoves = saferMoves.length > 0 ? saferMoves : threatFocusedMoves;
+    const safeSet = saferMoves.length > 0 ? saferMoves : threatFocusedMoves;
+
+    // ANTI-BLUNDER: Avoid moves that lose material immediately with no recapture,
+    // unless it is a direct winning move.
+    const nonBlunders = safeSet.filter(move => !this.isBlunderMove(gameState, move));
+    const finalMoves = nonBlunders.length > 0 ? nonBlunders : safeSet;
     
     // DEEP ANALYSIS: Use minimax to evaluate each move
     for (const move of finalMoves) {
@@ -1102,6 +1107,26 @@ export class GameBot {
     }
 
     return false;
+  }
+
+  isBlunderMove(state, move) {
+    if (this.isImmediateBotWin(state, move)) {
+      return false;
+    }
+    const afterMove = this.simulateMove(state, move);
+    const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
+    const playerCaptures = playerMoves.filter(m => m.eatenPiece);
+    const directCaptures = playerCaptures.filter(capture =>
+      capture.to.row === move.to.row && capture.to.col === move.to.col
+    );
+    if (directCaptures.length === 0) {
+      return false;
+    }
+    return !this.isMoveSafeWithCounterplay(state, move);
+  }
+
+  isImmediateBotWin(state, move) {
+    return move.to.col === state.board[0].length - 1;
   }
 
   countImmediatePlayerWins(state) {
