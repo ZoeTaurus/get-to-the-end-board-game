@@ -193,20 +193,24 @@ export class GameBot {
       : threatFocusedMoves.filter(move => this.isMoveSafeWithCounterplay(gameState, move));
     const safeSet = saferMoves.length > 0 ? saferMoves : threatFocusedMoves;
 
+    // HARD RULE: if any non-hanging moves exist, avoid moves that can be captured immediately
+    const nonHangingMoves = safeSet.filter(move => !this.isImmediatelyHanging(gameState, move));
+    const safetyFocusedSet = nonHangingMoves.length > 0 ? nonHangingMoves : safeSet;
+
     // ANTI-BLUNDER: Avoid moves that lose material immediately with no recapture,
     // unless it is a direct winning move.
     const nonBlunders = safeSet.filter(move => !this.isBlunderMove(gameState, move));
     const finalMoves = nonBlunders.length > 0 ? nonBlunders : safeSet;
 
     // RISK CONTROL: prefer safe non-captures when captures are risky
-    const safeQuietMoves = finalMoves.filter(move =>
+    const safeQuietMoves = safetyFocusedSet.filter(move =>
       !move.eatenPiece && this.isMoveImmediatelySafe(gameState, move, Player.BOT)
     );
-    const riskyCaptures = finalMoves.filter(move =>
+    const riskyCaptures = safetyFocusedSet.filter(move =>
       move.eatenPiece && this.evaluateImmediateCaptureRisk(gameState, move) > 0
     );
     const movesForSearch =
-      safeQuietMoves.length > 0 && riskyCaptures.length > 0 ? safeQuietMoves : finalMoves;
+      safeQuietMoves.length > 0 && riskyCaptures.length > 0 ? safeQuietMoves : safetyFocusedSet;
     
     // DEEP ANALYSIS: Use minimax to evaluate each move
     for (const move of movesForSearch) {
@@ -1137,6 +1141,18 @@ export class GameBot {
     }
 
     return false;
+  }
+
+  isImmediatelyHanging(state, move) {
+    if (this.isImmediateBotWin(state, move)) {
+      return false;
+    }
+    const afterMove = this.simulateMove(state, move);
+    const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
+    const playerCaptures = playerMoves.filter(m => m.eatenPiece);
+    return playerCaptures.some(capture =>
+      capture.to.row === move.to.row && capture.to.col === move.to.col
+    );
   }
 
   isBlunderMove(state, move) {
