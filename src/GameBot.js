@@ -169,7 +169,13 @@ export class GameBot {
     });
     
     // MOVE PRIORITIZATION: If we have safe moves, use them. Otherwise, take calculated risks.
-    const movesToConsider = safeMoves.length > 0 ? safeMoves : moves;
+    let movesToConsider = safeMoves.length > 0 ? safeMoves : moves;
+
+    // HARD RULE: avoid unsupported attacks if any other move exists
+    const supportedOnly = movesToConsider.filter(move => !this.isUnsupportedAttackMove(gameState, move));
+    if (supportedOnly.length > 0) {
+      movesToConsider = supportedOnly;
+    }
 
     // URGENT DEFENSE: If player has an immediate winning move, prioritize blocks/captures.
     const urgentThreats = this.countImmediatePlayerWins(gameState);
