@@ -216,7 +216,9 @@ export class GameBot {
     for (const move of movesForSearch) {
       const newGameState = this.simulateMove(gameState, move);
       const boardValue = this.minimax(newGameState, depth - 1, false, -Infinity, Infinity);
-      const tacticalPenalty = this.evaluateImmediateCaptureRisk(gameState, move) * 1.6;
+      const tacticalPenalty =
+        this.evaluateImmediateCaptureRisk(gameState, move) * 1.6 +
+        this.evaluatePostMoveHangingPenalty(gameState, move) * 1.2;
       const adjustedValue = boardValue - tacticalPenalty;
       
       // TIE-BREAKING: If moves have equal value, prefer more strategic ones
@@ -1214,9 +1216,29 @@ export class GameBot {
       }
     }
 
-     const movedPiece = state.board[move.from.row]?.[move.from.col];
+    const movedPiece = state.board[move.from.row]?.[move.from.col];
     const circleRiskPenalty = movedPiece?.type === PieceType.CIRCLE ? 180 : 0;
     return worstNetLoss * 3 + circleRiskPenalty; // extra penalty for risking circles
+  }
+
+  evaluatePostMoveHangingPenalty(state, move) {
+    const afterMove = this.simulateMove(state, move);
+    const threatMaps = this.buildThreatMaps(afterMove);
+    let penalty = 0;
+    for (let r = 0; r < afterMove.board.length; r++) {
+      for (let c = 0; c < afterMove.board[0].length; c++) {
+        const piece = afterMove.board[r][c];
+        if (!piece || piece.owner !== Player.BOT) continue;
+        const attacked = threatMaps.player[r][c] > 0;
+        const defended = threatMaps.bot[r][c] > 0;
+        if (attacked && !defended) {
+          penalty += this.getBasePieceValue(piece) * 1.2;
+        } else if (attacked && defended) {
+          penalty += this.getBasePieceValue(piece) * 0.3;
+        }
+      }
+    }
+    return penalty;
   }
 
   countImmediatePlayerWins(state) {
