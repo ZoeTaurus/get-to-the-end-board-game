@@ -198,11 +198,18 @@ export class GameBot {
     const safetyFocusedSet = nonHangingMoves.length > 0 ? nonHangingMoves : safeSet;
 
     // HARD RULE: avoid unsupported attack moves when other safe options exist
+    const nonAttackingMoves = safetyFocusedSet.filter(
+      move => !this.isAttackingEnemyAfterMove(gameState, move)
+    );
     const supportedAttackMoves = safetyFocusedSet.filter(
       move => !this.isUnsupportedAttackMove(gameState, move)
     );
     const supportFocusedSet =
-      supportedAttackMoves.length > 0 ? supportedAttackMoves : safetyFocusedSet;
+      nonAttackingMoves.length > 0
+        ? nonAttackingMoves
+        : supportedAttackMoves.length > 0
+          ? supportedAttackMoves
+          : safetyFocusedSet;
 
     // ANTI-BLUNDER: Avoid moves that lose material immediately with no recapture,
     // unless it is a direct winning move.
@@ -1190,6 +1197,18 @@ export class GameBot {
       return false;
     }
     return !this.isSquareProtected(afterMove, move.to.row, move.to.col, Player.BOT);
+  }
+
+  isAttackingEnemyAfterMove(state, move) {
+    const afterMove = this.simulateMove(state, move);
+    const movedPiece = afterMove.board[move.to.row]?.[move.to.col];
+    if (!movedPiece || movedPiece.owner !== Player.BOT) {
+      return false;
+    }
+    const attackSquares = this.getAttackSquares(afterMove.board, move.to.row, move.to.col, movedPiece);
+    return attackSquares.some(pos =>
+      afterMove.board[pos.row][pos.col]?.owner === Player.PLAYER
+    );
   }
 
   isBlunderMove(state, move) {
