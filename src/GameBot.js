@@ -171,9 +171,22 @@ export class GameBot {
     // MOVE PRIORITIZATION: If we have safe moves, use them. Otherwise, take calculated risks.
     const movesToConsider = safeMoves.length > 0 ? safeMoves : moves;
 
+    // URGENT DEFENSE: If player has an immediate winning move, prioritize blocks/captures.
+    const urgentThreats = this.countImmediatePlayerWins(gameState);
+    let threatFocusedMoves = movesToConsider;
+    if (urgentThreats > 0) {
+      const reducedThreatMoves = movesToConsider.filter(move => {
+        const afterMove = this.simulateMove(gameState, move);
+        return this.countImmediatePlayerWins(afterMove) < urgentThreats;
+      });
+      if (reducedThreatMoves.length > 0) {
+        threatFocusedMoves = reducedThreatMoves;
+      }
+    }
+
     // STRONGER DEFENSE: Avoid hanging pieces unless there is a recapture plan.
-    const saferMoves = movesToConsider.filter(move => this.isMoveSafeWithCounterplay(gameState, move));
-    const finalMoves = saferMoves.length > 0 ? saferMoves : movesToConsider;
+    const saferMoves = threatFocusedMoves.filter(move => this.isMoveSafeWithCounterplay(gameState, move));
+    const finalMoves = saferMoves.length > 0 ? saferMoves : threatFocusedMoves;
     
     // DEEP ANALYSIS: Use minimax to evaluate each move
     for (const move of finalMoves) {
@@ -1088,6 +1101,11 @@ export class GameBot {
     }
 
     return false;
+  }
+
+  countImmediatePlayerWins(state) {
+    const playerMoves = this.getAllValidMoves(state, Player.PLAYER);
+    return playerMoves.filter(move => move.to.col === 0).length;
   }
 
   isMoveImmediatelySafe(state, move, player) {
