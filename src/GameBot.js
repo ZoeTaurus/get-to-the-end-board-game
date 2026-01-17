@@ -153,6 +153,12 @@ export class GameBot {
   findBestMove(gameState, moves, depth) {
     let bestMove = null;
     let bestValue = -Infinity;
+
+    // ALWAYS TAKE A WINNING MOVE
+    const winningMove = moves.find(move => this.isImmediateBotWin(gameState, move));
+    if (winningMove) {
+      return winningMove;
+    }
     
     // SAFETY FIRST: Filter out moves that walk into immediate danger
     const safeMoves = moves.filter(move => {
@@ -1138,7 +1144,7 @@ export class GameBot {
       const quietSafetyBonus = !isCapture && safe ? 120 : 0;
 
       const score =
-        (isCapture ? 450 : 0) +
+        (isCapture ? 200 : 0) +
         advancementScore * 20 +
         centerScore * 5 +
         safe * 150 +
