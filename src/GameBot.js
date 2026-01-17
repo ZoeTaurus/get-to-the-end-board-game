@@ -1005,6 +1005,7 @@ export class GameBot {
 
     // === STEP 18: OFFENSIVE PRESSURE ===
     totalScore += this.evaluateOffensivePressure(state, threatMaps);
+    totalScore += this.evaluateOffensivePressure(state, threatMaps) * 0.5;
 
     // === STEP 19: PIECE ACTIVITY ===
     totalScore += this.evaluatePieceActivity(state);
@@ -1075,11 +1076,6 @@ export class GameBot {
   }
 
   isMoveSafeWithCounterplay(state, move) {
-    // Always allow a winning move
-    if (this.isBotWinningMove(state, move)) {
-      return true;
-    }
-
     const afterMove = this.simulateMove(state, move);
     const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
     const playerCaptures = playerMoves.filter(m => m.eatenPiece);
@@ -1106,10 +1102,6 @@ export class GameBot {
     }
 
     return false;
-  }
-
-  isBotWinningMove(state, move) {
-    return move.to.col === state.board[0].length - 1;
   }
 
   countImmediatePlayerWins(state) {
@@ -1205,9 +1197,9 @@ export class GameBot {
 
         if (piece.owner === Player.BOT) {
           if (attackedByPlayer && !attackedByBot) {
-            score -= value * 0.9; // hanging piece (bad but not over-defensive)
+            score -= value * 0.7; // hanging piece (bad, but allow attack)
           } else if (attackedByPlayer && attackedByBot) {
-            score -= value * 0.4; // contested
+            score -= value * 0.3; // contested
           } else if (!attackedByPlayer && attackedByBot) {
             score += value * 0.1; // defended and safe
           }
