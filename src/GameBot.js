@@ -197,11 +197,13 @@ export class GameBot {
     for (const move of finalMoves) {
       const newGameState = this.simulateMove(gameState, move);
       const boardValue = this.minimax(newGameState, depth - 1, false, -Infinity, Infinity);
+      const tacticalPenalty = this.evaluateImmediateCaptureRisk(gameState, move);
+      const adjustedValue = boardValue - tacticalPenalty;
       
       // TIE-BREAKING: If moves have equal value, prefer more strategic ones
-      if (boardValue > bestValue || 
-          (boardValue === bestValue && this.isMoreStrategic(move, bestMove, gameState))) {
-        bestValue = boardValue;
+      if (adjustedValue > bestValue || 
+          (adjustedValue === bestValue && this.isMoreStrategic(move, bestMove, gameState))) {
+        bestValue = adjustedValue;
         bestMove = move;
       }
     }
@@ -1129,6 +1131,41 @@ export class GameBot {
 
   isImmediateBotWin(state, move) {
     return move.to.col === state.board[0].length - 1;
+  }
+
+  getBasePieceValue(piece) {
+    if (!piece) return 0;
+    if (piece.type === PieceType.CIRCLE) return 180;
+    return 100; // person
+  }
+
+  evaluateImmediateCaptureRisk(state, move) {
+    const afterMove = this.simulateMove(state, move);
+    const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
+    const playerCaptures = playerMoves.filter(m => m.eatenPiece);
+    if (playerCaptures.length === 0) return 0;
+
+    let worstNetLoss = 0;
+    for (const capture of playerCaptures) {
+      const capturedPiece = afterMove.board[capture.to.row]?.[capture.to.col];
+      const capturedValue = this.getBasePieceValue(capturedPiece);
+
+      const afterCapture = this.simulateMove(afterMove, capture);
+      const botReplies = this.getAllValidMoves(afterCapture, Player.BOT);
+      const botRecaptures = botReplies.filter(m => m.eatenPiece);
+      const canRecapture = botRecaptures.some(reply =>
+        reply.to.row === capture.to.row && reply.to.col === capture.to.col
+      );
+
+      if (!canRecapture) {
+        worstNetLoss = Math.max(worstNetLoss, capturedValue);
+      } else {
+        // If we can recapture, estimate reduced loss
+        worstNetLoss = Math.max(worstNetLoss, capturedValue * 0.4);
+      }
+    }
+
+    return worstNetLoss * 3; // strong penalty for immediate tactical loss
   }
 
   countImmediatePlayerWins(state) {
