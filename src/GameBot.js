@@ -197,11 +197,19 @@ export class GameBot {
     const nonHangingMoves = safeSet.filter(move => !this.isImmediatelyHanging(gameState, move));
     const safetyFocusedSet = nonHangingMoves.length > 0 ? nonHangingMoves : safeSet;
 
+    // HARD RULE: prefer moves where the destination is protected
+    const protectedDestinationMoves = safetyFocusedSet.filter(move => {
+      const afterMove = this.simulateMove(gameState, move);
+      return this.isSquareProtected(afterMove, move.to.row, move.to.col, Player.BOT);
+    });
+    const protectionFocusedSet =
+      protectedDestinationMoves.length > 0 ? protectedDestinationMoves : safetyFocusedSet;
+
     // HARD RULE: avoid unsupported attack moves when other safe options exist
-    const nonAttackingMoves = safetyFocusedSet.filter(
+    const nonAttackingMoves = protectionFocusedSet.filter(
       move => !this.isAttackingEnemyAfterMove(gameState, move)
     );
-    const supportedAttackMoves = safetyFocusedSet.filter(
+    const supportedAttackMoves = protectionFocusedSet.filter(
       move => !this.isUnsupportedAttackMove(gameState, move)
     );
     const supportFocusedSet =
@@ -209,7 +217,7 @@ export class GameBot {
         ? nonAttackingMoves
         : supportedAttackMoves.length > 0
           ? supportedAttackMoves
-          : safetyFocusedSet;
+          : protectionFocusedSet;
 
     // ANTI-BLUNDER: Avoid moves that lose material immediately with no recapture,
     // unless it is a direct winning move.
