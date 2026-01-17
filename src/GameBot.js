@@ -1348,8 +1348,8 @@ export class GameBot {
 
         if (piece.owner === Player.BOT) {
           const forwardTargets = this.getForwardDiagonalTargets(board, r, c, true);
-          const pathBonus = forwardTargets.filter(t => !board[t.row][t.col]).length * 80;
-          const goalPressure = (lastCol - c) <= 1 ? 500 : 0;
+          const pathBonus = forwardTargets.filter(t => !board[t.row][t.col]).length * 120;
+          const goalPressure = (lastCol - c) <= 1 ? 1200 : (lastCol - c) <= 2 ? 500 : 0;
           score += pathBonus + goalPressure;
         } else {
           const forwardTargets = this.getForwardDiagonalTargets(board, r, c, false);
@@ -1422,9 +1422,9 @@ export class GameBot {
         const defended = threatMaps.player[r][c] > 0;
 
         if (attacked && !defended) {
-          score += 160;
+          score += 260;
         } else if (attacked && defended) {
-          score += 60;
+          score += 120;
         }
       }
     }
