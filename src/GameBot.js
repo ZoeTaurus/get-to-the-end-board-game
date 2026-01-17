@@ -1098,6 +1098,7 @@ export class GameBot {
     }
 
     // Allow if the bot can immediately recapture the capturing piece
+    // and the exchange isn't losing material badly.
     for (const capture of directCaptures) {
       const afterCapture = this.simulateMove(afterMove, capture);
       const botReplies = this.getAllValidMoves(afterCapture, Player.BOT);
@@ -1105,7 +1106,15 @@ export class GameBot {
       const canRecapture = botRecaptures.some(reply =>
         reply.to.row === capture.to.row && reply.to.col === capture.to.col
       );
-      if (canRecapture) {
+      if (!canRecapture) continue;
+
+      const capturedPiece = afterMove.board[capture.to.row]?.[capture.to.col];
+      const capturedValue = this.getBasePieceValue(capturedPiece);
+      const recapturePiece = afterCapture.board[capture.from.row]?.[capture.from.col];
+      const recaptureValue = this.getBasePieceValue(recapturePiece);
+      const netLoss = Math.max(0, capturedValue - recaptureValue * 0.8);
+
+      if (netLoss <= 50) {
         return true;
       }
     }
