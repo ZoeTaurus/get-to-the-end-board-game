@@ -91,6 +91,20 @@ function App() {
   const myColorRef = useRef<'red' | 'blue'>('red');
   const botMovePendingRef = useRef(false);
   const lastBotMoveRef = useRef<{ from: [number, number]; to: [number, number]; pieceType: PieceType } | null>(null);
+  const mlSessionRef = useRef<{
+    id: string;
+    startedAt: number;
+    difficulty: string;
+    moves: {
+      from: [number, number];
+      to: [number, number];
+      pieceType: PieceType;
+      color: PlayerColor;
+      wasCapture: boolean;
+      board: number[][];
+    }[];
+    winner?: PlayerColor;
+  } | null>(null);
 
   useEffect(() => {
     boardRef.current = board;
@@ -121,6 +135,60 @@ function App() {
       if (list.length > 200) list.length = 200;
       localStorage.setItem(storageKey, JSON.stringify(list));
     }
+  };
+
+  const encodeBoardForML = (boardState: (Piece | null)[][]) => {
+    return boardState.map(row =>
+      row.map(cell => {
+        if (!cell) return 0;
+        if (cell.color === 'red') {
+          return cell.type === 'circle' ? 2 : 1;
+        }
+        return cell.type === 'circle' ? -2 : -1;
+      })
+    );
+  };
+
+  const startMlSession = (difficulty: string) => {
+    mlSessionRef.current = {
+      id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      startedAt: Date.now(),
+      difficulty,
+      moves: []
+    };
+  };
+
+  const recordMlMove = (
+    move: { from: [number, number]; to: [number, number]; pieceType: PieceType; color: PlayerColor; wasCapture: boolean },
+    boardState: (Piece | null)[][]
+  ) => {
+    if (!mlSessionRef.current) return;
+    mlSessionRef.current.moves.push({
+      ...move,
+      board: encodeBoardForML(ensureBoardStructure(boardState))
+    });
+  };
+
+  const finalizeMlSession = (winnerColor: PlayerColor) => {
+    if (!mlSessionRef.current) return;
+    const raw = localStorage.getItem('mlTrainingData');
+    const list = raw ? JSON.parse(raw) : [];
+    mlSessionRef.current.winner = winnerColor;
+    list.unshift(mlSessionRef.current);
+    if (list.length > 100) list.length = 100;
+    localStorage.setItem('mlTrainingData', JSON.stringify(list));
+    mlSessionRef.current = null;
+  };
+
+  const downloadMlData = () => {
+    const raw = localStorage.getItem('mlTrainingData') || '[]';
+    const blob = new Blob([raw], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'get-to-the-end-ml-data.json';
+    a.click();
+    URL.revokeObjectURL(url);
   };
   
   
@@ -301,6 +369,11 @@ function App() {
     } else if (winner === 'red') {
       addLearnedMove(key, 'bad');
     }
+  }, [winner, gameMode]);
+
+  useEffect(() => {
+    if (gameMode !== 'bot' || !winner) return;
+    finalizeMlSession(winner);
   }, [winner, gameMode]);
 
   useEffect(() => {
@@ -1047,6 +1120,16 @@ function App() {
           if (botTimeouts.fallback) clearTimeout(botTimeouts.fallback);
           
           setBoard(ensureBoardStructure(newBoard));
+          recordMlMove(
+            {
+              from: [selectedRow, selectedCol],
+              to: [rowIndex, colIndex],
+              pieceType: movingPiece.type,
+              color: movingPiece.color,
+              wasCapture: isValidCapture
+            },
+            newBoard
+          );
           setSelectedPiece(null);
           setValidMoves([]);
           setValidCaptures([]);
@@ -1531,7 +1614,7 @@ function App() {
       to: [toRow, toCol],
       pieceType: pieceAtSource.type
     };
-
+      
     // Execute the move with proper capture handling
       const updatedBoard = latestBoard.map(row => [...row]);
       const movingPiece = { ...pieceAtSource };
@@ -1563,6 +1646,16 @@ function App() {
         }
       
     setBoard(ensureBoardStructure(updatedBoard));
+    recordMlMove(
+      {
+        from: [fromRow, fromCol],
+        to: [toRow, toCol],
+        pieceType: pieceAtSource.type,
+        color: pieceAtSource.color,
+        wasCapture: !!botMove.eatenPiece
+      },
+      updatedBoard
+    );
     
     // Switch turns back to player and update message
     setCurrentPlayer('red');
@@ -1612,10 +1705,10 @@ function App() {
       updatedBoard[eatenRow][eatenCol] = null;
       
       if (movingPiece.type === 'circle') {
-        movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
+          movingPiece.eatenCount = (movingPiece.eatenCount || 0) + 1;
       }
-    }
-      
+        }
+        
     updatedBoard[toRow][toCol] = movingPiece;
     updatedBoard[fromRow][fromCol] = null;
       
@@ -1630,6 +1723,16 @@ function App() {
     }
 
     setBoard(ensureBoardStructure(updatedBoard));
+    recordMlMove(
+      {
+        from: [fromRow, fromCol],
+        to: [toRow, toCol],
+        pieceType: pieceAtSource.type,
+        color: pieceAtSource.color,
+        wasCapture: !!randomMove.eatenPiece
+      },
+      updatedBoard
+    );
       
       // Switch back to player's turn
       setCurrentPlayer('red');
@@ -1840,8 +1943,8 @@ function App() {
                       if (purchaseItem(themeKey, 'pieces', theme.price)) {
                         setPieceTheme(themeKey);
                         localStorage.setItem('pieceTheme', themeKey);
-                      }
-                    }
+          }
+        }
                   }}
                 >
                 <div className="piece-preview">
@@ -2008,6 +2111,7 @@ function App() {
             newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
             
             setBoard(ensureBoardStructure(newBoard));
+            startMlSession('easy');
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -2053,6 +2157,7 @@ function App() {
             newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
             
             setBoard(ensureBoardStructure(newBoard));
+            startMlSession('normal');
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -2098,6 +2203,7 @@ function App() {
             newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
             
             setBoard(ensureBoardStructure(newBoard));
+            startMlSession('hard');
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -2143,6 +2249,7 @@ function App() {
             newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
             
             setBoard(ensureBoardStructure(newBoard));
+            startMlSession('pro');
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -2188,6 +2295,7 @@ function App() {
             newBoard[3][5] = { type: 'person', color: 'red', eatenCount: 0 };
             
             setBoard(ensureBoardStructure(newBoard));
+            startMlSession('wizard');
             setGameStarted(true);
             setCurrentPlayer('red');
             setIsMyTurn(true); // Player starts first in bot games
@@ -2203,6 +2311,10 @@ function App() {
               <p className="bot-description">{getTranslation(language).bots.forMasterPlayers}</p>
           </div>
         </div>
+
+        <button className="start-button" onClick={downloadMlData}>
+          Download ML Data
+        </button>
       </div>
     </div>
   );
@@ -2660,7 +2772,7 @@ function App() {
                   {showConfetti && <ConfettiOverlay />}
                 </>
               ) : (
-                <>
+              <>
                   <h2 style={{ color: '#888' }}>{getTranslation(language).game.youLose}</h2>
                 <div className="rain">
                   {Array.from({ length: 60 }).map((_, i) => (
