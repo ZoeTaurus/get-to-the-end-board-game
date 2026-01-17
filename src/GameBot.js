@@ -184,8 +184,13 @@ export class GameBot {
       }
     }
 
-    // STRONGER DEFENSE: Avoid hanging pieces unless there is a recapture plan.
-    const saferMoves = threatFocusedMoves.filter(move => this.isMoveSafeWithCounterplay(gameState, move));
+    // STRONGER DEFENSE: If any moves are completely safe, prefer them.
+    const strictlySafeMoves = threatFocusedMoves.filter(move =>
+      this.isMoveImmediatelySafe(gameState, move, Player.BOT)
+    );
+    const saferMoves = strictlySafeMoves.length > 0
+      ? strictlySafeMoves
+      : threatFocusedMoves.filter(move => this.isMoveSafeWithCounterplay(gameState, move));
     const safeSet = saferMoves.length > 0 ? saferMoves : threatFocusedMoves;
 
     // ANTI-BLUNDER: Avoid moves that lose material immediately with no recapture,
