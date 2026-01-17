@@ -1284,6 +1284,70 @@ export class GameBot {
       }
     }
 
+    // Extra bonus for "wall" chains (connected protection lines)
+    score += this.evaluateDefensiveAttackWall(state);
+
+    return score;
+  }
+
+  evaluateDefensiveAttackWall(state) {
+    const board = state.board;
+    const rows = board.length;
+    const cols = board[0].length;
+    let score = 0;
+
+    // Horizontal chains
+    for (let r = 0; r < rows; r++) {
+      let chain = 0;
+      for (let c = 0; c < cols; c++) {
+        const piece = board[r][c];
+        if (piece && piece.owner === Player.BOT) {
+          chain++;
+        } else {
+          if (chain >= 2) score += chain * 90;
+          chain = 0;
+        }
+      }
+      if (chain >= 2) score += chain * 90;
+    }
+
+    // Diagonal chains
+    for (let startCol = 0; startCol < cols; startCol++) {
+      let r = 0;
+      let c = startCol;
+      let chain = 0;
+      while (r < rows && c < cols) {
+        const piece = board[r][c];
+        if (piece && piece.owner === Player.BOT) {
+          chain++;
+        } else {
+          if (chain >= 2) score += chain * 70;
+          chain = 0;
+        }
+        r++;
+        c++;
+      }
+      if (chain >= 2) score += chain * 70;
+    }
+
+    for (let startRow = 1; startRow < rows; startRow++) {
+      let r = startRow;
+      let c = 0;
+      let chain = 0;
+      while (r < rows && c < cols) {
+        const piece = board[r][c];
+        if (piece && piece.owner === Player.BOT) {
+          chain++;
+        } else {
+          if (chain >= 2) score += chain * 70;
+          chain = 0;
+        }
+        r++;
+        c++;
+      }
+      if (chain >= 2) score += chain * 70;
+    }
+
     return score;
   }
 
