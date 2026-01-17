@@ -170,9 +170,13 @@ export class GameBot {
     
     // MOVE PRIORITIZATION: If we have safe moves, use them. Otherwise, take calculated risks.
     const movesToConsider = safeMoves.length > 0 ? safeMoves : moves;
+
+    // STRONGER DEFENSE: Avoid hanging pieces unless there is a recapture plan.
+    const saferMoves = movesToConsider.filter(move => this.isMoveSafeWithCounterplay(gameState, move));
+    const finalMoves = saferMoves.length > 0 ? saferMoves : movesToConsider;
     
     // DEEP ANALYSIS: Use minimax to evaluate each move
-    for (const move of movesToConsider) {
+    for (const move of finalMoves) {
       const newGameState = this.simulateMove(gameState, move);
       const boardValue = this.minimax(newGameState, depth - 1, false, -Infinity, Infinity);
       
@@ -1057,6 +1061,35 @@ export class GameBot {
     return scoredMoves.map(s => s.move);
   }
 
+  isMoveSafeWithCounterplay(state, move) {
+    const afterMove = this.simulateMove(state, move);
+    const playerMoves = this.getAllValidMoves(afterMove, Player.PLAYER);
+    const playerCaptures = playerMoves.filter(m => m.eatenPiece);
+
+    const directCaptures = playerCaptures.filter(capture =>
+      capture.to.row === move.to.row && capture.to.col === move.to.col
+    );
+
+    if (directCaptures.length === 0) {
+      return true;
+    }
+
+    // Allow if the bot can immediately recapture the capturing piece
+    for (const capture of directCaptures) {
+      const afterCapture = this.simulateMove(afterMove, capture);
+      const botReplies = this.getAllValidMoves(afterCapture, Player.BOT);
+      const botRecaptures = botReplies.filter(m => m.eatenPiece);
+      const canRecapture = botRecaptures.some(reply =>
+        reply.to.row === capture.to.row && reply.to.col === capture.to.col
+      );
+      if (canRecapture) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   isMoveImmediatelySafe(state, move, player) {
     const afterMove = this.simulateMove(state, move);
     const opponent = player === Player.BOT ? Player.PLAYER : Player.BOT;
@@ -1145,17 +1178,17 @@ export class GameBot {
 
         if (piece.owner === Player.BOT) {
           if (attackedByPlayer && !attackedByBot) {
-            score -= value * 0.6; // hanging piece
+            score -= value * 1.4; // hanging piece (very bad)
           } else if (attackedByPlayer && attackedByBot) {
-            score -= value * 0.2; // contested
+            score -= value * 0.6; // contested
           } else if (!attackedByPlayer && attackedByBot) {
-            score += value * 0.05; // defended and safe
+            score += value * 0.1; // defended and safe
           }
         } else {
           if (attackedByBot && !attackedByPlayer) {
-            score += value * 0.5; // opponent piece is hanging
+            score += value * 0.7; // opponent piece is hanging
           } else if (attackedByBot && attackedByPlayer) {
-            score += value * 0.1;
+            score += value * 0.2;
           }
         }
       }
@@ -1183,7 +1216,7 @@ export class GameBot {
 
       const isRecaptured = recaptures.some(r => r.to.row === move.to.row && r.to.col === move.to.col);
       if (isRecaptured) {
-        score += gain * 0.5 - risk * 0.7;
+        score += gain * 0.3 - risk * 1.1;
       } else {
         score += gain * 0.9;
       }
