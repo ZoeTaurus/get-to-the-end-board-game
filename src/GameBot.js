@@ -236,12 +236,17 @@ export class GameBot {
       return this.isSquareProtected(afterMove, move.to.row, move.to.col, Player.BOT);
     });
 
+    const noUnsupportedAttacks = supportFocusedSet.filter(
+      move => !this.isUnsupportedAttackMove(gameState, move)
+    );
+    const attackFilteredSet = noUnsupportedAttacks.length > 0 ? noUnsupportedAttacks : supportFocusedSet;
+
     const movesForSearch =
       safeQuietMoves.length > 0 && riskyCaptures.length > 0
         ? safeQuietMoves
         : supportedAttacks.length > 0
           ? supportedAttacks
-          : supportFocusedSet;
+          : attackFilteredSet;
     
     // DEEP ANALYSIS: Use minimax to evaluate each move
     for (const move of movesForSearch) {
@@ -1757,9 +1762,9 @@ export class GameBot {
         const isUnderThreat = threatMaps.player[r][c] > 0;
 
         if (isAttackingEnemy && !isProtected && isUnderThreat) {
-          score -= 380;
+          score -= 700;
         } else if (isAttackingEnemy && !isProtected) {
-          score -= 220;
+          score -= 400;
         }
       }
     }
