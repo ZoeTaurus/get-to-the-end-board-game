@@ -154,10 +154,13 @@ export class GameBot {
     let bestMove = null;
     let bestValue = -Infinity;
 
-    // ALWAYS TAKE A WINNING MOVE
-    const winningMove = moves.find(move => this.isImmediateBotWin(gameState, move));
-    if (winningMove) {
-      return winningMove;
+    // WIN IMMEDIATELY: if a winning move exists, take it.
+    const winningMoves = moves.filter(move => this.isImmediateBotWin(gameState, move));
+    if (winningMoves.length > 0) {
+      const safeWinning = winningMoves.filter(move =>
+        this.isMoveImmediatelySafe(gameState, move, Player.BOT)
+      );
+      return (safeWinning.length > 0 ? safeWinning : winningMoves)[0];
     }
     
     // SAFETY FIRST: Filter out moves that walk into immediate danger
@@ -1141,7 +1144,7 @@ export class GameBot {
       const centerScore = -Math.abs(move.to.row - Math.floor(state.board.length / 2));
       const safe = this.isMoveImmediatelySafe(state, move, player) ? 1 : 0;
       const learnedScore = this.getLearnedMoveScore(state, move);
-      const quietSafetyBonus = !isCapture && safe ? 120 : 0;
+      const quietSafetyBonus = !isCapture && safe ? 200 : 0;
 
       const score =
         (isCapture ? 200 : 0) +
@@ -1475,9 +1478,9 @@ export class GameBot {
 
       const isRecaptured = recaptures.some(r => r.to.row === move.to.row && r.to.col === move.to.col);
       if (isRecaptured) {
-        score += gain * 0.2 - risk * 1.4 - sacrificePenalty;
+        score += gain * 0.1 - risk * 1.6 - sacrificePenalty;
       } else {
-        score += gain * 0.7;
+        score += gain * 0.5;
       }
     }
 
