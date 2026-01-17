@@ -1469,9 +1469,9 @@ export class GameBot {
 
       const isRecaptured = recaptures.some(r => r.to.row === move.to.row && r.to.col === move.to.col);
       if (isRecaptured) {
-        score += gain * 0.3 - risk * 1.1 - sacrificePenalty;
+        score += gain * 0.2 - risk * 1.4 - sacrificePenalty;
       } else {
-        score += gain * 0.9;
+        score += gain * 0.7;
       }
     }
 
@@ -1480,7 +1480,7 @@ export class GameBot {
       const movingPiece = state.board[move.from.row][move.from.col];
       const loss = capturedPiece ? pieceValue[capturedPiece.type] : 0;
       const risk = movingPiece ? pieceValue[movingPiece.type] : 0;
-      score -= loss * 0.6;
+      score -= loss * 0.8;
       score += risk * 0.1; // if their capture exposes risk, small relief
     }
 
