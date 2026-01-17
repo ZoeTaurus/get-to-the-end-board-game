@@ -192,9 +192,19 @@ export class GameBot {
     // unless it is a direct winning move.
     const nonBlunders = safeSet.filter(move => !this.isBlunderMove(gameState, move));
     const finalMoves = nonBlunders.length > 0 ? nonBlunders : safeSet;
+
+    // RISK CONTROL: prefer safe non-captures when captures are risky
+    const safeQuietMoves = finalMoves.filter(move =>
+      !move.eatenPiece && this.isMoveImmediatelySafe(gameState, move, Player.BOT)
+    );
+    const riskyCaptures = finalMoves.filter(move =>
+      move.eatenPiece && this.evaluateImmediateCaptureRisk(gameState, move) > 0
+    );
+    const movesForSearch =
+      safeQuietMoves.length > 0 && riskyCaptures.length > 0 ? safeQuietMoves : finalMoves;
     
     // DEEP ANALYSIS: Use minimax to evaluate each move
-    for (const move of finalMoves) {
+    for (const move of movesForSearch) {
       const newGameState = this.simulateMove(gameState, move);
       const boardValue = this.minimax(newGameState, depth - 1, false, -Infinity, Infinity);
       const tacticalPenalty = this.evaluateImmediateCaptureRisk(gameState, move) * 1.6;
@@ -1069,13 +1079,15 @@ export class GameBot {
       const centerScore = -Math.abs(move.to.row - Math.floor(state.board.length / 2));
       const safe = this.isMoveImmediatelySafe(state, move, player) ? 1 : 0;
       const learnedScore = this.getLearnedMoveScore(state, move);
+      const quietSafetyBonus = !isCapture && safe ? 120 : 0;
 
       const score =
-        (isCapture ? 1000 : 0) +
+        (isCapture ? 450 : 0) +
         advancementScore * 20 +
         centerScore * 5 +
         safe * 150 +
-        learnedScore;
+        learnedScore +
+        quietSafetyBonus;
 
       return { move, score };
     });
@@ -1181,7 +1193,7 @@ export class GameBot {
       }
     }
 
-    const movedPiece = state.board[move.from.row]?.[move.from.col];
+     const movedPiece = state.board[move.from.row]?.[move.from.col];
     const circleRiskPenalty = movedPiece?.type === PieceType.CIRCLE ? 180 : 0;
     return worstNetLoss * 3 + circleRiskPenalty; // extra penalty for risking circles
   }
